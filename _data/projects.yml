@@ -1,0 +1,32 @@
+# Projects Data
+# Each project has: title, description, date (YYYY-MM-DD), url, year (for grouping)
+
+- title: "Personal Blog"
+  description: "This Jekyll-powered blog with command palette, dark mode, and GitHub Pages hosting"
+  date: 2024-01-18
+  year: 2024
+  url: "https://sehgal-vip.github.io"
+
+- title: "AI Writing Assistant"
+  description: "Chrome extension for contextual writing suggestions using GPT-4"
+  date: 2024-06-15
+  year: 2024
+  url: "#"
+
+- title: "Product Analytics Dashboard"
+  description: "Real-time metrics visualization for product teams built with React and D3"
+  date: 2024-03-20
+  year: 2024
+  url: "#"
+
+- title: "Hindi Codenames"
+  description: "Multiplayer word game in Hindi - built with Next.js and WebSockets"
+  date: 2023-11-10
+  year: 2023
+  url: "#"
+
+- title: "Reading List Tracker"
+  description: "Simple app to track books, papers, and articles with progress indicators"
+  date: 2023-08-05
+  year: 2023
+  url: "#"

@@ -1,0 +1,188 @@
+---
+layout: page
+title: Reading List
+description: Papers, books, articles, and other things I've found valuable
+permalink: /reading/
+---
+
+<div class="reading-list">
+  <!-- Papers Section -->
+  {% if site.data.reading.papers.size > 0 %}
+  <section class="reading-section">
+    <h2 class="reading-section-title">
+      <span class="reading-icon">📄</span>
+      Papers
+    </h2>
+    
+    {% assign papers_by_year = site.data.reading.papers | group_by: "year" | sort: "name" | reverse %}
+    {% for year_group in papers_by_year %}
+    <div class="reading-year-group">
+      <h3 class="reading-year">{{ year_group.name }}</h3>
+      <ul class="reading-items">
+        {% for item in year_group.items %}
+        <li class="reading-item">
+          <div class="reading-item-content">
+            <h4 class="reading-item-title">
+              {% if item.url %}
+              <a href="{{ item.url }}" target="_blank" rel="noopener noreferrer">{{ item.title }}</a>
+              {% else %}
+              {{ item.title }}
+              {% endif %}
+            </h4>
+            <span class="reading-item-author">{{ item.author }}</span>
+            {% if item.description %}
+            <p class="reading-item-description">{{ item.description }}</p>
+            {% endif %}
+          </div>
+          {% if item.url %}
+          <a href="{{ item.url }}" target="_blank" rel="noopener noreferrer" class="reading-item-link" aria-label="Open {{ item.title }}">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+              <polyline points="15 3 21 3 21 9"></polyline>
+              <line x1="10" y1="14" x2="21" y2="3"></line>
+            </svg>
+          </a>
+          {% endif %}
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endfor %}
+  </section>
+  {% endif %}
+
+  <!-- Books Section -->
+  {% if site.data.reading.books.size > 0 %}
+  <section class="reading-section">
+    <h2 class="reading-section-title">
+      <span class="reading-icon">📚</span>
+      Books
+    </h2>
+    
+    {% assign books_by_year = site.data.reading.books | group_by: "year" | sort: "name" | reverse %}
+    {% for year_group in books_by_year %}
+    <div class="reading-year-group">
+      <h3 class="reading-year">{{ year_group.name }}</h3>
+      <ul class="reading-items">
+        {% for item in year_group.items %}
+        <li class="reading-item">
+          <div class="reading-item-content">
+            <h4 class="reading-item-title">
+              {% if item.url %}
+              <a href="{{ item.url }}" target="_blank" rel="noopener noreferrer">{{ item.title }}</a>
+              {% else %}
+              {{ item.title }}
+              {% endif %}
+            </h4>
+            <span class="reading-item-author">{{ item.author }}</span>
+            {% if item.description %}
+            <p class="reading-item-description">{{ item.description }}</p>
+            {% endif %}
+          </div>
+          {% if item.url %}
+          <a href="{{ item.url }}" target="_blank" rel="noopener noreferrer" class="reading-item-link" aria-label="Open {{ item.title }}">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+              <polyline points="15 3 21 3 21 9"></polyline>
+              <line x1="10" y1="14" x2="21" y2="3"></line>
+            </svg>
+          </a>
+          {% endif %}
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endfor %}
+  </section>
+  {% endif %}
+
+  <!-- Articles Section -->
+  {% if site.data.reading.articles.size > 0 %}
+  <section class="reading-section">
+    <h2 class="reading-section-title">
+      <span class="reading-icon">📰</span>
+      Articles
+    </h2>
+    
+    {% assign articles_by_year = site.data.reading.articles | group_by: "year" | sort: "name" | reverse %}
+    {% for year_group in articles_by_year %}
+    <div class="reading-year-group">
+      <h3 class="reading-year">{{ year_group.name }}</h3>
+      <ul class="reading-items">
+        {% for item in year_group.items %}
+        <li class="reading-item">
+          <div class="reading-item-content">
+            <h4 class="reading-item-title">
+              {% if item.url %}
+              <a href="{{ item.url }}" target="_blank" rel="noopener noreferrer">{{ item.title }}</a>
+              {% else %}
+              {{ item.title }}
+              {% endif %}
+            </h4>
+            <span class="reading-item-author">{{ item.author }}</span>
+            {% if item.description %}
+            <p class="reading-item-description">{{ item.description }}</p>
+            {% endif %}
+          </div>
+          {% if item.url %}
+          <a href="{{ item.url }}" target="_blank" rel="noopener noreferrer" class="reading-item-link" aria-label="Open {{ item.title }}">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+              <polyline points="15 3 21 3 21 9"></polyline>
+              <line x1="10" y1="14" x2="21" y2="3"></line>
+            </svg>
+          </a>
+          {% endif %}
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endfor %}
+  </section>
+  {% endif %}
+
+  <!-- Others Section -->
+  {% if site.data.reading.others.size > 0 %}
+  <section class="reading-section">
+    <h2 class="reading-section-title">
+      <span class="reading-icon">🔗</span>
+      Others
+    </h2>
+    
+    {% assign others_by_year = site.data.reading.others | group_by: "year" | sort: "name" | reverse %}
+    {% for year_group in others_by_year %}
+    <div class="reading-year-group">
+      <h3 class="reading-year">{{ year_group.name }}</h3>
+      <ul class="reading-items">
+        {% for item in year_group.items %}
+        <li class="reading-item">
+          <div class="reading-item-content">
+            <h4 class="reading-item-title">
+              {% if item.url %}
+              <a href="{{ item.url }}" target="_blank" rel="noopener noreferrer">{{ item.title }}</a>
+              {% else %}
+              {{ item.title }}
+              {% endif %}
+            </h4>
+            <span class="reading-item-author">{{ item.author }}</span>
+            {% if item.description %}
+            <p class="reading-item-description">{{ item.description }}</p>
+            {% endif %}
+          </div>
+          {% if item.url %}
+          <a href="{{ item.url }}" target="_blank" rel="noopener noreferrer" class="reading-item-link" aria-label="Open {{ item.title }}">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+              <polyline points="15 3 21 3 21 9"></polyline>
+              <line x1="10" y1="14" x2="21" y2="3"></line>
+            </svg>
+          </a>
+          {% endif %}
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endfor %}
+  </section>
+  {% endif %}
+</div>

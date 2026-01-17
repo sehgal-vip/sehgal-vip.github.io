@@ -9,13 +9,13 @@
   url: /blog/
   icon: blog
 
-- name: Categories
-  url: /categories/
+- name: Projects
+  url: /projects/
   icon: folder
 
-- name: Tags
-  url: /tags/
-  icon: tag
+- name: Reading
+  url: /reading/
+  icon: book
 
 - name: About
   url: /about/

@@ -1,0 +1,57 @@
+# Reading List Data
+# Organized by type and grouped by year
+# Each item has: title, author, url (optional), year, description (optional)
+
+papers:
+  - title: "Attention Is All You Need"
+    author: "Vaswani et al."
+    url: "https://arxiv.org/abs/1706.03762"
+    year: 2017
+    description: "The transformer architecture paper that changed NLP forever"
+  
+  - title: "BERT: Pre-training of Deep Bidirectional Transformers"
+    author: "Devlin et al."
+    url: "https://arxiv.org/abs/1810.04805"
+    year: 2018
+    description: "Bidirectional encoder representations from transformers"
+
+books:
+  - title: "Thinking, Fast and Slow"
+    author: "Daniel Kahneman"
+    year: 2011
+    description: "Exploration of the two systems that drive the way we think"
+  
+  - title: "The Courage to Be Disliked"
+    author: "Ichiro Kishimi & Fumitake Koga"
+    year: 2013
+    description: "Japanese phenomenon on Adlerian psychology"
+
+  - title: "Sapiens: A Brief History of Humankind"
+    author: "Yuval Noah Harari"
+    year: 2014
+    description: "A sweeping history of our species"
+
+articles:
+  - title: "The Bitter Lesson"
+    author: "Rich Sutton"
+    url: "http://www.incompleteideas.net/IncIdeas/BitterLesson.html"
+    year: 2019
+    description: "On the importance of scale in AI research"
+  
+  - title: "What I Talk About When I Talk About Running"
+    author: "Haruki Murakami"
+    year: 2008
+    description: "Memoir on running and writing"
+
+others:
+  - title: "Wait But Why: The AI Revolution"
+    author: "Tim Urban"
+    url: "https://waitbutwhy.com/2015/01/artificial-intelligence-revolution-1.html"
+    year: 2015
+    description: "Two-part series on the future of AI"
+  
+  - title: "Paul Graham Essays"
+    author: "Paul Graham"
+    url: "http://paulgraham.com/articles.html"
+    year: 2024
+    description: "Essays on startups, programming, and life"

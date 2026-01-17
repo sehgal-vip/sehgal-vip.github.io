@@ -11,12 +11,67 @@
    * Initialize when DOM is ready
    */
   function init() {
+    setupSidebar();
     setupMobileMenu();
     setupSmoothScroll();
     setupExternalLinks();
     setupReadingTime();
     setupShareButtons();
     setupLazyLoading();
+  }
+
+  /**
+   * Sidebar toggle functionality
+   */
+  function setupSidebar() {
+    const toggleBtn = document.querySelector('.sidebar-toggle-btn');
+    const closeBtn = document.querySelector('.sidebar-close-btn');
+    const backdrop = document.querySelector('.sidebar-backdrop');
+    const sidebar = document.querySelector('.sidebar');
+
+    if (!toggleBtn || !sidebar) return;
+
+    function openSidebar() {
+      document.body.classList.add('sidebar-open');
+      toggleBtn.setAttribute('aria-expanded', 'true');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeSidebar() {
+      document.body.classList.remove('sidebar-open');
+      toggleBtn.setAttribute('aria-expanded', 'false');
+      document.body.style.overflow = '';
+    }
+
+    toggleBtn.addEventListener('click', () => {
+      const isOpen = document.body.classList.contains('sidebar-open');
+      if (isOpen) {
+        closeSidebar();
+      } else {
+        openSidebar();
+      }
+    });
+
+    if (closeBtn) {
+      closeBtn.addEventListener('click', closeSidebar);
+    }
+
+    if (backdrop) {
+      backdrop.addEventListener('click', closeSidebar);
+    }
+
+    // Close on escape key
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && document.body.classList.contains('sidebar-open')) {
+        closeSidebar();
+        toggleBtn.focus();
+      }
+    });
+
+    // Close sidebar when clicking a link inside it
+    sidebar.querySelectorAll('a').forEach(link => {
+      link.addEventListener('click', closeSidebar);
+    });
   }
 
   /**

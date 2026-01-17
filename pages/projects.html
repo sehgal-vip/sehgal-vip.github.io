@@ -1,0 +1,50 @@
+---
+layout: page
+title: Projects
+description: Things I've built and worked on
+permalink: /projects/
+---
+
+<div class="projects-list">
+  {% assign projects_by_year = site.data.projects | group_by: "year" | sort: "name" | reverse %}
+  
+  {% for year_group in projects_by_year %}
+  <section class="projects-year-section">
+    <h2 class="projects-year-title">{{ year_group.name }}</h2>
+    
+    <div class="projects-grid">
+      {% for project in year_group.items %}
+      <article class="project-card">
+        <div class="project-card-header">
+          <h3 class="project-card-title">
+            {% if project.url and project.url != "#" %}
+            <a href="{{ project.url }}" target="_blank" rel="noopener noreferrer">
+              {{ project.title }}
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="external-link-icon">
+                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                <polyline points="15 3 21 3 21 9"></polyline>
+                <line x1="10" y1="14" x2="21" y2="3"></line>
+              </svg>
+            </a>
+            {% else %}
+            {{ project.title }}
+            {% endif %}
+          </h3>
+          <time class="project-card-date" datetime="{{ project.date }}">
+            {{ project.date | date: "%b %Y" }}
+          </time>
+        </div>
+        
+        <p class="project-card-description">{{ project.description }}</p>
+        
+        {% if project.url and project.url != "#" %}
+        <a href="{{ project.url }}" target="_blank" rel="noopener noreferrer" class="project-card-link">
+          View Project →
+        </a>
+        {% endif %}
+      </article>
+      {% endfor %}
+    </div>
+  </section>
+  {% endfor %}
+</div>
