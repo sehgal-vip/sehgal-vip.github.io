@@ -1749,6 +1749,11 @@ strong, b {
   filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.2));
 }
 
+.pikachu-chaser.is-crashed .pikachu-sprite {
+  background-image: url("/assets/images/pikachu-crash.png");
+  animation: none;
+}
+
 @keyframes pikachu-run {
   0% { transform: translateY(0); }
   50% { transform: translateY(-2px); }
