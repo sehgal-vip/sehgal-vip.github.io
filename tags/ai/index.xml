@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>AI on Vipul Sehgal</title><link>https://sehgal-vip.github.io/tags/ai/</link><description>Recent content in AI on Vipul Sehgal</description><generator>Hugo</generator><language>en-us</language><lastBuildDate>Sat, 17 Jan 2026 17:10:20 +0530</lastBuildDate><atom:link href="https://sehgal-vip.github.io/tags/ai/index.xml" rel="self" type="application/rss+xml"/><item><title>Understanding Transformers: A First Principles Approach</title><link>https://sehgal-vip.github.io/writing/understanding-transformers-a-first-principles-approach/</link><pubDate>Wed, 15 Jan 2025 00:00:00 +0000</pubDate><guid>https://sehgal-vip.github.io/writing/understanding-transformers-a-first-principles-approach/</guid><description>&lt;p&gt;The transformer architecture, introduced in the 2017 paper &amp;ldquo;Attention Is All You Need,&amp;rdquo; revolutionized natural language processing. But what makes it so powerful?&lt;/p&gt;
+&lt;h2 id="the-core-intuition"&gt;The Core Intuition&lt;/h2&gt;
+&lt;p&gt;Imagine you&amp;rsquo;re reading a sentence:&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;&amp;ldquo;The cat sat on the mat because it was tired.&amp;rdquo;&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;When you read &amp;ldquo;it,&amp;rdquo; your brain automatically connects it to &amp;ldquo;cat&amp;rdquo; rather than &amp;ldquo;mat.&amp;rdquo; You&amp;rsquo;re performing attention—focusing on the relevant context to understand meaning.&lt;/p&gt;
+&lt;p&gt;Transformers do something similar, but mathematically.&lt;/p&gt;</description></item></channel></rss>
