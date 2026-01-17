@@ -161,6 +161,7 @@ strong, b {
   flex-direction: column;
   min-height: 100vh;
   width: 100%;
+  max-width: 100%;
 }
 
 .main-content {
@@ -168,21 +169,14 @@ strong, b {
   padding-top: calc(var(--header-height) + 2rem);
   padding-bottom: 4rem;
   width: 100%;
+  max-width: 100%;
 }
 
 .container {
   width: 100%;
-  max-width: 1200px;
+  max-width: 100%;
   margin: 0 auto;
-  padding: 0 1.5rem;
-  
-  @media (min-width: 1400px) {
-    max-width: 1300px;
-  }
-}
-
-.container {
-  // Container is already defined above, this just ensures content flows properly
+  padding: 0 clamp(1.5rem, 4vw, 4rem);
 }
 
 // =============================================================================
@@ -207,13 +201,9 @@ strong, b {
   align-items: center;
   justify-content: space-between;
   height: 100%;
-  max-width: 1200px;
+  max-width: 100%;
   margin: 0 auto;
-  padding: 0 1.5rem;
-  
-  @media (min-width: 1400px) {
-    max-width: 1300px;
-  }
+  padding: 0 clamp(1.5rem, 4vw, 4rem);
 }
 
 .site-logo {
@@ -542,18 +532,14 @@ strong, b {
 }
 
 .footer-inner {
-  max-width: 1200px;
+  max-width: 100%;
   margin: 0 auto;
-  padding: 0 1.5rem;
+  padding: 0 clamp(1.5rem, 4vw, 4rem);
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 1.5rem;
   text-align: center;
-  
-  @media (min-width: 1400px) {
-    max-width: 1300px;
-  }
 }
 
 .footer-social {
