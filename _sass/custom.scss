@@ -1721,59 +1721,113 @@ strong, b {
   }
 }
 
-@keyframes rabbit-stars-spin {
+@keyframes chaser-stars-spin {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
 }
 
-.rabbit-chaser {
+.pikachu-chaser {
   position: fixed;
   left: 0;
   top: 0;
-  width: 24px;
-  height: 24px;
-  margin-left: -12px;
-  margin-top: -12px;
-  border-radius: 50%;
-  background: var(--bg-color);
-  border: 2px solid var(--text-color);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  width: 28px;
+  height: 28px;
+  margin-left: -14px;
+  margin-top: -14px;
+  image-rendering: pixelated;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.25));
   pointer-events: none;
   z-index: 2000;
   transition: transform 60ms linear;
 }
 
-.rabbit-chaser::before,
-.rabbit-chaser::after {
+.pikachu-chaser::before {
   content: "";
   position: absolute;
-  width: 8px;
-  height: 12px;
-  top: -9px;
-  background: var(--bg-color);
-  border: 2px solid var(--text-color);
-  border-radius: 6px 6px 4px 4px;
+  left: 50%;
+  top: 50%;
+  width: 4px;
+  height: 4px;
+  transform: translate(-50%, -50%);
+  background: #ffd100;
+  box-shadow:
+    -4px -8px 0 #ffd100,
+    0 -8px 0 #ffd100,
+    4px -8px 0 #ffd100,
+    -8px -4px 0 #ffd100,
+    -4px -4px 0 #ffd100,
+    0 -4px 0 #ffd100,
+    4px -4px 0 #ffd100,
+    8px -4px 0 #ffd100,
+    -8px 0 0 #ffd100,
+    -4px 0 0 #ffd100,
+    0 0 0 #ffd100,
+    4px 0 0 #ffd100,
+    8px 0 0 #ffd100,
+    -12px -12px 0 #ffd100,
+    12px -12px 0 #ffd100,
+    -12px -16px 0 #2b2b2b,
+    12px -16px 0 #2b2b2b,
+    -8px 4px 0 #ff4d4d,
+    8px 4px 0 #ff4d4d,
+    -4px 4px 0 #ffd100,
+    0 4px 0 #ffd100,
+    4px 4px 0 #ffd100,
+    -4px 8px 0 #ffd100,
+    0 8px 0 #ffd100,
+    4px 8px 0 #ffd100,
+    -4px 12px 0 #ffd100,
+    0 12px 0 #ffd100,
+    4px 12px 0 #ffd100,
+    12px 4px 0 #f2b500,
+    16px 4px 0 #f2b500,
+    16px 8px 0 #f2b500;
 }
 
-.rabbit-chaser::before {
-  left: 3px;
-  transform: rotate(-8deg);
+.pikachu-chaser.run-2::before {
+  box-shadow:
+    -4px -8px 0 #ffd100,
+    0 -8px 0 #ffd100,
+    4px -8px 0 #ffd100,
+    -8px -4px 0 #ffd100,
+    -4px -4px 0 #ffd100,
+    0 -4px 0 #ffd100,
+    4px -4px 0 #ffd100,
+    8px -4px 0 #ffd100,
+    -8px 0 0 #ffd100,
+    -4px 0 0 #ffd100,
+    0 0 0 #ffd100,
+    4px 0 0 #ffd100,
+    8px 0 0 #ffd100,
+    -12px -12px 0 #ffd100,
+    12px -12px 0 #ffd100,
+    -12px -16px 0 #2b2b2b,
+    12px -16px 0 #2b2b2b,
+    -8px 4px 0 #ff4d4d,
+    8px 4px 0 #ff4d4d,
+    -4px 4px 0 #ffd100,
+    0 4px 0 #ffd100,
+    4px 4px 0 #ffd100,
+    -4px 8px 0 #ffd100,
+    0 8px 0 #ffd100,
+    4px 8px 0 #ffd100,
+    -4px 12px 0 #ffd100,
+    0 12px 0 #ffd100,
+    4px 12px 0 #ffd100,
+    8px 6px 0 #f2b500,
+    12px 6px 0 #f2b500,
+    12px 10px 0 #f2b500;
 }
 
-.rabbit-chaser::after {
-  right: 3px;
-  transform: rotate(8deg);
-}
-
-.rabbit-stars {
+.chaser-stars {
   position: absolute;
   inset: -10px;
   display: none;
   pointer-events: none;
-  animation: rabbit-stars-spin 0.8s linear infinite;
+  animation: chaser-stars-spin 0.8s linear infinite;
 }
 
-.rabbit-stars::before {
+.chaser-stars::before {
   content: "";
   position: absolute;
   inset: 0;
@@ -1793,6 +1847,6 @@ strong, b {
     -7px 7px 0 var(--color-secondary);
 }
 
-.rabbit-chaser.is-crashed .rabbit-stars {
+.pikachu-chaser.is-crashed .chaser-stars {
   display: block;
 }

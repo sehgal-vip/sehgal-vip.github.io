@@ -294,13 +294,13 @@
    * Animated rabbit that follows the pointer and "crashes" on contact
    */
   function setupRabbitChaser() {
-    const rabbit = document.createElement('div');
-    rabbit.className = 'rabbit-chaser';
-    rabbit.setAttribute('aria-hidden', 'true');
+    const chaser = document.createElement('div');
+    chaser.className = 'pikachu-chaser run-1';
+    chaser.setAttribute('aria-hidden', 'true');
     const stars = document.createElement('div');
-    stars.className = 'rabbit-stars';
-    rabbit.appendChild(stars);
-    document.body.appendChild(rabbit);
+    stars.className = 'chaser-stars';
+    chaser.appendChild(stars);
+    document.body.appendChild(chaser);
 
     let x = window.innerWidth / 2;
     let y = window.innerHeight / 2;
@@ -308,6 +308,8 @@
     let targetY = y;
     let crashed = false;
     let crashTimeout = null;
+    let frame = 0;
+    let frameTimer = null;
 
     function onMove(e) {
       targetX = e.clientX;
@@ -330,20 +332,28 @@
 
         if (dist < 10) {
           crashed = true;
-          rabbit.classList.add('is-crashed');
+          chaser.classList.add('is-crashed');
           if (crashTimeout) clearTimeout(crashTimeout);
           crashTimeout = setTimeout(() => {
             crashed = false;
-            rabbit.classList.remove('is-crashed');
+            chaser.classList.remove('is-crashed');
           }, 600);
         }
       }
 
-      rabbit.style.transform = `translate(${x}px, ${y}px)`;
+      chaser.style.transform = `translate(${x}px, ${y}px)`;
       requestAnimationFrame(animate);
     }
 
+    function tickFrames() {
+      frame = (frame + 1) % 2;
+      chaser.classList.toggle('run-1', frame === 0);
+      chaser.classList.toggle('run-2', frame === 1);
+      frameTimer = setTimeout(tickFrames, 120);
+    }
+
     requestAnimationFrame(animate);
+    tickFrames();
   }
 
   /**
