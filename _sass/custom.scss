@@ -1795,3 +1795,10 @@ strong, b {
 .pikachu-chaser.is-crashed .chaser-stars {
   display: block;
 }
+
+// Hide chaser on mobile devices
+@media (max-width: 768px) {
+  .pikachu-chaser {
+    display: none !important;
+  }
+}

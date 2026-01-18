@@ -294,6 +294,11 @@
    * Animated rabbit that follows the pointer and "crashes" on contact
    */
   function setupRabbitChaser() {
+    // Don't initialize on mobile devices
+    if (window.innerWidth <= 768 || 'ontouchstart' in window || navigator.maxTouchPoints > 0) {
+      return;
+    }
+
     const chaser = document.createElement('div');
     chaser.className = 'pikachu-chaser';
     chaser.setAttribute('aria-hidden', 'true');
