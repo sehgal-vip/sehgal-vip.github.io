@@ -331,7 +331,7 @@
       
       // Get actual dimensions to center the chaser
       const chaserWidth = chaser.offsetWidth || 64;
-      const chaserHeight = 64;
+      const chaserHeight = chaser.offsetHeight || 64;
 
       if (!crashed) {
         if (dist > 1) {
@@ -356,6 +356,11 @@
       requestAnimationFrame(animate);
     }
 
+    // Set initial position
+    const chaserWidth = chaser.offsetWidth || 64;
+    const chaserHeight = chaser.offsetHeight || 64;
+    chaser.style.transform = `translate(${x - chaserWidth / 2}px, ${y - chaserHeight / 2}px)`;
+    
     requestAnimationFrame(animate);
   }
 

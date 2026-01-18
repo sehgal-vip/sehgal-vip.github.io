@@ -1783,24 +1783,28 @@ strong, b {
   position: fixed;
   left: 0;
   top: 0;
-  width: auto;
+  width: 64px;
   height: 64px;
-  display: inline-block;
   pointer-events: none;
   z-index: 2000;
   transition: transform 60ms linear;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .pikachu-sprite {
   display: block;
-  width: auto;
+  width: 64px;
   height: 64px;
+  min-width: 64px;
+  min-height: 64px;
   background-image: url("/assets/images/pikachu-run.png");
-  background-position: center;
+  background-position: center center;
   background-repeat: no-repeat;
-  background-size: contain;
+  background-size: 64px 64px;
   image-rendering: pixelated;
-  animation: pikachu-run 0.6s steps(2) infinite;
+  animation: pikachu-run 0.6s ease-in-out infinite;
   filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.2));
 }
 
