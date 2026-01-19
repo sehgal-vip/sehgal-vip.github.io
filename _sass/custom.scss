@@ -1617,11 +1617,13 @@ strong, b {
 .data-table {
   width: 100%;
   border-collapse: collapse;
+  table-layout: fixed;
   
   th, td {
-    padding: 0.875rem 1rem;
+    padding: 0.75rem 1rem;
     text-align: left;
     border-bottom: 1px solid var(--border-color);
+    vertical-align: top;
   }
   
   th {
@@ -1630,7 +1632,8 @@ strong, b {
     text-transform: uppercase;
     letter-spacing: 0.05em;
     color: var(--text-muted);
-    background: var(--bg-secondary);
+    background: transparent;
+    padding-bottom: 0.5rem;
   }
   
   tbody tr {
@@ -1644,11 +1647,26 @@ strong, b {
       border-bottom: none;
     }
   }
+  
+  // Column widths
+  th:nth-child(1),
+  td:nth-child(1) {
+    width: 35%;
+  }
+  
+  th:nth-child(2),
+  td:nth-child(2) {
+    width: 20%;
+  }
+  
+  th:nth-child(3),
+  td:nth-child(3) {
+    width: 45%;
+  }
 }
 
 .title-cell {
   font-weight: 500;
-  min-width: 180px;
   
   a {
     color: var(--color-primary);
@@ -1663,13 +1681,12 @@ strong, b {
 .author-cell {
   color: var(--text-muted);
   font-size: 0.875rem;
-  white-space: nowrap;
 }
 
 .desc-cell {
   color: var(--text-muted);
   font-size: 0.875rem;
-  max-width: 400px;
+  line-height: 1.5;
 }
 
 // Responsive tables
