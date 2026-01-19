@@ -1,6 +1,6 @@
 ---
 layout: page
-title: Hello!
+title: Hello
 description: Submerged temple at 30 meters. Blue fire on Kawah Ijen at 2am, acid lake glowing turquoise in the crater. I chase things that defy logic. The most interesting truths don't wait for certainty: **they reward curiosity**.
 permalink: /about/
 ---
