@@ -1,13 +1,9 @@
 ---
 layout: page
-title: About
-description: Learn more about me and this blog
+title: Hello!
+description: Submerged temple at 30 meters. Blue fire on Kawah Ijen at 2am, acid lake glowing turquoise in the crater. I chase things that defy logic. The most interesting truths don't wait for certainty: **they reward curiosity**.
 permalink: /about/
 ---
-
-## About
-
-Submerged temple at 30 meters. Blue fire on Kawah Ijen at 2am, acid lake glowing turquoise in the crater. I chase things that defy logic. The most interesting truths don't wait for certainty: **they reward curiosity**.
 
 In my current day avatar, I lead Product and Tech teams working on EV adoption in India. The problem compounds: financing vehicles for buyers with thin credit histories, leasing electric buses to operators navigating new unit economics, building risk infrastructure for a market still taking shape. I build lending systems, operational workflows, credit models—the invisible scaffolding that makes the transition possible.
 
