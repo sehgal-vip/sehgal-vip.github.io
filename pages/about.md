@@ -18,7 +18,7 @@ Best thinking happens in the margins between disciplines. Compartmentalized chao
 
 Right now I'm building lending systems, writing about AI and philosophy, maintaining a blog with Jekyll because sometimes you need to understand how things work before making them beautiful. Still mapping territories without names. Still asking what else glows in the dark.
 
-You'll find me asking one more clarifying question. Making the obscure oddly clear for the genuinely curious. Somewhere between systematic and spontaneous. Probably learning something I have no business knowing. Will find a use for it eventually.
+You'll find me asking one more clarifying question. Trying to make the obscure, oddly clear for the genuinely curious. Somewhere between systematic and spontaneous. Probably learning something I have no business knowing. Will find a use for it eventually, or maybe not!
 
 ---
 
