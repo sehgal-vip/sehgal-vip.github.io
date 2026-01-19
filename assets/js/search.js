@@ -66,7 +66,7 @@
     if (!searchIndex || !query) {
       return [];
     }
-
+    
     const normalizedQuery = query.toLowerCase().trim();
     const terms = normalizedQuery.split(/\s+/);
 
@@ -98,7 +98,7 @@
         terms.forEach(term => {
           if (cats.includes(term) || tags.includes(term)) {
             score += 20;
-          }
+  }
         });
 
         return { post, score };
@@ -139,7 +139,7 @@
     highlight,
     getPosts: () => posts
   };
-
+    
   // Initialize when DOM is ready
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);
