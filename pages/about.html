@@ -324,6 +324,8 @@ permalink: /about/
         .circled {
             position: relative;
             padding: 0 0.3rem;
+            display: inline-block;
+            white-space: nowrap;
         }
 
         .circled::before {
@@ -648,6 +650,44 @@ permalink: /about/
 
             .nav-back {
                 position: static;
+                margin-bottom: 1rem;
+            }
+
+            /* Fix circled text on mobile - prevent breaking across lines */
+            .circled {
+                white-space: nowrap;
+                display: inline-block;
+                max-width: 100%;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+
+            .circled::before {
+                inset: -2px -4px;
+                border-width: 1.5px;
+            }
+            
+            /* For very long circled text, make it wrap but keep oval compact */
+            .entry-body .circled {
+                white-space: normal;
+                display: inline;
+                line-height: 1.8;
+            }
+            
+            .entry-body .circled::before {
+                inset: -1px -3px;
+                border-width: 1px;
+            }
+
+            /* Adjust entry body font size for better mobile readability */
+            .entry-body {
+                font-size: 1.2rem;
+            }
+
+            /* Better spacing for entry domains on mobile */
+            .entry-domain {
+                font-size: 1rem;
+                display: block;
                 margin-bottom: 1rem;
             }
         }
