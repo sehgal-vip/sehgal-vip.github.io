@@ -42,6 +42,7 @@
       this.isActive = false;
       this.animationFrame = null;
       this.throttleTimer = null;
+      this.cursorHidden = false;
 
       this.init();
     }
@@ -76,6 +77,13 @@
           this.handleMove(touch.clientX, touch.clientY);
         }
       }, { passive: true });
+      // Restore cursor when mouse leaves viewport
+      document.addEventListener('mouseleave', () => {
+        if (this.cursorHidden) {
+          document.body.style.cursor = '';
+          this.cursorHidden = false;
+        }
+      });
 
       // Start animation loop
       this.animate();
@@ -153,6 +161,12 @@
 
       this.isActive = true;
       this.lastRippleTime = Date.now();
+      
+      // Hide cursor when ripple is active
+      if (!this.cursorHidden) {
+        document.body.style.cursor = 'none';
+        this.cursorHidden = true;
+      }
     }
 
     /**
@@ -175,6 +189,12 @@
       if (elapsed >= CONFIG.fadeDuration) {
         this.particles = [];
         this.isActive = false;
+        
+        // Restore cursor when ripple fades out
+        if (this.cursorHidden) {
+          document.body.style.cursor = '';
+          this.cursorHidden = false;
+        }
         return;
       }
 
@@ -214,6 +234,11 @@
       }
       if (this.canvas && this.canvas.parentNode) {
         this.canvas.parentNode.removeChild(this.canvas);
+      }
+      // Restore cursor if hidden
+      if (this.cursorHidden) {
+        document.body.style.cursor = '';
+        this.cursorHidden = false;
       }
       this.particles = [];
     }
