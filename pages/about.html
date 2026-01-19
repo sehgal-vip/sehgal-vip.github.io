@@ -28,22 +28,17 @@ hide_breadcrumbs: true
 
         /* About page specific styles */
         .about-page-wrapper {
-            margin: -2rem calc(-1 * clamp(1.5rem, 4vw, 4rem));
-            padding: 2rem clamp(1.5rem, 4vw, 4rem);
+            margin-left: calc(-1 * clamp(1.5rem, 4vw, 4rem));
+            margin-right: calc(-1 * clamp(1.5rem, 4vw, 4rem));
+            margin-top: -2rem;
+            margin-bottom: -4rem;
+            padding: 2rem clamp(1.5rem, 4vw, 4rem) 4rem;
             background: var(--bg-color);
             min-height: calc(100vh - var(--header-height) - 4rem);
         }
 
         [data-theme="dark"] .about-page-wrapper {
             background: var(--bg-color);
-        }
-
-        /* Override container constraints for full-width */
-        .container .about-page-wrapper {
-            max-width: none;
-            width: 100vw;
-            margin-left: calc(-50vw + 50%);
-            margin-right: calc(-50vw + 50%);
         }
 
         /* Main document container */
