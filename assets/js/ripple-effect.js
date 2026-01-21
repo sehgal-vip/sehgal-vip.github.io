@@ -18,10 +18,10 @@
   const CONFIG = {
     particleCount: 30,           // Number of particles per ripple
     fadeDuration: 300,            // Fade out duration in ms
-    maxRadius: 80,                // Maximum ripple radius in pixels
-    particleSize: 2,              // Individual particle size
+    maxRadius: 100,              // Maximum ripple radius in pixels
+    particleSize: 2.5,           // Individual particle size
     colors: ['#00CED1', '#FF6B35'], // Alternating colors
-    opacity: 0.4,                 // Base opacity (0.3-0.5 range)
+    opacity: 0.65,               // Base opacity (less subtle)
     throttleDelay: 16,            // ~60fps throttling
     minMovementDistance: 2        // Minimum movement to trigger new ripple
   };
