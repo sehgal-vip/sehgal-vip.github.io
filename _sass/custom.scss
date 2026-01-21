@@ -107,6 +107,59 @@ body {
   overflow-x: hidden;
   margin: 0;
   padding: 0;
+  position: relative;
+  
+  // Organized Chaos: Subtle gradient layers
+  &::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: -2;
+    background: 
+      linear-gradient(135deg, rgba(255, 107, 53, 0.03) 0%, transparent 50%),
+      linear-gradient(225deg, rgba(0, 217, 255, 0.03) 0%, transparent 50%),
+      linear-gradient(45deg, transparent 0%, rgba(255, 107, 53, 0.02) 50%, transparent 100%);
+    background-size: 200% 200%, 200% 200%, 300% 300%;
+    animation: gradientShift 20s ease infinite;
+    pointer-events: none;
+  }
+  
+  &::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    background: 
+      linear-gradient(315deg, rgba(0, 217, 255, 0.02) 0%, transparent 60%),
+      linear-gradient(90deg, transparent 0%, rgba(255, 107, 53, 0.02) 30%, transparent 70%);
+    background-size: 250% 250%, 400% 400%;
+    animation: gradientShift 25s ease-in-out infinite reverse;
+    pointer-events: none;
+  }
+}
+
+[data-theme="dark"] body {
+  &::before {
+    background: 
+      linear-gradient(135deg, rgba(255, 107, 53, 0.04) 0%, transparent 50%),
+      linear-gradient(225deg, rgba(0, 217, 255, 0.04) 0%, transparent 50%),
+      linear-gradient(45deg, transparent 0%, rgba(255, 107, 53, 0.03) 50%, transparent 100%);
+  }
+  
+  &::after {
+    background: 
+      linear-gradient(315deg, rgba(0, 217, 255, 0.03) 0%, transparent 60%),
+      linear-gradient(90deg, transparent 0%, rgba(255, 107, 53, 0.03) 30%, transparent 70%);
+  }
+}
+
+@keyframes gradientShift {
+  0%, 100% {
+    background-position: 0% 0%, 100% 100%, 0% 50%;
+  }
+  50% {
+    background-position: 100% 100%, 0% 0%, 100% 50%;
+  }
 }
 
 // =============================================================================
