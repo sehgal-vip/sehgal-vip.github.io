@@ -1926,6 +1926,7 @@ strong, b {
   color: var(--text-muted);
   background: var(--bg-color);
   border-radius: 9999px;
+  display: none; // hide count badge per request
 }
 
 .chevron {
