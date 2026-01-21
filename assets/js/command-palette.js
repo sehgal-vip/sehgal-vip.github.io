@@ -180,8 +180,15 @@
     const handledKeys = ['ArrowDown', 'ArrowUp', 'Enter', 'Tab'];
     if (!handledKeys.includes(e.key)) return;
 
+    // Prevent default to stop page scrolling
     e.preventDefault();
     e.stopPropagation();
+    
+    // Ensure input has focus for better UX
+    if (document.activeElement !== input && input) {
+      input.focus({ preventScroll: true });
+    }
+    
     handleInputKeydown(e);
   }
 
@@ -207,23 +214,33 @@
    * Handle keyboard navigation in the input
    */
   function handleInputKeydown(e) {
+    // Ensure we're in the palette context
+    if (!isOpen) return;
+    
     switch (e.key) {
       case 'ArrowDown':
         e.preventDefault();
-        selectedIndex = Math.min(selectedIndex + 1, filteredResults.length - 1);
-        render();
-        scrollSelectedIntoView();
+        e.stopPropagation();
+        if (filteredResults.length > 0) {
+          selectedIndex = Math.min(selectedIndex + 1, filteredResults.length - 1);
+          render();
+          scrollSelectedIntoView();
+        }
         break;
         
       case 'ArrowUp':
         e.preventDefault();
-        selectedIndex = Math.max(selectedIndex - 1, 0);
-        render();
-        scrollSelectedIntoView();
+        e.stopPropagation();
+        if (filteredResults.length > 0) {
+          selectedIndex = Math.max(selectedIndex - 1, 0);
+          render();
+          scrollSelectedIntoView();
+        }
         break;
         
       case 'Enter':
         e.preventDefault();
+        e.stopPropagation();
         if (filteredResults[selectedIndex]) {
           executeCommand(filteredResults[selectedIndex]);
         }
@@ -231,13 +248,22 @@
         
       case 'Tab':
         e.preventDefault();
-        if (e.shiftKey) {
-          selectedIndex = Math.max(selectedIndex - 1, 0);
-        } else {
-          selectedIndex = Math.min(selectedIndex + 1, filteredResults.length - 1);
+        e.stopPropagation();
+        if (filteredResults.length > 0) {
+          if (e.shiftKey) {
+            selectedIndex = Math.max(selectedIndex - 1, 0);
+          } else {
+            selectedIndex = Math.min(selectedIndex + 1, filteredResults.length - 1);
+          }
+          render();
+          scrollSelectedIntoView();
         }
-        render();
-        scrollSelectedIntoView();
+        break;
+        
+      case 'Escape':
+        e.preventDefault();
+        e.stopPropagation();
+        close();
         break;
     }
   }
@@ -553,21 +579,83 @@
     // Show palette
     palette.classList.add('is-open');
 
-    // Focus input (retry on next frame to avoid focus loss)
-    requestAnimationFrame(() => {
-      input.focus({ preventScroll: true });
-    });
-    setTimeout(() => {
-      if (document.activeElement !== input) {
+    // Focus input with multiple retry attempts to ensure it works
+    const focusInput = () => {
+      if (input) {
         input.focus({ preventScroll: true });
+        // Verify focus was successful
+        if (document.activeElement !== input) {
+          // Force focus by temporarily making input visible and focusing
+          input.style.opacity = '1';
+          input.focus({ preventScroll: true });
+        }
       }
-    }, 80);
+    };
+
+    // Immediate focus
+    focusInput();
+    
+    // Retry on next frame
+    requestAnimationFrame(focusInput);
+    
+    // Retry after a short delay
+    setTimeout(focusInput, 50);
+    setTimeout(focusInput, 100);
+    
+    // Final retry after modal animation
+    setTimeout(focusInput, 200);
 
     // Prevent body scroll
     document.body.style.overflow = 'hidden';
 
     // Announce to screen readers
     palette.setAttribute('aria-hidden', 'false');
+    
+    // Add focus trap - prevent tabbing outside palette
+    setupFocusTrap();
+  }
+  
+  /**
+   * Set up focus trap to keep focus within palette
+   */
+  function setupFocusTrap() {
+    if (!palette || !input) return;
+    
+    // Handle Tab key to trap focus
+    const trapHandler = (e) => {
+      if (!isOpen) return;
+      
+      if (e.key === 'Tab') {
+        const focusableElements = palette.querySelectorAll(
+          'input, button, [href], [tabindex]:not([tabindex="-1"])'
+        );
+        const firstElement = focusableElements[0];
+        const lastElement = focusableElements[focusableElements.length - 1];
+        
+        if (e.shiftKey && document.activeElement === firstElement) {
+          e.preventDefault();
+          lastElement?.focus();
+        } else if (!e.shiftKey && document.activeElement === lastElement) {
+          e.preventDefault();
+          firstElement?.focus();
+        }
+      }
+    };
+    
+    palette.addEventListener('keydown', trapHandler);
+    
+    // Store handler for cleanup
+    palette._trapHandler = trapHandler;
+  }
+  
+  /**
+   * Remove focus trap
+   */
+  function removeFocusTrap() {
+    if (palette && palette._trapHandler) {
+      palette.removeEventListener('keydown', palette._trapHandler);
+      delete palette._trapHandler;
+    }
   }
 
   /**
@@ -580,11 +668,17 @@
     palette.classList.remove('is-open');
     document.body.style.overflow = '';
     palette.setAttribute('aria-hidden', 'true');
+    
+    // Remove focus trap
+    removeFocusTrap();
 
     // Return focus to trigger element
     if (triggerElement) {
-      triggerElement.focus();
-      triggerElement = null;
+      // Small delay to ensure modal is closed
+      setTimeout(() => {
+        triggerElement.focus();
+        triggerElement = null;
+      }, 100);
     }
   }
 
