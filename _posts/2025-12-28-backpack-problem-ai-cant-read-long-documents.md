@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "The Backpack Problem: Why Your AI Can't Actually Read That Long Document"
+title: "The Librarian Who Stopped Reading: Why the future of AI isn't bigger context windows. It's knowing when not to look."
 date: 2025-12-28
 author: Vipul Sehgal
 categories: [AI, Technology]
@@ -8,7 +8,7 @@ tags: [ai, language-models, rlm, context-window, research, mit, recursive-langua
 description: "The smartest language models in the world are running around with tiny backpacks, desperately trying to stuff encyclopedias into them. A new approach called Recursive Language Models doesn't give them bigger bags. It gives them a workshop, a filing system, and a team of assistants."
 ---
 
-# The Backpack Problem: Why Your AI Can't Actually Read That Long Document
+# The Librarian Who Stopped Reading:Why the future of AI isn't bigger context windows. It's knowing when not to look.
 
 **Bottom line up front:** The smartest language models in the world are running around with tiny backpacks, desperately trying to stuff encyclopedias into them. A new approach called Recursive Language Models doesn't give them bigger bags. It gives them a workshop, a filing system, and a team of assistants. The results are stunning, and the implications for how we think about AI cognition are even more interesting.
 
