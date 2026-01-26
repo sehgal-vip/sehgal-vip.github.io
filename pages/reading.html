@@ -64,13 +64,7 @@ permalink: /reading/
     
     {% assign papers_by_year = site.data.reading_papers | group_by: "year" | sort: "name" | reverse %}
     {% for year_group in papers_by_year %}
-    <div class="year-accordion">
-      <button class="year-toggle" aria-expanded="true" data-year="{{ year_group.name }}">
-        <span class="year-label">{{ year_group.name }}</span>
-        <svg class="chevron" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <polyline points="6 9 12 15 18 9"></polyline>
-        </svg>
-      </button>
+    <div class="year-group">
       <div class="year-content">
         <table class="data-table">
           <thead>
@@ -515,8 +509,8 @@ document.addEventListener('DOMContentLoaded', function() {
       const selectedYears = yearDropdown ? getSelectedValues(yearDropdown) : ['all'];
       const selectedAuthors = authorDropdown ? getSelectedValues(authorDropdown) : ['all'];
       
-      accordions.forEach(acc => {
-        const rows = acc.querySelectorAll('tbody tr');
+      yearGroups.forEach(group => {
+        const rows = group.querySelectorAll('tbody tr');
         let visibleRows = 0;
         
         rows.forEach(row => {
@@ -529,8 +523,8 @@ document.addEventListener('DOMContentLoaded', function() {
           if (shouldShow) visibleRows++;
         });
         
-        // Hide entire accordion if no rows match
-        acc.style.display = visibleRows > 0 ? '' : 'none';
+        // Hide entire year group if no rows match
+        group.style.display = visibleRows > 0 ? '' : 'none';
       });
     });
   };
