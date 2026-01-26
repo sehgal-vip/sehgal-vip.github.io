@@ -601,6 +601,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     const sortType = selectedRadio.value;
+    console.log('Applying sort:', { section, sortType, rowCount: rows.length });
     
     // Store sort state for this section
     sortState[section] = sortType;
@@ -629,8 +630,24 @@ document.addEventListener('DOMContentLoaded', function() {
       return 0;
     });
     
-    // Reorder rows in DOM - this physically moves them in the DOM
-    rows.forEach(row => tbody.appendChild(row));
+    // Store current display states before reordering (in original order)
+    const originalRows = Array.from(tbody.querySelectorAll('tr'));
+    const displayStatesMap = new Map();
+    originalRows.forEach(row => {
+      displayStatesMap.set(row, row.style.display);
+    });
+    
+    // Clear tbody and re-append rows in sorted order
+    // This ensures the DOM order matches the sorted array
+    tbody.innerHTML = '';
+    rows.forEach(row => {
+      // Restore display state from map
+      const savedDisplay = displayStatesMap.get(row) || '';
+      row.style.display = savedDisplay;
+      tbody.appendChild(row);
+    });
+    
+    console.log('Sort applied, rows reordered');
     
     // Reapply filters to show/hide rows based on current filter state
     // This doesn't change the sort order, just visibility
