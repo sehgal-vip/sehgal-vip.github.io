@@ -636,18 +636,23 @@ document.addEventListener('DOMContentLoaded', function() {
       return 0;
     });
     
-    // Remove all rows from tbody first (they'll be re-added in sorted order)
-    // We need to detach them before reordering
-    while (tbody.firstChild) {
-      tbody.removeChild(tbody.firstChild);
-    }
+    // IMPORTANT: We need to physically reorder rows in the DOM
+    // Create a document fragment to hold sorted rows
+    const fragment = document.createDocumentFragment();
     
-    // Now append rows in sorted order with preserved display states
+    // Add sorted rows to fragment with preserved display states
+    // appendChild automatically removes the node from its current parent
     rows.forEach(row => {
       const savedDisplay = displayStatesMap.get(row) || '';
+      // Remove row from current parent (tbody) and add to fragment
+      fragment.appendChild(row);
+      // Restore display state after moving
       row.style.display = savedDisplay;
-      tbody.appendChild(row);
     });
+    
+    // Now append the fragment to tbody
+    // This moves all rows from fragment to tbody in sorted order
+    tbody.appendChild(fragment);
     
     console.log('Sort applied, rows reordered. New order:', 
       Array.from(tbody.querySelectorAll('tr')).map(r => {
@@ -665,33 +670,48 @@ document.addEventListener('DOMContentLoaded', function() {
   // Initial filter application
   applyFilters();
   
-  // Add Apply button click handlers
+  // Add Apply button click handlers - use event delegation for reliability
+  document.addEventListener('click', function(e) {
+    // Check if clicked element is a sort apply button or inside one
+    const applyBtn = e.target.closest('.sort-apply-btn');
+    if (!applyBtn) return;
+    
+    e.stopPropagation();
+    e.preventDefault();
+    
+    const section = applyBtn.getAttribute('data-section');
+    if (!section) {
+      console.error('Apply button has no data-section attribute');
+      return;
+    }
+    
+    console.log('Apply button clicked for section:', section);
+    
+    // Apply the sort
+    try {
+      applySort(section);
+    } catch (error) {
+      console.error('Error applying sort:', error);
+      return;
+    }
+    
+    // Close the dropdown
+    const dropdown = applyBtn.closest('.sort-dropdown');
+    if (dropdown) {
+      dropdown.classList.remove('open');
+      const toggle = dropdown.previousElementSibling;
+      if (toggle && toggle.classList.contains('filter-toggle')) {
+        toggle.classList.remove('active');
+      }
+    }
+  });
+  
+  // Also log how many buttons were found for debugging
   const applyButtons = document.querySelectorAll('.sort-apply-btn');
   console.log('Found sort apply buttons:', applyButtons.length);
-  
   applyButtons.forEach((btn, index) => {
     const section = btn.getAttribute('data-section');
-    console.log(`Attaching handler to button ${index} for section: ${section}`);
-    
-    btn.addEventListener('click', function(e) {
-      e.stopPropagation();
-      e.preventDefault();
-      const section = this.getAttribute('data-section');
-      console.log('Apply button clicked for section:', section);
-      
-      // Apply the sort
-      applySort(section);
-      
-      // Close the dropdown
-      const dropdown = this.closest('.sort-dropdown');
-      if (dropdown) {
-        dropdown.classList.remove('open');
-        const toggle = dropdown.previousElementSibling;
-        if (toggle && toggle.classList.contains('filter-toggle')) {
-          toggle.classList.remove('active');
-        }
-      }
-    });
+    console.log(`Button ${index}: section="${section}"`);
   });
 });
 </script>
