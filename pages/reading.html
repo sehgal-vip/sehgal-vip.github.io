@@ -664,7 +664,10 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Reapply filters to show/hide rows based on current filter state
     // This doesn't change the sort order, just visibility
-    applyFilters();
+    // Use setTimeout to ensure DOM is updated first
+    setTimeout(() => {
+      applyFilters();
+    }, 0);
   };
   
   // Initial filter application
