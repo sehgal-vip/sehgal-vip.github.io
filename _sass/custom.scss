@@ -867,6 +867,54 @@ strong, b {
   color: var(--text-muted);
   max-width: 600px;
   text-align: left;
+}
+
+// Intro Section
+.intro {
+  padding: 3rem 0;
+  margin: 2rem 0;
+  
+  @media (min-width: 768px) {
+    padding: 4rem 0;
+    margin: 3rem 0;
+  }
+}
+
+.intro-content {
+  max-width: 800px;
+  margin: 0 auto;
+  text-align: left;
+  
+  @media (max-width: 767px) {
+    text-align: left;
+  }
+}
+
+.intro-subheading {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--color-secondary);
+  margin-bottom: 1.5rem;
+  line-height: 1.4;
+  
+  @media (min-width: 768px) {
+    font-size: 1.75rem;
+  }
+}
+
+.intro-text {
+  font-size: 1rem;
+  line-height: 1.7;
+  color: var(--text-color);
+  margin-bottom: 1.25rem;
+  
+  &:last-child {
+    margin-bottom: 0;
+  }
+  
+  @media (min-width: 768px) {
+    font-size: 1.0625rem;
+  }
   margin-bottom: 0;
   
   @media (max-width: 767px) {
