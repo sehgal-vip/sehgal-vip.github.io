@@ -573,11 +573,22 @@ document.addEventListener('DOMContentLoaded', function() {
   
   // Sorting functionality - completely independent of filters
   const applySort = (section) => {
+    console.log('applySort called with section:', section);
+    
     const dropdown = document.querySelector(`.sort-dropdown[data-section="${section}"]`);
-    const table = document.querySelector(`.collapsible-section[data-section="${section}"] .data-table`);
+    const sectionElement = document.querySelector(`.collapsible-section[data-section="${section}"]`);
+    const table = sectionElement ? sectionElement.querySelector('.data-table') : null;
+    
+    console.log('Sort elements found:', { 
+      dropdown: !!dropdown, 
+      sectionElement: !!sectionElement, 
+      table: !!table,
+      section 
+    });
     
     if (!dropdown || !table) {
-      console.error('Sort: Dropdown or table not found', { dropdown, table, section });
+      console.error('Sort: Dropdown or table not found', { dropdown, table, section, sectionElement });
+      alert(`Sort error: Could not find dropdown or table for section "${section}". Check console for details.`);
       return;
     }
     
