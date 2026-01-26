@@ -356,9 +356,28 @@ strong, b {
     padding: 1rem 0;
     font-size: 1.125rem;
     color: var(--text-color);
+    transition: color var(--transition-fast);
     
     &:hover {
       color: var(--color-primary);
+    }
+    
+    &[aria-current="page"] {
+      color: var(--color-primary);
+      font-weight: 600;
+      position: relative;
+      
+      &::before {
+        content: '';
+        position: absolute;
+        left: -1.5rem;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 3px;
+        height: 1.5rem;
+        background: var(--color-primary);
+        border-radius: 0 2px 2px 0;
+      }
     }
   }
 }

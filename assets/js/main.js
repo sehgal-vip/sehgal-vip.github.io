@@ -111,6 +111,11 @@
         mobileNav.classList.remove('is-open');
         menuBtn.setAttribute('aria-expanded', 'false');
         document.body.style.overflow = '';
+        // Reset hamburger icon
+        const icon = menuBtn.querySelector('svg');
+        if (icon) {
+          icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"></path>';
+        }
       });
     });
 
@@ -121,6 +126,11 @@
         menuBtn.setAttribute('aria-expanded', 'false');
         menuBtn.focus();
         document.body.style.overflow = '';
+        // Reset hamburger icon
+        const icon = menuBtn.querySelector('svg');
+        if (icon) {
+          icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"></path>';
+        }
       }
     });
   }

@@ -1,8 +1,23 @@
 <nav class="mobile-nav" id="mobile-nav" aria-label="Mobile navigation">
   <ul class="mobile-nav-links">
     {% for item in site.data.navigation %}
+    {% assign page_url_clean = page.url | remove: '/index.html' %}
+    {% if page_url_clean == '' %}
+      {% assign page_url_clean = '/' %}
+    {% endif %}
+    {% assign item_url_clean = item.url %}
+    {% assign is_active = false %}
+    {% if page_url_clean == item_url_clean %}
+      {% assign is_active = true %}
+    {% elsif page_url_clean != '/' and item_url_clean != '/' %}
+      {% assign page_with_slash = page_url_clean | append: '/' %}
+      {% assign item_with_slash = item_url_clean | append: '/' %}
+      {% if page_url_clean == item_with_slash or page_with_slash == item_url_clean or page_with_slash == item_with_slash %}
+        {% assign is_active = true %}
+      {% endif %}
+    {% endif %}
     <li>
-      <a href="{{ item.url | relative_url }}" {% if page.url == item.url %}aria-current="page"{% endif %}>
+      <a href="{{ item.url | relative_url }}" {% if is_active %}aria-current="page"{% endif %}>
         {{ item.name }}
       </a>
     </li>

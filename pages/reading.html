@@ -43,7 +43,6 @@ permalink: /reading/
     <div class="year-accordion">
       <button class="year-toggle" aria-expanded="true" data-year="{{ year_group.name }}">
         <span class="year-label">{{ year_group.name }}</span>
-        <span class="year-count">{{ year_group.items.size }}</span>
         <svg class="chevron" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <polyline points="6 9 12 15 18 9"></polyline>
         </svg>
@@ -118,7 +117,6 @@ permalink: /reading/
     <div class="year-accordion">
       <button class="year-toggle" aria-expanded="true" data-year="{{ year_group.name }}">
         <span class="year-label">{{ year_group.name }}</span>
-        <span class="year-count">{{ year_group.items.size }}</span>
         <svg class="chevron" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <polyline points="6 9 12 15 18 9"></polyline>
         </svg>
@@ -193,7 +191,6 @@ permalink: /reading/
     <div class="year-accordion">
       <button class="year-toggle" aria-expanded="true" data-year="{{ year_group.name }}">
         <span class="year-label">{{ year_group.name }}</span>
-        <span class="year-count">{{ year_group.items.size }}</span>
         <svg class="chevron" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <polyline points="6 9 12 15 18 9"></polyline>
         </svg>
@@ -268,7 +265,6 @@ permalink: /reading/
     <div class="year-accordion">
       <button class="year-toggle" aria-expanded="true" data-year="{{ year_group.name }}">
         <span class="year-label">{{ year_group.name }}</span>
-        <span class="year-count">{{ year_group.items.size }}</span>
         <svg class="chevron" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <polyline points="6 9 12 15 18 9"></polyline>
         </svg>
@@ -361,12 +357,6 @@ document.addEventListener('DOMContentLoaded', function() {
           row.style.display = shouldShow ? '' : 'none';
           if (shouldShow) visibleRows++;
         });
-
-        // Update year count badge
-        const countBadge = acc.querySelector('.year-count');
-        if (countBadge) {
-          countBadge.textContent = visibleRows;
-        }
 
         // Hide entire accordion if no rows match
         acc.style.display = visibleRows > 0 ? '' : 'none';
