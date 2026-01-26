@@ -568,12 +568,10 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   };
   
-  // Initial filter application
-  applyFilters();
+  // Store sort state for each section
+  const sortState = {};
   
-  // Sorting functionality
-  const sortDropdowns = document.querySelectorAll('.sort-dropdown');
-  
+  // Sorting functionality - completely independent of filters
   const applySort = (section) => {
     const dropdown = document.querySelector(`.sort-dropdown[data-section="${section}"]`);
     const table = document.querySelector(`.collapsible-section[data-section="${section}"] .data-table`);
@@ -595,7 +593,7 @@ document.addEventListener('DOMContentLoaded', function() {
       return;
     }
     
-    // Get ALL rows, including hidden ones
+    // Get ALL rows, including hidden ones - sort operates on all data
     const rows = Array.from(tbody.querySelectorAll('tr'));
     if (rows.length === 0) {
       console.error('Sort: No rows found');
@@ -603,9 +601,11 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     const sortType = selectedRadio.value;
-    console.log('Sorting:', { section, sortType, rowCount: rows.length });
     
-    // Sort rows
+    // Store sort state for this section
+    sortState[section] = sortType;
+    
+    // Sort rows based on selected option
     rows.sort((a, b) => {
       if (sortType === 'year') {
         const yearA = parseInt(a.getAttribute('data-year')) || 0;
@@ -629,12 +629,16 @@ document.addEventListener('DOMContentLoaded', function() {
       return 0;
     });
     
-    // Reorder rows in DOM - append each row directly (moves them automatically)
+    // Reorder rows in DOM - this physically moves them in the DOM
     rows.forEach(row => tbody.appendChild(row));
     
-    // Reapply filters after sorting to maintain filter state
+    // Reapply filters to show/hide rows based on current filter state
+    // This doesn't change the sort order, just visibility
     applyFilters();
   };
+  
+  // Initial filter application
+  applyFilters();
   
   // Add Apply button click handlers
   document.querySelectorAll('.sort-apply-btn').forEach(btn => {
