@@ -20,7 +20,7 @@ permalink: /reading/
     <div class="section-filters" aria-label="Filter papers">
       <label class="filter-group">
         <span class="filter-label">Year</span>
-        <select class="filter-select filter-year" data-section="papers" multiple size="4">
+        <select class="filter-select filter-year" data-section="papers">
           <option value="all">All</option>
           {% for y in papers_years %}
           <option value="{{ y }}">{{ y }}</option>
@@ -29,7 +29,7 @@ permalink: /reading/
       </label>
       <label class="filter-group">
         <span class="filter-label">Author</span>
-        <select class="filter-select filter-author" data-section="papers" multiple size="4">
+        <select class="filter-select filter-author" data-section="papers">
           <option value="all">All</option>
           {% for a in papers_authors %}
           <option value="{{ a }}">{{ a }}</option>
@@ -53,7 +53,6 @@ permalink: /reading/
             <tr>
               <th>Title</th>
               <th>Author</th>
-              <th>Year</th>
               <th>Description</th>
             </tr>
           </thead>
@@ -68,7 +67,6 @@ permalink: /reading/
                 {% endif %}
               </td>
               <td class="author-cell">{{ item.author }}</td>
-              <td class="year-cell">{{ item.year }}</td>
               <td class="desc-cell">{{ item.description }}</td>
             </tr>
             {% endfor %}
@@ -94,7 +92,7 @@ permalink: /reading/
     <div class="section-filters" aria-label="Filter books">
       <label class="filter-group">
         <span class="filter-label">Year</span>
-        <select class="filter-select filter-year" data-section="books" multiple size="4">
+        <select class="filter-select filter-year" data-section="books">
           <option value="all">All</option>
           {% for y in books_years %}
           <option value="{{ y }}">{{ y }}</option>
@@ -103,7 +101,7 @@ permalink: /reading/
       </label>
       <label class="filter-group">
         <span class="filter-label">Author</span>
-        <select class="filter-select filter-author" data-section="books" multiple size="4">
+        <select class="filter-select filter-author" data-section="books">
           <option value="all">All</option>
           {% for a in books_authors %}
           <option value="{{ a }}">{{ a }}</option>
@@ -127,7 +125,6 @@ permalink: /reading/
             <tr>
               <th>Title</th>
               <th>Author</th>
-              <th>Year</th>
               <th>Description</th>
             </tr>
           </thead>
@@ -142,7 +139,6 @@ permalink: /reading/
                 {% endif %}
               </td>
               <td class="author-cell">{{ item.author }}</td>
-              <td class="year-cell">{{ item.year }}</td>
               <td class="desc-cell">{{ item.description }}</td>
             </tr>
             {% endfor %}
@@ -168,7 +164,7 @@ permalink: /reading/
     <div class="section-filters" aria-label="Filter articles">
       <label class="filter-group">
         <span class="filter-label">Year</span>
-        <select class="filter-select filter-year" data-section="articles" multiple size="4">
+        <select class="filter-select filter-year" data-section="articles">
           <option value="all">All</option>
           {% for y in articles_years %}
           <option value="{{ y }}">{{ y }}</option>
@@ -177,7 +173,7 @@ permalink: /reading/
       </label>
       <label class="filter-group">
         <span class="filter-label">Author</span>
-        <select class="filter-select filter-author" data-section="articles" multiple size="4">
+        <select class="filter-select filter-author" data-section="articles">
           <option value="all">All</option>
           {% for a in articles_authors %}
           <option value="{{ a }}">{{ a }}</option>
@@ -201,7 +197,6 @@ permalink: /reading/
             <tr>
               <th>Title</th>
               <th>Author</th>
-              <th>Year</th>
               <th>Description</th>
             </tr>
           </thead>
@@ -216,7 +211,6 @@ permalink: /reading/
                 {% endif %}
               </td>
               <td class="author-cell">{{ item.author }}</td>
-              <td class="year-cell">{{ item.year }}</td>
               <td class="desc-cell">{{ item.description }}</td>
             </tr>
             {% endfor %}
@@ -242,7 +236,7 @@ permalink: /reading/
     <div class="section-filters" aria-label="Filter others">
       <label class="filter-group">
         <span class="filter-label">Year</span>
-        <select class="filter-select filter-year" data-section="others" multiple size="4">
+        <select class="filter-select filter-year" data-section="others">
           <option value="all">All</option>
           {% for y in others_years %}
           <option value="{{ y }}">{{ y }}</option>
@@ -251,7 +245,7 @@ permalink: /reading/
       </label>
       <label class="filter-group">
         <span class="filter-label">Author</span>
-        <select class="filter-select filter-author" data-section="others" multiple size="4">
+        <select class="filter-select filter-author" data-section="others">
           <option value="all">All</option>
           {% for a in others_authors %}
           <option value="{{ a }}">{{ a }}</option>
@@ -275,7 +269,6 @@ permalink: /reading/
             <tr>
               <th>Title</th>
               <th>Author</th>
-              <th>Year</th>
               <th>Description</th>
             </tr>
           </thead>
@@ -290,7 +283,6 @@ permalink: /reading/
                 {% endif %}
               </td>
               <td class="author-cell">{{ item.author }}</td>
-              <td class="year-cell">{{ item.year }}</td>
               <td class="desc-cell">{{ item.description }}</td>
             </tr>
             {% endfor %}
@@ -319,30 +311,14 @@ document.addEventListener('DOMContentLoaded', function() {
   // Filtering per section
   const sections = document.querySelectorAll('.collapsible-section');
   
-  const normalizeSelection = (select) => {
-    if (!select) return ['all'];
-    const options = Array.from(select.options);
-    const selected = options.filter(o => o.selected).map(o => o.value);
-    if (selected.includes('all') && selected.length > 1) {
-      options.forEach(o => { o.selected = o.value === 'all'; });
-      return ['all'];
-    }
-    if (selected.length === 0) {
-      const allOpt = options.find(o => o.value === 'all');
-      if (allOpt) allOpt.selected = true;
-      return ['all'];
-    }
-    return selected;
-  };
-
   sections.forEach(function(section) {
     const yearSelect = section.querySelector('.filter-year');
     const authorSelect = section.querySelector('.filter-author');
     const accordions = section.querySelectorAll('.year-accordion');
 
     const applyFilters = () => {
-      const selectedYears = normalizeSelection(yearSelect);
-      const selectedAuthors = normalizeSelection(authorSelect);
+      const selectedYear = yearSelect ? yearSelect.value : 'all';
+      const selectedAuthor = authorSelect ? authorSelect.value : 'all';
 
       accordions.forEach(acc => {
         const rows = acc.querySelectorAll('tbody tr');
@@ -351,8 +327,8 @@ document.addEventListener('DOMContentLoaded', function() {
         rows.forEach(row => {
           const rowYear = row.getAttribute('data-year');
           const rowAuthor = row.getAttribute('data-author');
-          const matchYear = selectedYears.includes('all') || selectedYears.includes(rowYear);
-          const matchAuthor = selectedAuthors.includes('all') || selectedAuthors.includes(rowAuthor);
+          const matchYear = selectedYear === 'all' || rowYear === selectedYear;
+          const matchAuthor = selectedAuthor === 'all' || rowAuthor === selectedAuthor;
           const shouldShow = matchYear && matchAuthor;
           row.style.display = shouldShow ? '' : 'none';
           if (shouldShow) visibleRows++;
@@ -364,16 +340,10 @@ document.addEventListener('DOMContentLoaded', function() {
     };
 
     if (yearSelect) {
-      yearSelect.addEventListener('change', () => {
-        normalizeSelection(yearSelect);
-        applyFilters();
-      });
+      yearSelect.addEventListener('change', applyFilters);
     }
     if (authorSelect) {
-      authorSelect.addEventListener('change', () => {
-        normalizeSelection(authorSelect);
-        applyFilters();
-      });
+      authorSelect.addEventListener('change', applyFilters);
     }
 
     // Initial filter application

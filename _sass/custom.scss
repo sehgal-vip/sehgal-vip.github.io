@@ -1893,10 +1893,6 @@ strong, b {
   }
 }
 
-.filter-select[multiple] {
-  height: auto;
-  min-height: 2.75rem;
-}
 
 @media (max-width: 600px) {
   .filter-select {
@@ -2001,21 +1997,16 @@ strong, b {
   // Column widths
   th:nth-child(1),
   td:nth-child(1) {
-    width: 30%;
+    width: 35%;
   }
   
   th:nth-child(2),
   td:nth-child(2) {
-    width: 15%;
+    width: 20%;
   }
   
   th:nth-child(3),
   td:nth-child(3) {
-    width: 10%;
-  }
-
-  th:nth-child(4),
-  td:nth-child(4) {
     width: 45%;
   }
 }
