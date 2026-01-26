@@ -2012,7 +2012,8 @@ strong, b {
     background: var(--bg-secondary);
   }
   
-  input[type="checkbox"] {
+  input[type="checkbox"],
+  input[type="radio"] {
     cursor: pointer;
     accent-color: var(--color-primary);
   }
@@ -2021,6 +2022,29 @@ strong, b {
     font-size: 0.9rem;
     color: var(--text-color);
     flex: 1;
+  }
+}
+
+.sort-apply-btn {
+  width: 100%;
+  margin-top: 0.5rem;
+  padding: 0.625rem 1rem;
+  background: var(--color-primary);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color var(--transition-fast), transform var(--transition-fast);
+  
+  &:hover {
+    background: var(--color-primary-hover);
+    transform: translateY(-1px);
+  }
+  
+  &:active {
+    transform: translateY(0);
   }
 }
 

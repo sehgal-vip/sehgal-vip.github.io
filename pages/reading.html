@@ -80,6 +80,7 @@ permalink: /reading/
             <input type="radio" name="sort-papers" value="title-desc">
             <span>Title (Z-A)</span>
           </label>
+          <button class="sort-apply-btn" data-section="papers">Apply</button>
         </div>
       </div>
     </div>
@@ -188,6 +189,7 @@ permalink: /reading/
             <input type="radio" name="sort-books" value="title-desc">
             <span>Title (Z-A)</span>
           </label>
+          <button class="sort-apply-btn" data-section="books">Apply</button>
         </div>
       </div>
     </div>
@@ -296,6 +298,7 @@ permalink: /reading/
             <input type="radio" name="sort-articles" value="title-desc">
             <span>Title (Z-A)</span>
           </label>
+          <button class="sort-apply-btn" data-section="articles">Apply</button>
         </div>
       </div>
     </div>
@@ -404,6 +407,7 @@ permalink: /reading/
             <input type="radio" name="sort-others" value="title-desc">
             <span>Title (Z-A)</span>
           </label>
+          <button class="sort-apply-btn" data-section="others">Apply</button>
         </div>
       </div>
     </div>
@@ -570,45 +574,56 @@ document.addEventListener('DOMContentLoaded', function() {
   // Sorting functionality
   const sortDropdowns = document.querySelectorAll('.sort-dropdown');
   
-  sortDropdowns.forEach(dropdown => {
-    const radios = dropdown.querySelectorAll('input[type="radio"]');
-    const section = dropdown.getAttribute('data-section');
+  const applySort = (section) => {
+    const dropdown = document.querySelector(`.sort-dropdown[data-section="${section}"]`);
     const table = document.querySelector(`.collapsible-section[data-section="${section}"] .data-table`);
     
-    if (!table) return;
+    if (!dropdown || !table) return;
     
-    radios.forEach(radio => {
-      radio.addEventListener('change', function() {
-        if (!this.checked) return;
-        
-        const tbody = table.querySelector('tbody');
-        const rows = Array.from(tbody.querySelectorAll('tr'));
-        const sortType = this.value;
-        
-        // Sort rows
-        rows.sort((a, b) => {
-          if (sortType === 'year') {
-            const yearA = parseInt(a.getAttribute('data-year')) || 0;
-            const yearB = parseInt(b.getAttribute('data-year')) || 0;
-            return yearB - yearA; // Descending (newest first)
-          } else if (sortType === 'title-asc') {
-            const titleA = a.querySelector('.title-cell').textContent.trim().toLowerCase();
-            const titleB = b.querySelector('.title-cell').textContent.trim().toLowerCase();
-            return titleA.localeCompare(titleB);
-          } else if (sortType === 'title-desc') {
-            const titleA = a.querySelector('.title-cell').textContent.trim().toLowerCase();
-            const titleB = b.querySelector('.title-cell').textContent.trim().toLowerCase();
-            return titleB.localeCompare(titleA);
-          }
-          return 0;
-        });
-        
-        // Reorder rows in DOM
-        rows.forEach(row => tbody.appendChild(row));
-        
-        // Reapply filters after sorting
-        applyFilters();
-      });
+    const selectedRadio = dropdown.querySelector('input[type="radio"]:checked');
+    if (!selectedRadio) return;
+    
+    const tbody = table.querySelector('tbody');
+    const rows = Array.from(tbody.querySelectorAll('tr'));
+    const sortType = selectedRadio.value;
+    
+    // Sort rows
+    rows.sort((a, b) => {
+      if (sortType === 'year') {
+        const yearA = parseInt(a.getAttribute('data-year')) || 0;
+        const yearB = parseInt(b.getAttribute('data-year')) || 0;
+        return yearB - yearA; // Descending (newest first)
+      } else if (sortType === 'title-asc') {
+        const titleA = a.querySelector('.title-cell').textContent.trim().toLowerCase();
+        const titleB = b.querySelector('.title-cell').textContent.trim().toLowerCase();
+        return titleA.localeCompare(titleB);
+      } else if (sortType === 'title-desc') {
+        const titleA = a.querySelector('.title-cell').textContent.trim().toLowerCase();
+        const titleB = b.querySelector('.title-cell').textContent.trim().toLowerCase();
+        return titleB.localeCompare(titleA);
+      }
+      return 0;
+    });
+    
+    // Reorder rows in DOM
+    rows.forEach(row => tbody.appendChild(row));
+    
+    // Reapply filters after sorting
+    applyFilters();
+  };
+  
+  // Add Apply button click handlers
+  document.querySelectorAll('.sort-apply-btn').forEach(btn => {
+    btn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      const section = this.getAttribute('data-section');
+      applySort(section);
+      
+      // Close the dropdown
+      const dropdown = this.closest('.sort-dropdown');
+      const toggle = dropdown.previousElementSibling;
+      dropdown.classList.remove('open');
+      toggle.classList.remove('active');
     });
   });
 });
