@@ -174,7 +174,7 @@
 
     if (input) {
       input.addEventListener('input', handleInput);
-      input.addEventListener('keydown', handleInputKeydown);
+      // Note: keydown is handled by handlePaletteKeydown (capture phase on document)
     }
 
     // Search trigger button
