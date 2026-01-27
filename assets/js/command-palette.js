@@ -241,8 +241,11 @@
       case 'Enter':
         e.preventDefault();
         e.stopPropagation();
-        if (filteredResults[selectedIndex]) {
+        if (filteredResults.length > 0 && filteredResults[selectedIndex]) {
+          console.log('Enter pressed, executing command at index:', selectedIndex, filteredResults[selectedIndex]);
           executeCommand(filteredResults[selectedIndex]);
+        } else {
+          console.warn('No command to execute. filteredResults:', filteredResults, 'selectedIndex:', selectedIndex);
         }
         break;
         
