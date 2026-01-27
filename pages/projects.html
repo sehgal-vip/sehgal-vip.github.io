@@ -5,56 +5,162 @@ description: Things I've built and worked on
 permalink: /projects/
 ---
 
-<div class="projects-list">
-  {% assign projects_by_year = site.data.projects | group_by: "year" | sort: "name" | reverse %}
-  
-  {% for year_group in projects_by_year %}
-  <div class="year-accordion">
-    <button class="year-toggle" aria-expanded="true" data-year="{{ year_group.name }}">
-      <span class="year-label">{{ year_group.name }}</span>
-      <span class="year-count">{{ year_group.items.size }}</span>
-      <svg class="chevron" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <polyline points="6 9 12 15 18 9"></polyline>
-      </svg>
-    </button>
-    <div class="year-content">
-      <table class="data-table">
-        <thead>
-          <tr>
-            <th>Title</th>
-            <th>Description</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for project in year_group.items %}
-          <tr>
-            <td class="title-cell">
-              {% if project.url and project.url != "" %}
-              <a href="{{ project.url }}" target="_blank" rel="noopener noreferrer">{{ project.title }}</a>
-              {% else %}
-              {{ project.title }}
-              {% endif %}
-            </td>
-            <td class="desc-cell">{{ project.description }}</td>
-          </tr>
+<div class="reading-list">
+  {% if site.data.projects.size > 0 %}
+  {% assign projects_by_year_temp = site.data.projects | group_by: "year" %}
+  {% assign projects_years = projects_by_year_temp | map: "name" | sort | reverse %}
+  <section class="collapsible-section" data-section="projects">
+    <h2 class="section-title">
+      <span class="section-icon">🚀</span>
+      Projects
+    </h2>
+    <div class="section-filters" aria-label="Filter projects">
+      <div class="filter-group">
+        <button class="filter-toggle" data-filter="year" data-section="projects">
+          <span class="filter-label">Year</span>
+          <span class="filter-selected-count"></span>
+          <svg class="filter-chevron" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </button>
+        <div class="filter-dropdown filter-year" data-section="projects">
+          <label class="filter-option">
+            <input type="checkbox" value="all" checked>
+            <span>All</span>
+          </label>
+          {% for y in projects_years %}
+          <label class="filter-option">
+            <input type="checkbox" value="{{ y }}">
+            <span>{{ y }}</span>
+          </label>
           {% endfor %}
-        </tbody>
-      </table>
+        </div>
+      </div>
     </div>
+    
+    {% assign projects_sorted = site.data.projects | sort: "year" | reverse %}
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Title</th>
+          <th>Year</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for project in projects_sorted %}
+        <tr data-year="{{ project.year }}">
+          <td class="title-cell" data-label="Title">
+            {% if project.url and project.url != "" %}
+            <a href="{{ project.url }}" target="_blank" rel="noopener noreferrer">{{ project.title }}</a>
+            {% else %}
+            {{ project.title }}
+            {% endif %}
+          </td>
+          <td class="year-cell" data-label="Year">{{ project.year }}</td>
+          <td class="desc-cell" data-label="Description">{{ project.description }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+  {% else %}
+  <div class="text-center" style="padding: 4rem 0;">
+    <p style="color: var(--text-muted); font-size: 1.125rem;">No projects yet.</p>
   </div>
-  {% endfor %}
+  {% endif %}
 </div>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-  document.querySelectorAll('.year-toggle').forEach(function(button) {
-    button.addEventListener('click', function() {
-      const content = this.nextElementSibling;
-      const isExpanded = this.getAttribute('aria-expanded') === 'true';
+  // Collapsible filter dropdowns
+  const filterToggles = document.querySelectorAll('.filter-toggle');
+  const filterDropdowns = document.querySelectorAll('.filter-dropdown');
+  
+  // Toggle dropdown visibility
+  filterToggles.forEach(toggle => {
+    toggle.addEventListener('click', function(e) {
+      e.stopPropagation();
+      const dropdown = this.nextElementSibling;
+      const isOpen = dropdown.classList.contains('open');
       
-      this.setAttribute('aria-expanded', !isExpanded);
-      content.classList.toggle('collapsed', isExpanded);
+      // Close all dropdowns
+      filterDropdowns.forEach(d => d.classList.remove('open'));
+      filterToggles.forEach(t => t.classList.remove('active'));
+      
+      // Open clicked dropdown if it was closed
+      if (!isOpen) {
+        dropdown.classList.add('open');
+        this.classList.add('active');
+      }
     });
   });
+  
+  // Close dropdowns when clicking outside
+  document.addEventListener('click', function(e) {
+    if (!e.target.closest('.filter-group')) {
+      filterDropdowns.forEach(d => d.classList.remove('open'));
+      filterToggles.forEach(t => t.classList.remove('active'));
+    }
+  });
+  
+  // Filter functionality
+  const applyFilters = () => {
+    const sections = document.querySelectorAll('.collapsible-section');
+    
+    sections.forEach(section => {
+      const sectionName = section.getAttribute('data-section');
+      const table = section.querySelector('.data-table');
+      if (!table) return;
+      
+      const rows = table.querySelectorAll('tbody tr');
+      const yearCheckboxes = section.querySelectorAll('.filter-year input[type="checkbox"]:checked');
+      
+      const selectedYears = Array.from(yearCheckboxes).map(cb => cb.value).filter(v => v !== 'all');
+      const showAllYears = yearCheckboxes.length > 0 && Array.from(yearCheckboxes).some(cb => cb.value === 'all');
+      
+      rows.forEach(row => {
+        const year = row.getAttribute('data-year');
+        const yearMatch = showAllYears || selectedYears.length === 0 || selectedYears.includes(year);
+        
+        row.style.display = yearMatch ? '' : 'none';
+      });
+      
+      // Update selected count badge
+      const yearToggle = section.querySelector('.filter-toggle[data-filter="year"]');
+      if (yearToggle) {
+        const count = showAllYears ? 0 : selectedYears.length;
+        const countBadge = yearToggle.querySelector('.filter-selected-count');
+        if (countBadge) {
+          countBadge.textContent = count > 0 ? `(${count})` : '';
+        }
+      }
+    });
+  };
+  
+  // Handle checkbox changes
+  document.addEventListener('change', function(e) {
+    if (e.target.type === 'checkbox' && e.target.closest('.filter-dropdown')) {
+      const checkbox = e.target;
+      const dropdown = checkbox.closest('.filter-dropdown');
+      
+      // Handle "All" checkbox
+      if (checkbox.value === 'all' && checkbox.checked) {
+        dropdown.querySelectorAll('input[type="checkbox"]:not([value="all"])').forEach(cb => {
+          cb.checked = false;
+        });
+      } else if (checkbox.value !== 'all' && checkbox.checked) {
+        const allCheckbox = dropdown.querySelector('input[value="all"]');
+        if (allCheckbox) {
+          allCheckbox.checked = false;
+        }
+      }
+      
+      applyFilters();
+    }
+  });
+  
+  // Initial filter application
+  applyFilters();
 });
 </script>
