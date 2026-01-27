@@ -2364,10 +2364,10 @@ strong, b {
     }
   }
   
-  // Column widths
+  // Column widths - Default for 4-column tables (reading page)
   th:nth-child(1),
   td:nth-child(1) {
-    width: 30%;
+    width: 25%; // Reduced from 30%
   }
   
   th:nth-child(2),
@@ -2377,12 +2377,30 @@ strong, b {
   
   th:nth-child(3),
   td:nth-child(3) {
-    width: 10%;
+    width: 8%; // Reduced from 10%
   }
   
   th:nth-child(4),
   td:nth-child(4) {
-    width: 40%;
+    width: 47%; // Increased from 40%
+  }
+}
+
+// 3-column tables (projects page: Title, Year, Description)
+.reading-list .collapsible-section[data-section="projects"] .data-table {
+  th:nth-child(1),
+  td:nth-child(1) {
+    width: 25%; // Title - reduced
+  }
+  
+  th:nth-child(2),
+  td:nth-child(2) {
+    width: 8%; // Year - reduced
+  }
+  
+  th:nth-child(3),
+  td:nth-child(3) {
+    width: 67%; // Description - increased
   }
 }
 
