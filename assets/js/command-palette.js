@@ -275,17 +275,17 @@
         e.stopPropagation();
         if (filteredResults.length > 0) {
           selectedIndex = Math.min(selectedIndex + 1, filteredResults.length - 1);
-          render();
+          updateSelection();
           scrollSelectedIntoView();
         }
         break;
-        
+
       case 'ArrowUp':
         e.preventDefault();
         e.stopPropagation();
         if (filteredResults.length > 0) {
           selectedIndex = Math.max(selectedIndex - 1, 0);
-          render();
+          updateSelection();
           scrollSelectedIntoView();
         }
         break;
@@ -310,7 +310,7 @@
           } else {
             selectedIndex = Math.min(selectedIndex + 1, filteredResults.length - 1);
           }
-          render();
+          updateSelection();
           scrollSelectedIntoView();
         }
         break;
