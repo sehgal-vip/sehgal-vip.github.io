@@ -34,7 +34,12 @@
     function openSidebar() {
       document.body.classList.add('sidebar-open');
       toggleBtn.setAttribute('aria-expanded', 'true');
-      document.body.style.overflow = 'hidden';
+      // Use ModalManager if available, fallback to direct style
+      if (window.ModalManager) {
+        window.ModalManager.open('sidebar', closeSidebar);
+      } else {
+        document.body.style.overflow = 'hidden';
+      }
       if (backdrop) backdrop.style.display = 'block';
       sidebar.style.transform = 'translateX(0)';
     }
@@ -42,7 +47,12 @@
     function closeSidebar() {
       document.body.classList.remove('sidebar-open');
       toggleBtn.setAttribute('aria-expanded', 'false');
-      document.body.style.overflow = '';
+      // Use ModalManager if available, fallback to direct style
+      if (window.ModalManager) {
+        window.ModalManager.close('sidebar');
+      } else {
+        document.body.style.overflow = '';
+      }
       if (backdrop) backdrop.style.display = 'none';
       sidebar.style.transform = 'translateX(-100%)';
     }
@@ -64,13 +74,7 @@
       backdrop.addEventListener('click', closeSidebar);
     }
 
-    // Close on escape key
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && document.body.classList.contains('sidebar-open')) {
-        closeSidebar();
-        toggleBtn.focus();
-      }
-    });
+    // Note: Escape key handling is now managed by global ModalManager in command-palette.js
 
     // Close sidebar when clicking a link inside it
     sidebar.querySelectorAll('a').forEach(link => {
@@ -87,10 +91,26 @@
 
     if (!menuBtn || !mobileNav) return;
 
+    function closeMobileMenu() {
+      mobileNav.classList.remove('is-open');
+      menuBtn.setAttribute('aria-expanded', 'false');
+      // Use ModalManager if available, fallback to direct style
+      if (window.ModalManager) {
+        window.ModalManager.close('mobile-menu');
+      } else {
+        document.body.style.overflow = '';
+      }
+      // Reset hamburger icon
+      const icon = menuBtn.querySelector('svg');
+      if (icon) {
+        icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"></path>';
+      }
+    }
+
     menuBtn.addEventListener('click', () => {
       const isOpen = mobileNav.classList.toggle('is-open');
       menuBtn.setAttribute('aria-expanded', isOpen);
-      
+
       // Toggle hamburger icon
       const icon = menuBtn.querySelector('svg');
       if (icon) {
@@ -101,38 +121,24 @@
         }
       }
 
-      // Prevent body scroll when menu is open
-      document.body.style.overflow = isOpen ? 'hidden' : '';
+      // Prevent body scroll when menu is open via ModalManager
+      if (window.ModalManager) {
+        if (isOpen) {
+          window.ModalManager.open('mobile-menu', closeMobileMenu);
+        } else {
+          window.ModalManager.close('mobile-menu');
+        }
+      } else {
+        document.body.style.overflow = isOpen ? 'hidden' : '';
+      }
     });
 
     // Close menu on link click
     mobileNav.querySelectorAll('a').forEach(link => {
-      link.addEventListener('click', () => {
-        mobileNav.classList.remove('is-open');
-        menuBtn.setAttribute('aria-expanded', 'false');
-        document.body.style.overflow = '';
-        // Reset hamburger icon
-        const icon = menuBtn.querySelector('svg');
-        if (icon) {
-          icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"></path>';
-        }
-      });
+      link.addEventListener('click', closeMobileMenu);
     });
 
-    // Close menu on escape
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && mobileNav.classList.contains('is-open')) {
-        mobileNav.classList.remove('is-open');
-        menuBtn.setAttribute('aria-expanded', 'false');
-        menuBtn.focus();
-        document.body.style.overflow = '';
-        // Reset hamburger icon
-        const icon = menuBtn.querySelector('svg');
-        if (icon) {
-          icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"></path>';
-        }
-      }
-    });
+    // Note: Escape key handling is now managed by global ModalManager in command-palette.js
   }
 
   /**

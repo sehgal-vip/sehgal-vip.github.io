@@ -13,11 +13,60 @@
 (function() {
   'use strict';
 
+  // Modal Stack Manager - coordinates overflow across all modals
+  const ModalManager = (function() {
+    const openModals = new Set();
+    const closeHandlers = new Map();
+
+    return {
+      open(id, closeHandler) {
+        openModals.add(id);
+        if (closeHandler) {
+          closeHandlers.set(id, closeHandler);
+        }
+        document.body.style.overflow = 'hidden';
+      },
+      close(id) {
+        openModals.delete(id);
+        closeHandlers.delete(id);
+        if (openModals.size === 0) {
+          document.body.style.overflow = '';
+        }
+      },
+      hasOpenModals() {
+        return openModals.size > 0;
+      },
+      getTop() {
+        // Return the most recently opened modal's close handler
+        const ids = Array.from(openModals);
+        if (ids.length === 0) return null;
+        const topId = ids[ids.length - 1];
+        const handler = closeHandlers.get(topId);
+        return handler ? { close: handler } : null;
+      },
+      isOpen(id) {
+        return openModals.has(id);
+      }
+    };
+  })();
+  window.ModalManager = ModalManager;
+
+  // Global Escape handler - closes topmost modal
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && ModalManager.hasOpenModals()) {
+      e.preventDefault();
+      e.stopPropagation();
+      const topModal = ModalManager.getTop();
+      if (topModal) topModal.close();
+    }
+  }, true);
+
   // Constants
   const RECENT_COMMANDS_KEY = 'command-palette-recent';
   const MAX_RECENT = 5;
   
   // State
+  let isInitialized = false;
   let isOpen = false;
   let selectedIndex = 0;
   let commands = [];
@@ -51,6 +100,9 @@
    * Initialize the command palette
    */
   function init() {
+    if (isInitialized) return;
+    isInitialized = true;
+
     // Get DOM elements
     palette = document.getElementById('command-palette');
     if (!palette) return;
@@ -546,7 +598,7 @@
 
       el.addEventListener('mouseenter', () => {
         selectedIndex = parseInt(el.dataset.index, 10);
-        render();
+        updateSelection();
       });
       
       // Make items keyboard accessible
@@ -592,6 +644,18 @@
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
+  }
+
+  /**
+   * Lightweight selection update without full re-render
+   */
+  function updateSelection() {
+    if (!results) return;
+    results.querySelectorAll('.command-item').forEach(el => {
+      const index = parseInt(el.dataset.index, 10);
+      el.classList.toggle('selected', index === selectedIndex);
+      el.setAttribute('aria-selected', index === selectedIndex);
+    });
   }
 
   /**
@@ -646,8 +710,8 @@
     // Final retry after modal animation
     setTimeout(focusInput, 200);
 
-    // Prevent body scroll
-    document.body.style.overflow = 'hidden';
+    // Prevent body scroll via ModalManager
+    ModalManager.open('command-palette', close);
 
     // Announce to screen readers
     palette.setAttribute('aria-hidden', 'false');
@@ -661,7 +725,10 @@
    */
   function setupFocusTrap() {
     if (!palette || !input) return;
-    
+
+    // Remove existing trap handler first (prevents accumulation)
+    removeFocusTrap();
+
     // Handle Tab key to trap focus
     const trapHandler = (e) => {
       if (!isOpen) return;
@@ -707,7 +774,7 @@
     isOpen = false;
 
     palette.classList.remove('is-open');
-    document.body.style.overflow = '';
+    ModalManager.close('command-palette');
     palette.setAttribute('aria-hidden', 'true');
     
     // Remove focus trap
