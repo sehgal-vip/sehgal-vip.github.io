@@ -322,10 +322,21 @@ strong, b {
   margin: 0 auto;
   padding: 0 clamp(1.5rem, 4vw, 4rem);
   gap: 1rem;
+  
+  @media (max-width: 767px) {
+    padding: 0 1rem;
+    gap: 0.5rem;
+    align-items: center;
+  }
 }
 
 .header-inner > .sidebar-toggle-btn {
   flex-shrink: 0;
+  
+  @media (max-width: 767px) {
+    flex-shrink: 0;
+    margin-right: 0;
+  }
 }
 
 .site-logo {
@@ -336,6 +347,20 @@ strong, b {
   text-align: left;
   margin-left: 0.25rem;
   white-space: nowrap;
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  
+  @media (max-width: 767px) {
+    font-size: 1.125rem;
+    margin-left: 0.25rem;
+    text-align: left;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex: 0 1 auto;
+    min-width: 0;
+  }
   
   &:hover {
     color: var(--color-primary);
