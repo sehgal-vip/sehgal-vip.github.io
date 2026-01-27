@@ -442,13 +442,16 @@ document.addEventListener('DOMContentLoaded', function() {
   
   // Update selected count display
   const updateSelectedCount = (toggle, dropdown) => {
+    if (!toggle || !dropdown) return;
     const selected = getSelectedValues(dropdown);
     const count = selected.includes('all') ? 0 : selected.length;
     const countSpan = toggle.querySelector('.filter-selected-count');
-    if (count > 0) {
-      countSpan.textContent = `(${count})`;
-    } else {
-      countSpan.textContent = '';
+    if (countSpan) {
+      if (count > 0) {
+        countSpan.textContent = `(${count})`;
+      } else {
+        countSpan.textContent = '';
+      }
     }
   };
   
