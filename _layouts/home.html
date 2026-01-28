@@ -3,13 +3,13 @@ layout: default
 hide_breadcrumbs: true
 ---
 
+<!-- Fixed Hero Background Image -->
+<div class="hero-bg-fixed" style="background-image: url('{{ '/assets/images/hero-greek.png' | relative_url }}');">
+  <div class="hero-overlay"></div>
+</div>
+
 <section class="hero hero-fullscreen">
   <div class="hero-content animate-fade-in">
-    {% if site.profile_image %}
-    <div class="hero-avatar">
-      <img src="{{ site.profile_image | relative_url }}" alt="{{ site.author }}" class="profile-image animate-float">
-    </div>
-    {% endif %}
     <div class="hero-text">
       <h1 class="hero-title animate-fade-in-up" style="animation-delay: 0.3s">{{ site.title }}</h1>
       <div class="hero-divider animate-draw-line" style="animation-delay: 0.6s"></div>
