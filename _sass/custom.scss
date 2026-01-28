@@ -134,52 +134,11 @@ body {
     opacity: 0.03;
     pointer-events: none;
   }
-
-  // Greek key / meander pattern overlay with slow diagonal drift
-  &::after {
-    content: '';
-    position: fixed;
-    inset: 0;
-    z-index: -1;
-    pointer-events: none;
-    opacity: 0.04;
-    background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 0h60v60H0V0zm30 30v-10h-10v-10H10v10H0v10h10v10h10v10h10v-10h10v-10H30zm0-20v10h10V10H30zM10 30H0v10h10V30zm40-20v10h10V10H50zm0 20v10h10V30H50z' fill='%23C4A77D' fill-opacity='1' fill-rule='evenodd'/%3E%3C/svg%3E");
-    background-size: 60px 60px;
-    animation: greekTileDrift 20s linear infinite;
-  }
-}
-
-// Remove background texture/pattern on home page only
-body.home-no-pattern::before,
-body.home-no-pattern::after {
-  display: none;
-}
-
-// Greek tile drift animation
-@keyframes greekTileDrift {
-  from {
-    background-position: 0 0;
-  }
-  to {
-    background-position: 60px 60px;
-  }
-}
-
-// Respect reduced motion preference
-@media (prefers-reduced-motion: reduce) {
-  body::after {
-    animation: none;
-  }
 }
 
 [data-theme="dark"] body {
   &::before {
     opacity: 0.04;
-  }
-  &::after {
-    opacity: 0.03;
-    background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 0h60v60H0V0zm30 30v-10h-10v-10H10v10H0v10h10v10h10v10h10v-10h10v-10H30zm0-20v10h10V10H30zM10 30H0v10h10V30zm40-20v10h10V10H50zm0 20v10h10V30H50z' fill='%23D4B896' fill-opacity='1' fill-rule='evenodd'/%3E%3C/svg%3E");
-    // Animation inherited from base body::after
   }
 }
 
