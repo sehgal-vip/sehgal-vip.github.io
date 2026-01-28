@@ -149,6 +149,12 @@ body {
   }
 }
 
+// Remove background texture/pattern on home page only
+body.home-no-pattern::before,
+body.home-no-pattern::after {
+  display: none;
+}
+
 // Greek tile drift animation
 @keyframes greekTileDrift {
   from {
