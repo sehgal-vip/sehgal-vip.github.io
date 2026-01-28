@@ -18,6 +18,8 @@
     setupReadingTime();
     setupShareButtons();
     setupLazyLoading();
+    setupScrollReveal();
+    setupScrollIndicator();
   }
 
   /**
@@ -336,6 +338,63 @@
   function getGiscusTheme() {
     const theme = document.documentElement.getAttribute('data-theme');
     return theme === 'dark' ? 'dark' : 'light';
+  }
+
+  /**
+   * Scroll reveal animations using IntersectionObserver
+   */
+  function setupScrollReveal() {
+    const revealElements = document.querySelectorAll('.scroll-reveal');
+    if (!revealElements.length) return;
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry, index) => {
+        if (entry.isIntersecting) {
+          // Add staggered delay for grid items
+          const delay = entry.target.classList.contains('post-card')
+            ? index * 100
+            : 0;
+
+          setTimeout(() => {
+            entry.target.classList.add('revealed');
+          }, delay);
+
+          observer.unobserve(entry.target);
+        }
+      });
+    }, {
+      threshold: 0.1,
+      rootMargin: '0px 0px -50px 0px'
+    });
+
+    revealElements.forEach(el => observer.observe(el));
+
+    // Also observe post cards within scroll-reveal sections
+    document.querySelectorAll('.scroll-reveal .post-card').forEach(card => {
+      card.classList.add('scroll-reveal');
+      observer.observe(card);
+    });
+  }
+
+  /**
+   * Hide scroll indicator after user scrolls
+   */
+  function setupScrollIndicator() {
+    const indicator = document.querySelector('.scroll-indicator');
+    if (!indicator) return;
+
+    let hasScrolled = false;
+
+    function handleScroll() {
+      if (!hasScrolled && window.scrollY > 100) {
+        hasScrolled = true;
+        indicator.style.opacity = '0';
+        indicator.style.transform = 'translateX(-50%) translateY(20px)';
+        window.removeEventListener('scroll', handleScroll);
+      }
+    }
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
   }
 
   // Initialize

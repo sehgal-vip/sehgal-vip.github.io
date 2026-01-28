@@ -3,29 +3,36 @@ layout: default
 hide_breadcrumbs: true
 ---
 
-<section class="hero">
-  <div class="hero-content">
+<section class="hero hero-fullscreen">
+  <div class="hero-content animate-fade-in">
     {% if site.profile_image %}
     <div class="hero-avatar">
-      <img src="{{ site.profile_image | relative_url }}" alt="{{ site.author }}" class="profile-image">
+      <img src="{{ site.profile_image | relative_url }}" alt="{{ site.author }}" class="profile-image animate-float">
     </div>
     {% endif %}
     <div class="hero-text">
-      <h1 class="hero-title">{{ site.title }}</h1>
-      <p class="hero-subtitle">{{ site.description }}</p>
+      <h1 class="hero-title animate-fade-in-up" style="animation-delay: 0.3s">{{ site.title }}</h1>
+      <div class="hero-divider animate-draw-line" style="animation-delay: 0.6s"></div>
+      <p class="hero-subtitle animate-fade-in-up" style="animation-delay: 0.8s">{{ site.description }}</p>
     </div>
+  </div>
+  <div class="scroll-indicator animate-fade-in" style="animation-delay: 1.5s">
+    <span class="scroll-text">Scroll</span>
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+      <path d="M12 5v14M5 12l7 7 7-7"/>
+    </svg>
   </div>
 </section>
 
 {{ content }}
 
-<!-- Intro Section -->
-<section class="intro">
-  <div class="intro-content">
-    <h2 class="intro-subheading">Perennial learner. No lanes, only rabbit holes worth falling into.</h2>
-    <p class="intro-text">I lead product teams building EV financing systems at Turno. Nights, I decode AI and philosophy through odd analogies that shouldn't work, but do!</p>
-    <p class="intro-text">First principles thinking is my debugger. It works on code, arguments, and why systems break the way they do.</p>
-    <p class="intro-text">The best insights hide where disciplines collide. One question away from the thing that clicks.</p>
+<!-- About Section -->
+<section class="about-section scroll-reveal">
+  <div class="about-content">
+    <p class="about-text lead">Perennial learner. No lanes, only rabbit holes worth falling into.</p>
+    <div class="divider"></div>
+    <p class="about-text">I lead product teams building EV financing systems at Turno. Nights, I decode AI and philosophy through odd analogies that shouldn't work, but do.</p>
+    <p class="about-text">First principles thinking is my debugger. The best insights hide where disciplines collide.</p>
   </div>
 </section>
 
@@ -34,9 +41,10 @@ hide_breadcrumbs: true
 {% assign latest_book = site.data.reading_books | last %}
 {% assign latest_paper = site.data.reading_papers | last %}
 
-<section class="latest-updates">
+<section class="latest-updates scroll-reveal">
   <div class="section-header">
-    <h2 class="section-title">Latest Updates</h2>
+    <h2 class="section-title">Latest</h2>
+    <div class="divider"></div>
   </div>
 
   <div class="posts-grid">
