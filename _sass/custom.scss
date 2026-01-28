@@ -134,6 +134,11 @@ body {
     opacity: 0.03;
     pointer-events: none;
   }
+
+  // Remove Greek key/meander pattern (L-shaped tiled pattern)
+  &::after {
+    display: none;
+  }
 }
 
 [data-theme="dark"] body {
