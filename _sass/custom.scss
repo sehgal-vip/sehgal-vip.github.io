@@ -2670,42 +2670,102 @@ strong, b {
 @media (max-width: 768px) {
   .data-table {
     display: block;
-    
+
     thead {
       display: none;
     }
-    
+
     tbody, tr, td {
       display: block;
+      width: 100% !important;
     }
-    
+
     tr {
       padding: 1rem;
       border-bottom: 1px solid var(--border-color);
-      
+      background: var(--card-bg);
+
       &:last-child {
         border-bottom: none;
       }
     }
-    
+
     td {
-      padding: 0.25rem 0;
+      padding: 0;
       border-bottom: none;
-      
+
+      // Hide empty cells
+      &:empty {
+        display: none;
+      }
+
       &.title-cell {
         font-size: 1rem;
-        margin-bottom: 0.25rem;
+        font-weight: 500;
+        margin-bottom: 0.35rem;
+        line-height: 1.4;
+
+        a {
+          color: var(--text-color);
+
+          &:hover {
+            color: var(--color-primary);
+          }
+        }
       }
-      
+
+      // Show author and year inline
+      &.author-cell,
+      &.year-cell {
+        display: inline;
+        font-size: 0.75rem;
+        color: var(--text-subtle);
+      }
+
       &.author-cell {
-        font-size: 0.8rem;
-        margin-bottom: 0.5rem;
+        &::after {
+          content: ' · ';
+        }
       }
-      
+
+      &.year-cell {
+        margin-bottom: 0.5rem;
+
+        &::after {
+          content: '';
+          display: block;
+          margin-bottom: 0.5rem;
+        }
+      }
+
       &.desc-cell {
-        max-width: 100%;
+        font-size: 0.875rem;
+        color: var(--text-muted);
+        line-height: 1.5;
+
+        // Hide if empty
+        &:empty {
+          display: none !important;
+          margin: 0;
+          padding: 0;
+        }
       }
     }
+  }
+
+  // Compact filters on mobile
+  .section-filters {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .filter-toggle {
+    padding: 0.4rem 0.75rem;
+    font-size: 0.8rem;
+  }
+
+  .filter-dropdown {
+    min-width: 140px;
   }
 }
 
