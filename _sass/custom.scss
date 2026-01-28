@@ -135,15 +135,44 @@ body {
     pointer-events: none;
   }
 
-  // Remove Greek key/meander pattern (L-shaped tiled pattern)
+  // Greek key / meander pattern overlay with slow diagonal drift
   &::after {
-    display: none;
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    opacity: 0.08;
+    background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 0h60v60H0V0zm30 30v-10h-10v-10H10v10H0v10h10v10h10v10h10v-10h10v-10H30zm0-20v10h10V10H30zM10 30H0v10h10V30zm40-20v10h10V10H50zm0 20v10h10V30H50z' fill='%23C4A77D' fill-opacity='1' fill-rule='evenodd'/%3E%3C/svg%3E");
+    background-size: 60px 60px;
+    animation: greekTileDrift 20s linear infinite;
+  }
+}
+
+// Greek tile drift animation
+@keyframes greekTileDrift {
+  from {
+    background-position: 0 0;
+  }
+  to {
+    background-position: 60px 60px;
+  }
+}
+
+// Respect reduced motion preference
+@media (prefers-reduced-motion: reduce) {
+  body::after {
+    animation: none;
   }
 }
 
 [data-theme="dark"] body {
   &::before {
     opacity: 0.04;
+  }
+  &::after {
+    opacity: 0.06;
+    background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 0h60v60H0V0zm30 30v-10h-10v-10H10v10H0v10h10v10h10v10h10v-10h10v-10H30zm0-20v10h10V10H30zM10 30H0v10h10V30zm40-20v10h10V10H50zm0 20v10h10V30H50z' fill='%23D4B896' fill-opacity='1' fill-rule='evenodd'/%3E%3C/svg%3E");
   }
 }
 
@@ -866,45 +895,6 @@ strong, b {
   align-items: center;
   padding: 2rem;
   position: relative;
-
-  // Classical corner ornaments
-  &::before,
-  &::after {
-    content: '';
-    position: absolute;
-    width: 120px;
-    height: 120px;
-    opacity: 0.12;
-    pointer-events: none;
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 0v30h10V10h20V0H0zm70 0v10h20v20h10V0H70zM0 70v30h30v-10H10V70H0zm90 0v20H70v10h30V70h-10z' fill='%23C4A77D'/%3E%3Cpath d='M20 20v10h10V20H20zm50 0v10h10V20H70zM20 70v10h10V70H20zm50 0v10h10V70H70z' fill='%23C4A77D'/%3E%3C/svg%3E");
-    background-size: contain;
-    background-repeat: no-repeat;
-
-    @media (max-width: 767px) {
-      width: 80px;
-      height: 80px;
-      opacity: 0.08;
-    }
-  }
-
-  &::before {
-    top: 2rem;
-    left: 2rem;
-  }
-
-  &::after {
-    bottom: 2rem;
-    right: 2rem;
-    transform: rotate(180deg);
-  }
-}
-
-[data-theme="dark"] .hero-fullscreen {
-  &::before,
-  &::after {
-    opacity: 0.08;
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 0v30h10V10h20V0H0zm70 0v10h20v20h10V0H70zM0 70v30h30v-10H10V70H0zm90 0v20H70v10h30V70h-10z' fill='%23D4B896'/%3E%3Cpath d='M20 20v10h10V20H20zm50 0v10h10V20H70zM20 70v10h10V70H20zm50 0v10h10V70H70z' fill='%23D4B896'/%3E%3C/svg%3E");
-  }
 }
 
 .hero-content {
