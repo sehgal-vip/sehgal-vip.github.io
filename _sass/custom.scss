@@ -2523,6 +2523,9 @@ strong, b {
     text-align: left;
     vertical-align: top;
     line-height: 1.4;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    white-space: normal;
   }
 
   thead {
@@ -2539,6 +2542,9 @@ strong, b {
       position: sticky;
       top: 0;
       z-index: 10;
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+      white-space: normal;
     }
   }
 
@@ -2606,11 +2612,34 @@ strong, b {
     font-size: 0.8rem;
   }
 
-  // Column widths - optimized for 4-column tables
-  th:nth-child(1), td:nth-child(1) { width: 28%; }
-  th:nth-child(2), td:nth-child(2) { width: 18%; }
-  th:nth-child(3), td:nth-child(3) { width: 6%; }
-  th:nth-child(4), td:nth-child(4) { width: 48%; }
+  // Column widths - default for 4-column tables (reading sections: Title, Author, Year, Description)
+  th:nth-child(1), td:nth-child(1) { width: 25%; } // Title
+  th:nth-child(2), td:nth-child(2) { width: 12%; } // Author/Date
+  th:nth-child(3), td:nth-child(3) { width: 18%; } // Year/Category
+  th:nth-child(4), td:nth-child(4) { width: 45%; } // Description/Excerpt
+}
+
+// 4-column tables (blog/posts page: Title, Date, Category, Excerpt)
+.reading-list .collapsible-section[data-section="posts"] .data-table {
+  th:nth-child(1),
+  td:nth-child(1) {
+    width: 20% !important; // Title
+  }
+  
+  th:nth-child(2),
+  td:nth-child(2) {
+    width: 10% !important; // Date
+  }
+  
+  th:nth-child(3),
+  td:nth-child(3) {
+    width: 24% !important; // Category - wider to show full header
+  }
+  
+  th:nth-child(4),
+  td:nth-child(4) {
+    width: 46% !important; // Excerpt
+  }
 }
 
 // 3-column tables (projects page: Title, Year, Description)
