@@ -1575,6 +1575,7 @@ strong, b {
     top: calc(var(--header-height) + 2rem);
     max-height: calc(100vh - var(--header-height) - 4rem);
     overflow-y: auto;
+    z-index: 10;
   }
 }
 
@@ -1649,7 +1650,7 @@ strong, b {
 .toc-link {
   display: block;
   padding: 0.5rem 0.75rem;
-  color: var(--text-secondary);
+  color: var(--text-muted);
   text-decoration: none;
   font-size: 0.875rem;
   line-height: 1.5;
@@ -1662,7 +1663,7 @@ strong, b {
   overflow-wrap: break-word;
 
   &:hover {
-    color: var(--text-primary);
+    color: var(--text-color);
     background: rgba(255, 107, 53, 0.08);
     border-left-color: rgba(255, 107, 53, 0.3);
     transform: translateX(2px);
