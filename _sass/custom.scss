@@ -1549,19 +1549,28 @@ strong, b {
 // =============================================================================
 
 .post-layout {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 0;
-  position: relative;
+  display: block;
 
   @media (min-width: 1024px) {
-    grid-template-columns: minmax(0, 700px) 280px;
+    display: flex;
+    align-items: flex-start;
     gap: 3rem;
   }
 
   @media (min-width: 1280px) {
-    grid-template-columns: minmax(0, 750px) 300px;
     gap: 4rem;
+  }
+}
+
+.post-layout > article {
+  @media (min-width: 1024px) {
+    flex: 0 0 700px;
+    max-width: 700px;
+  }
+
+  @media (min-width: 1280px) {
+    flex: 0 0 750px;
+    max-width: 750px;
   }
 }
 
@@ -1570,12 +1579,20 @@ strong, b {
 
   @media (min-width: 1024px) {
     display: block;
-    align-self: start;
+    flex: 0 0 280px;
+    width: 280px;
+    position: -webkit-sticky;
     position: sticky;
-    top: calc(var(--header-height) + 2rem);
-    max-height: calc(100vh - var(--header-height) - 4rem);
+    top: 96px;
+    align-self: flex-start;
+    max-height: calc(100vh - 96px - 2rem);
     overflow-y: auto;
     z-index: 10;
+  }
+
+  @media (min-width: 1280px) {
+    flex: 0 0 300px;
+    width: 300px;
   }
 }
 
@@ -1586,8 +1603,6 @@ strong, b {
   border: 1px solid var(--border-color);
   border-radius: 12px;
   padding: 1.5rem;
-  height: 100%;
-  overflow-y: auto;
 
   // Custom scrollbar styling
   &::-webkit-scrollbar {
@@ -1682,10 +1697,6 @@ strong, b {
 @media (max-width: 1023px) {
   .toc-sidebar {
     display: none !important;
-  }
-
-  .post-layout {
-    grid-template-columns: 1fr;
   }
 }
 
