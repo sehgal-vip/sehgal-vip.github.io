@@ -37,9 +37,13 @@
         const scrollTop = window.pageYOffset;
         const containerTop = container.getBoundingClientRect().top + scrollTop;
         const containerBottom = containerTop + container.offsetHeight;
+        const sidebarHeight = tocSidebar.offsetHeight;
 
-        if (scrollTop + TOP_OFFSET >= containerTop) {
-          // Calculate right position to align with flex layout
+        // Calculate when to stop sticking (when sidebar would go past container bottom)
+        const maxScrollForSticky = containerBottom - sidebarHeight - TOP_OFFSET;
+
+        if (scrollTop + TOP_OFFSET >= containerTop && scrollTop <= maxScrollForSticky) {
+          // Sticky range: stick to viewport
           const containerLeft = container.getBoundingClientRect().left;
           const articleWidth = window.innerWidth >= 1280 ? 750 : 700;
           const gap = window.innerWidth >= 1280 ? 64 : 48; // 4rem or 3rem in pixels
@@ -50,8 +54,20 @@
           tocSidebar.style.left = sidebarLeft + 'px';
           tocSidebar.style.width = sidebarWidth + 'px';
           tocSidebar.style.maxHeight = `calc(100vh - ${TOP_OFFSET + 32}px)`;
+        } else if (scrollTop > maxScrollForSticky) {
+          // Past sticky range: position at bottom of container
+          const containerLeft = container.getBoundingClientRect().left;
+          const articleWidth = window.innerWidth >= 1280 ? 750 : 700;
+          const gap = window.innerWidth >= 1280 ? 64 : 48;
+          const sidebarLeft = containerLeft + articleWidth + gap;
+
+          tocSidebar.style.position = 'absolute';
+          tocSidebar.style.top = (containerBottom - containerTop - sidebarHeight) + 'px';
+          tocSidebar.style.left = (sidebarLeft - containerLeft) + 'px';
+          tocSidebar.style.width = sidebarWidth + 'px';
+          tocSidebar.style.maxHeight = `calc(100vh - ${TOP_OFFSET + 32}px)`;
         } else {
-          // Not scrolled enough, use static positioning
+          // Before sticky range: use static positioning
           tocSidebar.style.position = '';
           tocSidebar.style.top = '';
           tocSidebar.style.left = '';
