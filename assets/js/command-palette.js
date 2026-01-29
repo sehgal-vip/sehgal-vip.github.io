@@ -457,47 +457,45 @@
     saveRecentCommand(cmd);
     close();
 
-    // Small delay to ensure palette closes before navigation
-    setTimeout(() => {
-      switch (cmd.action) {
-        case 'navigate':
-          if (cmd.url) {
-            // Ensure URL is properly formatted
-            let url = cmd.url;
-            // If URL doesn't start with http/https, ensure it starts with /
-            if (!url.startsWith('http://') && !url.startsWith('https://') && !url.startsWith('/')) {
-              url = '/' + url;
-            }
-            console.log('Navigating to:', url);
-            window.location.href = url;
-          } else {
-            console.error('Command missing URL:', cmd);
+    // Execute immediately after closing modal
+    switch (cmd.action) {
+      case 'navigate':
+        if (cmd.url) {
+          // Ensure URL is properly formatted
+          let url = cmd.url;
+          // If URL doesn't start with http/https, ensure it starts with /
+          if (!url.startsWith('http://') && !url.startsWith('https://') && !url.startsWith('/')) {
+            url = '/' + url;
           }
-          break;
+          console.log('Navigating to:', url);
+          window.location.href = url;
+        } else {
+          console.error('Command missing URL:', cmd);
+        }
+        break;
 
-        case 'external':
-          if (cmd.url) {
-            window.open(cmd.url, '_blank', 'noopener,noreferrer');
-          } else {
-            console.error('Command missing URL:', cmd);
-          }
-          break;
+      case 'external':
+        if (cmd.url) {
+          window.open(cmd.url, '_blank', 'noopener,noreferrer');
+        } else {
+          console.error('Command missing URL:', cmd);
+        }
+        break;
 
-        case 'toggle-theme':
-          if (window.ThemeToggle) {
-            window.ThemeToggle.toggle();
-          }
-          break;
+      case 'toggle-theme':
+        if (window.ThemeToggle) {
+          window.ThemeToggle.toggle();
+        }
+        break;
 
-        case 'copy-url':
-          copyToClipboard(window.location.href);
-          showToast('URL copied to clipboard!');
-          break;
-          
-        default:
-          console.error('Unknown command action:', cmd.action);
-      }
-    }, 100);
+      case 'copy-url':
+        copyToClipboard(window.location.href);
+        showToast('URL copied to clipboard!');
+        break;
+
+      default:
+        console.error('Unknown command action:', cmd.action);
+    }
   }
 
   /**
@@ -664,7 +662,10 @@
   function scrollSelectedIntoView() {
     const selected = results.querySelector('.command-item.selected');
     if (selected) {
-      selected.scrollIntoView({ block: 'nearest' });
+      selected.scrollIntoView({
+        block: 'nearest',
+        behavior: 'smooth'
+      });
     }
   }
 
@@ -684,31 +685,15 @@
     // Show palette
     palette.classList.add('is-open');
 
-    // Focus input with multiple retry attempts to ensure it works
+    // Focus with single retry aligned to transition timing
     const focusInput = () => {
       if (input) {
         input.focus({ preventScroll: true });
-        // Verify focus was successful
-        if (document.activeElement !== input) {
-          // Force focus by temporarily making input visible and focusing
-          input.style.opacity = '1';
-          input.focus({ preventScroll: true });
-        }
       }
     };
 
-    // Immediate focus
     focusInput();
-    
-    // Retry on next frame
-    requestAnimationFrame(focusInput);
-    
-    // Retry after a short delay
-    setTimeout(focusInput, 50);
-    setTimeout(focusInput, 100);
-    
-    // Final retry after modal animation
-    setTimeout(focusInput, 200);
+    setTimeout(focusInput, 150); // Align with --transition-fast
 
     // Prevent body scroll via ModalManager
     ModalManager.open('command-palette', close);
