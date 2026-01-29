@@ -1318,6 +1318,26 @@ strong, b {
   }
 }
 
+[data-theme="dark"] .tag-badge {
+  color: #C5E0F0;
+  background: rgba(0, 217, 255, 0.22);
+
+  &:hover {
+    background: rgba(0, 217, 255, 0.35);
+    color: #E8F4FA;
+  }
+}
+
+[data-theme="dark"] .category-badge {
+  color: #F0D8C8;
+  background: rgba(255, 107, 53, 0.25);
+
+  &:hover {
+    background: rgba(255, 107, 53, 0.4);
+    color: #FAE8DC;
+  }
+}
+
 .post-card-meta {
   display: flex;
   flex-wrap: wrap;
