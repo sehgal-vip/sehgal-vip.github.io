@@ -144,7 +144,7 @@ body {
     inset: 0;
     z-index: -1;
     pointer-events: none;
-    opacity: 0.08;
+    opacity: 0.015;
     background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 0h60v60H0V0zm30 30v-10h-10v-10H10v10H0v10h10v10h10v10h10v-10h10v-10H30zm0-20v10h10V10H30zM10 30H0v10h10V30zm40-20v10h10V10H50zm0 20v10h10V30H50z' fill='%23C5A059' fill-opacity='1' fill-rule='evenodd'/%3E%3C/svg%3E");
     background-size: 60px 60px;
     animation: greekTileDrift 20s linear infinite;
@@ -173,7 +173,7 @@ body {
     opacity: 0.04;
   }
   &::after {
-    opacity: 0.06;
+    opacity: 0.01;
     background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 0h60v60H0V0zm30 30v-10h-10v-10H10v10H0v10h10v10h10v10h10v-10h10v-10H30zm0-20v10h10V10H30zM10 30H0v10h10V30zm40-20v10h10V10H50zm0 20v10h10V30H50z' fill='%23D4AF37' fill-opacity='1' fill-rule='evenodd'/%3E%3C/svg%3E");
   }
 }
@@ -2511,7 +2511,7 @@ strong, b {
   border-collapse: separate;
   border-spacing: 0;
   table-layout: fixed;
-  background: rgba(245, 247, 250, 0.4);
+  background: rgba(245, 247, 250, 0.2);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border-radius: 8px;
@@ -2529,7 +2529,7 @@ strong, b {
   }
 
   thead {
-    background: rgba(235, 238, 242, 0.5);
+    background: rgba(235, 238, 242, 0.3);
 
     th {
       font-size: 0.7rem;
@@ -2545,6 +2545,7 @@ strong, b {
       word-wrap: break-word;
       overflow-wrap: break-word;
       white-space: normal;
+      text-align: center;
     }
   }
 
@@ -2564,10 +2565,10 @@ strong, b {
 }
 
 [data-theme="dark"] .data-table {
-  background: rgba(26, 31, 36, 0.4);
+  background: rgba(26, 31, 36, 0.2);
 
   thead {
-    background: rgba(35, 42, 49, 0.5);
+    background: rgba(35, 42, 49, 0.3);
 
     th {
       border-bottom-color: rgba(50, 63, 75, 0.6);
@@ -2623,7 +2624,7 @@ strong, b {
 .reading-list .collapsible-section[data-section="posts"] .data-table {
   th:nth-child(1),
   td:nth-child(1) {
-    width: 20% !important; // Title
+    width: 22% !important; // Title
   }
   
   th:nth-child(2),
@@ -2633,12 +2634,12 @@ strong, b {
   
   th:nth-child(3),
   td:nth-child(3) {
-    width: 24% !important; // Category - wider to show full header
+    width: 20% !important; // Category
   }
   
   th:nth-child(4),
   td:nth-child(4) {
-    width: 46% !important; // Excerpt
+    width: 48% !important; // Excerpt
   }
 }
 
