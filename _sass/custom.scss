@@ -73,9 +73,9 @@
   --bg-color: #121619;           // Marble White (dark) - Shadowed Stone
   --bg-secondary: #1A1F24;
   --bg-tertiary: #232A31;
-  --text-color: #E1E7EF;         // Obsidian (inverted) - Moonlight Text
-  --text-muted: #9AA5B1;
-  --text-subtle: #616E7C;
+  --text-color: #F0F4F8;         // Brighter text for better readability
+  --text-muted: #B8C5D1;         // Brighter muted text
+  --text-subtle: #8B9BA8;        // Brighter subtle text
   --border-color: #323F4B;
   --code-bg: #1A1F24;
   --card-bg: #1A1F24;
@@ -1282,11 +1282,11 @@ strong, b {
 }
 
 [data-theme="dark"] .post-card {
-  background: rgba(35, 42, 49, 0.5);
-  border-color: rgba(50, 63, 75, 0.4);
+  background: rgba(35, 42, 49, 0.6);
+  border-color: rgba(50, 63, 75, 0.5);
 
   &:hover {
-    background: rgba(35, 42, 49, 0.65);
+    background: rgba(35, 42, 49, 0.75);
   }
 }
 
@@ -2454,8 +2454,8 @@ strong, b {
 }
 
 [data-theme="dark"] .year-accordion {
-  background: rgba(26, 31, 36, 0.4);
-  border-color: rgba(50, 63, 75, 0.4);
+  background: rgba(26, 31, 36, 0.5);
+  border-color: rgba(50, 63, 75, 0.5);
 }
 
 .year-toggle {
@@ -2478,10 +2478,10 @@ strong, b {
 }
 
 [data-theme="dark"] .year-toggle {
-  background: rgba(35, 42, 49, 0.5);
+  background: rgba(35, 42, 49, 0.6);
 
   &:hover {
-    background: rgba(50, 63, 75, 0.5);
+    background: rgba(50, 63, 75, 0.65);
   }
 }
 
@@ -2576,10 +2576,10 @@ strong, b {
 }
 
 [data-theme="dark"] .data-table {
-  background: rgba(26, 31, 36, 0.2);
+  background: rgba(26, 31, 36, 0.35);
 
   thead {
-    background: rgba(35, 42, 49, 0.3);
+    background: rgba(35, 42, 49, 0.45);
 
     th {
       border-bottom-color: rgba(50, 63, 75, 0.6);
