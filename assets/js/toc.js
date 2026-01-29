@@ -14,8 +14,13 @@
     headingSelectors: 'h2, h3',
     minHeadingsForTOC: 3,
     scrollOffset: 80, // Offset for header height
-    observerRootMargin: '-100px 0px -66%', // Intersection observer margins
+    observerRootMargin: '-80px 0px -80% 0px', // Intersection observer margins
+    debounceDelay: 100, // Debounce delay for active state updates
   };
+
+  // State management
+  let isScrollingProgrammatically = false;
+  let debounceTimer = null;
 
   /**
    * Generate a unique ID from heading text
@@ -103,6 +108,9 @@
         const targetElement = document.getElementById(targetId);
 
         if (targetElement) {
+          // Disable observer during programmatic scrolling
+          isScrollingProgrammatically = true;
+
           const elementPosition = targetElement.getBoundingClientRect().top;
           const offsetPosition = elementPosition + window.pageYOffset - CONFIG.scrollOffset;
 
@@ -113,8 +121,30 @@
 
           // Update URL without triggering scroll
           history.pushState(null, null, `#${targetId}`);
+
+          // Manually set active state immediately
+          updateActiveLink(targetId);
+
+          // Re-enable observer after scroll completes
+          setTimeout(() => {
+            isScrollingProgrammatically = false;
+          }, 1000);
         }
       });
+    });
+  }
+
+  /**
+   * Manually update active link (used during programmatic scrolling)
+   */
+  function updateActiveLink(targetId) {
+    const tocLinks = document.querySelectorAll('.toc-link');
+    tocLinks.forEach(link => {
+      if (link.getAttribute('data-heading-id') === targetId) {
+        link.classList.add('active');
+      } else {
+        link.classList.remove('active');
+      }
     });
   }
 
@@ -137,6 +167,11 @@
 
     const observer = new IntersectionObserver(
       (entries) => {
+        // Skip updates during programmatic scrolling
+        if (isScrollingProgrammatically) {
+          return;
+        }
+
         entries.forEach(entry => {
           const headingId = entry.target.id;
 
@@ -147,12 +182,15 @@
           }
         });
 
-        // Update active states
-        updateActiveStates(linkMap, visibleHeadings, headingElements);
+        // Debounce the active state updates
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => {
+          updateActiveStates(linkMap, visibleHeadings, headingElements);
+        }, CONFIG.debounceDelay);
       },
       {
         rootMargin: CONFIG.observerRootMargin,
-        threshold: 0
+        threshold: [0, 0.5, 1]
       }
     );
 
@@ -213,6 +251,8 @@
         const targetElement = document.getElementById(targetId);
 
         if (targetElement) {
+          isScrollingProgrammatically = true;
+
           const elementPosition = targetElement.getBoundingClientRect().top;
           const offsetPosition = elementPosition + window.pageYOffset - CONFIG.scrollOffset;
 
@@ -220,6 +260,14 @@
             top: offsetPosition,
             behavior: 'smooth'
           });
+
+          // Manually set active state
+          updateActiveLink(targetId);
+
+          // Re-enable observer after scroll completes
+          setTimeout(() => {
+            isScrollingProgrammatically = false;
+          }, 1000);
         }
       }, 100);
     }
