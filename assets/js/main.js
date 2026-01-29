@@ -11,6 +11,21 @@
    * Initialize when DOM is ready
    */
   function init() {
+    // Landing page: start scrolled at top (and keep at top on back navigation)
+    const path = window.location.pathname.replace(/\/$/, '') || '/';
+    const isLandingPage = path === '' || path === '/' || path.endsWith('/index') || path.endsWith('index.html');
+    if (isLandingPage) {
+      window.scrollTo(0, 0);
+      if ('scrollRestoration' in history) {
+        history.scrollRestoration = 'manual';
+      }
+      window.addEventListener('pageshow', function onLandingPageShow(event) {
+        if (event.persisted) {
+          window.scrollTo(0, 0);
+        }
+      }, { once: false });
+    }
+
     setupSidebar();
     setupMobileMenu();
     setupSmoothScroll();
