@@ -7,27 +7,25 @@
   const video = document.getElementById('hero-video');
   const heroSection = document.querySelector('.hero-fullscreen');
   const heroBg = document.querySelector('.hero-bg-fixed');
-  const heroContent = document.querySelector('.hero-content');
   const heroTitle = document.querySelector('.hero-title');
+  const scrollIndicator = document.querySelector('.scroll-indicator');
 
   if (!video || !heroSection) return;
 
   // Scroll distance for video scrub (200vh)
   const scrollDistance = window.innerHeight * 2;
-  const heroHeight = window.innerHeight - 64; // viewport minus header
 
-  // Create spacer for scroll room
+  // Create spacer for scroll room (70% of scroll distance since hero hides at 70%)
   const spacer = document.createElement('div');
-  spacer.style.height = scrollDistance + 'px';
+  spacer.style.height = (scrollDistance * 0.7) + 'px';
   heroSection.after(spacer);
 
-  // Fix hero position with proper centering
-  heroSection.style.cssText = 'position:fixed;top:64px;left:0;right:0;width:100%;height:calc(100vh - 64px);z-index:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;padding:2rem;padding-bottom:4rem;box-sizing:border-box;';
+  // Fix hero position
+  heroSection.style.cssText = 'position:fixed;top:64px;left:0;right:0;width:100%;height:calc(100vh - 64px);z-index:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;padding:2rem;padding-bottom:4rem;box-sizing:border-box;pointer-events:none;';
 
-  // Fix scroll indicator centering
-  const scrollIndicator = heroSection.querySelector('.scroll-indicator');
+  // Fix scroll indicator
   if (scrollIndicator) {
-    scrollIndicator.style.cssText = 'position:fixed !important;bottom:2rem !important;left:0 !important;right:0 !important;margin:0 auto !important;transform:none !important;width:fit-content !important;z-index:2 !important;display:flex;flex-direction:column;align-items:center;';
+    scrollIndicator.style.cssText = 'position:fixed !important;bottom:2rem !important;left:0 !important;right:0 !important;margin:0 auto !important;width:fit-content !important;z-index:1 !important;display:flex;flex-direction:column;align-items:center;';
   }
 
   // Scroll handler
@@ -35,52 +33,64 @@
     const scrollY = window.scrollY;
     const progress = Math.min(scrollY / scrollDistance, 1);
 
-    // Video scrub (full 0-100%)
+    // Video scrub (0-70% of scroll = full video)
     if (video.duration) {
-      video.currentTime = progress * video.duration;
+      const videoProgress = Math.min(progress / 0.7, 1);
+      video.currentTime = videoProgress * video.duration;
     }
 
-    // Background fade (full 0-100%)
-    if (heroBg) {
-      heroBg.style.opacity = 1 - progress;
-    }
-
-    // Title scaling after 70%
-    if (progress > 0.7) {
-      const fx = (progress - 0.7) / 0.3;
-      if (heroTitle) heroTitle.style.transform = 'scale(' + (1 + fx * 0.15) + ')';
-    } else {
-      if (heroTitle) heroTitle.style.transform = '';
-    }
-
-    // Hero content fade out during last 30%
-    if (progress > 0.7) {
-      const fadeProgress = (progress - 0.7) / 0.3;
-      heroSection.style.opacity = 1 - fadeProgress;
-    } else {
+    // Hero text fades out from 50% to 70%
+    if (progress < 0.5) {
       heroSection.style.opacity = '1';
+      heroSection.style.visibility = 'visible';
+    } else if (progress < 0.7) {
+      const fadeProgress = (progress - 0.5) / 0.2;
+      heroSection.style.opacity = 1 - fadeProgress;
+      heroSection.style.visibility = 'visible';
+    } else {
+      heroSection.style.opacity = '0';
+      heroSection.style.visibility = 'hidden';
     }
 
-    // Hide hero completely when scroll reaches end
-    if (progress >= 1) {
-      heroSection.style.visibility = 'hidden';
-      heroSection.style.pointerEvents = 'none';
-      if (heroBg) {
+    // Background fades from 50% to 70%
+    if (heroBg) {
+      if (progress < 0.5) {
+        heroBg.style.opacity = '1';
+        heroBg.style.visibility = 'visible';
+      } else if (progress < 0.7) {
+        const fadeProgress = (progress - 0.5) / 0.2;
+        heroBg.style.opacity = 1 - fadeProgress;
+        heroBg.style.visibility = 'visible';
+      } else {
+        heroBg.style.opacity = '0';
         heroBg.style.visibility = 'hidden';
-        heroBg.style.pointerEvents = 'none';
       }
-      if (scrollIndicator) {
+    }
+
+    // Scroll indicator fades earlier (30% to 50%)
+    if (scrollIndicator) {
+      if (progress < 0.3) {
+        scrollIndicator.style.opacity = '1';
+        scrollIndicator.style.visibility = 'visible';
+      } else if (progress < 0.5) {
+        const fadeProgress = (progress - 0.3) / 0.2;
+        scrollIndicator.style.opacity = 1 - fadeProgress;
+        scrollIndicator.style.visibility = 'visible';
+      } else {
+        scrollIndicator.style.opacity = '0';
         scrollIndicator.style.visibility = 'hidden';
       }
-    } else {
-      heroSection.style.visibility = 'visible';
-      heroSection.style.pointerEvents = '';
-      if (heroBg) {
-        heroBg.style.visibility = 'visible';
-        heroBg.style.pointerEvents = '';
-      }
-      if (scrollIndicator) {
-        scrollIndicator.style.visibility = 'visible';
+    }
+
+    // Title scaling from 50% to 70%
+    if (heroTitle) {
+      if (progress > 0.5 && progress < 0.7) {
+        const fx = (progress - 0.5) / 0.2;
+        heroTitle.style.transform = 'scale(' + (1 + fx * 0.15) + ')';
+      } else if (progress >= 0.7) {
+        heroTitle.style.transform = 'scale(1.15)';
+      } else {
+        heroTitle.style.transform = '';
       }
     }
   }
