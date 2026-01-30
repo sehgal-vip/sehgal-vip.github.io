@@ -11,16 +11,14 @@
     contentSelector: '.post-content',
     tocListSelector: '#toc-list',
     tocSidebarSelector: '#toc-sidebar',
+    tocNavSelector: '.toc-nav',
     headingSelectors: 'h2, h3',
     minHeadingsForTOC: 3,
     scrollOffset: 80, // Offset for header height
-    observerRootMargin: '-80px 0px -80% 0px', // Intersection observer margins
-    debounceDelay: 100, // Debounce delay for active state updates
   };
 
   // State management
   let isScrollingProgrammatically = false;
-  let debounceTimer = null;
 
   /**
    * Generate a unique ID from heading text
@@ -149,78 +147,115 @@
   }
 
   /**
-   * Setup active section tracking using Intersection Observer
+   * Create the progress indicator elements
    */
-  function setupActiveTracking(headings) {
-    const tocLinks = document.querySelectorAll('.toc-link');
-    const headingElements = headings.map(h => h.element);
+  function createProgressIndicator() {
+    const tocNav = document.querySelector(CONFIG.tocNavSelector);
+    if (!tocNav) return;
 
-    // Create a map for quick lookup
-    const linkMap = new Map();
-    tocLinks.forEach(link => {
-      const headingId = link.getAttribute('data-heading-id');
-      linkMap.set(headingId, link);
-    });
+    // Check if indicator already exists
+    if (tocNav.querySelector('.toc-progress-track')) return;
 
-    // Track which headings are currently visible
-    const visibleHeadings = new Set();
+    const track = document.createElement('div');
+    track.className = 'toc-progress-track';
 
-    const observer = new IntersectionObserver(
-      (entries) => {
-        // Skip updates during programmatic scrolling
-        if (isScrollingProgrammatically) {
-          return;
-        }
+    const indicator = document.createElement('div');
+    indicator.className = 'toc-progress-indicator';
 
-        entries.forEach(entry => {
-          const headingId = entry.target.id;
-
-          if (entry.isIntersecting) {
-            visibleHeadings.add(headingId);
-          } else {
-            visibleHeadings.delete(headingId);
-          }
-        });
-
-        // Debounce the active state updates
-        clearTimeout(debounceTimer);
-        debounceTimer = setTimeout(() => {
-          updateActiveStates(linkMap, visibleHeadings, headingElements);
-        }, CONFIG.debounceDelay);
-      },
-      {
-        rootMargin: CONFIG.observerRootMargin,
-        threshold: [0, 0.5, 1]
-      }
-    );
-
-    // Observe all heading elements
-    headingElements.forEach(heading => observer.observe(heading));
+    tocNav.appendChild(track);
+    tocNav.appendChild(indicator);
   }
 
   /**
-   * Update active states for TOC links
+   * Update the progress indicator position to match active link
    */
-  function updateActiveStates(linkMap, visibleHeadings, headingElements) {
-    // Remove all active classes first
-    linkMap.forEach(link => link.classList.remove('active'));
+  function updateProgressIndicator() {
+    const indicator = document.querySelector('.toc-progress-indicator');
+    const activeLink = document.querySelector('.toc-link.active');
+    const tocNav = document.querySelector(CONFIG.tocNavSelector);
 
-    // If no headings are visible, don't highlight anything
-    if (visibleHeadings.size === 0) return;
+    if (!indicator || !tocNav) return;
 
-    // Find the topmost visible heading
-    let activeHeading = null;
-    for (const heading of headingElements) {
-      if (visibleHeadings.has(heading.id)) {
-        activeHeading = heading.id;
-        break;
+    if (!activeLink) {
+      indicator.style.opacity = '0';
+      return;
+    }
+
+    const linkRect = activeLink.getBoundingClientRect();
+    const navRect = tocNav.getBoundingClientRect();
+
+    indicator.style.opacity = '1';
+    indicator.style.top = (linkRect.top - navRect.top) + 'px';
+    indicator.style.height = linkRect.height + 'px';
+  }
+
+  /**
+   * Auto-scroll TOC to keep active item visible
+   */
+  function scrollTocToActive() {
+    const tocSidebar = document.querySelector(CONFIG.tocSidebarSelector);
+    const activeLink = document.querySelector('.toc-link.active');
+
+    if (!tocSidebar || !activeLink) return;
+
+    const tocRect = tocSidebar.getBoundingClientRect();
+    const linkRect = activeLink.getBoundingClientRect();
+
+    // Check if active link is outside visible area of TOC
+    if (linkRect.top < tocRect.top || linkRect.bottom > tocRect.bottom) {
+      activeLink.scrollIntoView({
+        block: 'center',
+        behavior: 'smooth'
+      });
+    }
+  }
+
+  /**
+   * Setup active section tracking using scroll position
+   */
+  function setupActiveTracking(headings) {
+    // Create progress indicator
+    createProgressIndicator();
+
+    function updateActiveOnScroll() {
+      if (isScrollingProgrammatically) return;
+
+      const scrollPosition = window.scrollY + CONFIG.scrollOffset + 20;
+      let activeHeading = null;
+
+      // Find the last heading that's above the scroll position
+      for (const heading of headings) {
+        if (heading.element.offsetTop <= scrollPosition) {
+          activeHeading = heading.id;
+        } else {
+          break;
+        }
       }
+
+      // Update active state
+      updateActiveLink(activeHeading);
+
+      // Update progress indicator
+      updateProgressIndicator();
+
+      // Auto-scroll TOC to keep active item visible
+      scrollTocToActive();
     }
 
-    // Highlight the active heading
-    if (activeHeading && linkMap.has(activeHeading)) {
-      linkMap.get(activeHeading).classList.add('active');
-    }
+    // Throttled scroll listener using requestAnimationFrame
+    let ticking = false;
+    window.addEventListener('scroll', () => {
+      if (!ticking) {
+        requestAnimationFrame(() => {
+          updateActiveOnScroll();
+          ticking = false;
+        });
+        ticking = true;
+      }
+    });
+
+    // Initial update
+    updateActiveOnScroll();
   }
 
   /**
