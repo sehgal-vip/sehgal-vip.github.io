@@ -1110,9 +1110,8 @@ strong, b {
   padding: 5rem 2rem;
   text-align: center;
   position: relative;
-  background: rgba(245, 247, 250, 0.5);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  z-index: 10;
+  background: var(--bg-primary);
 
   // Greek key border top and bottom
   &::before,
@@ -1139,7 +1138,7 @@ strong, b {
 }
 
 [data-theme="dark"] .about-section {
-  background: rgba(18, 22, 25, 0.5);
+  background: var(--bg-primary);
 
   &::before,
   &::after {
@@ -1178,6 +1177,9 @@ strong, b {
   padding: 4rem 0 5rem;
   max-width: 900px;
   margin: 0 auto;
+  position: relative;
+  z-index: 10;
+  background: var(--bg-primary);
 
   .posts-grid {
     display: grid;
