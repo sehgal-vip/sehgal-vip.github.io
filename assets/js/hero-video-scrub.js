@@ -4,6 +4,10 @@
  * Sequence:
  * - 0-70%: Video scrubs, hero text fixed at bottom
  * - 70%+: Hero text scrolls up via translateY, about follows immediately
+ *
+ * Optimizations:
+ * - requestAnimationFrame throttling for smooth 60fps
+ * - Seek threshold to reduce expensive video.currentTime calls
  */
 (function() {
   'use strict';
@@ -45,14 +49,24 @@
     'transform:translateY(0)'
   ].join(';');
 
-  function onScroll() {
+  // Throttling state
+  let ticking = false;
+  let lastVideoTime = 0;
+
+  function updateOnScroll() {
     const scrollY = window.scrollY;
     const progress = Math.min(scrollY / scrollDistance, 1);
 
     // VIDEO: 0-70% scroll = 0-100% video
     if (video.duration) {
       const videoProgress = Math.min(progress / 0.7, 1);
-      video.currentTime = videoProgress * video.duration;
+      const targetTime = videoProgress * video.duration;
+
+      // Only seek if difference > 0.05s (reduces jank on fast scroll)
+      if (Math.abs(targetTime - lastVideoTime) > 0.05) {
+        video.currentTime = targetTime;
+        lastVideoTime = targetTime;
+      }
     }
 
     // HERO: Fixed during video (0-70%), then scrolls up via translateY
@@ -102,6 +116,16 @@
     }
   }
 
+  function onScroll() {
+    if (!ticking) {
+      requestAnimationFrame(function() {
+        updateOnScroll();
+        ticking = false;
+      });
+      ticking = true;
+    }
+  }
+
   // Fixed scroll indicator positioning
   if (scrollIndicator) {
     scrollIndicator.style.cssText = [
@@ -116,5 +140,5 @@
   }
 
   window.addEventListener('scroll', onScroll, { passive: true });
-  onScroll();
+  updateOnScroll();
 })();
