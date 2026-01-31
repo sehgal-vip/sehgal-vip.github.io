@@ -2,8 +2,8 @@
  * Hero Video Scroll Scrub
  *
  * Sequence:
- * - 0-70%: Video scrubs, hero text fixed
- * - 70%+: Hero text scrolls up naturally, about follows
+ * - 0-70%: Video scrubs, hero text fixed at bottom
+ * - 70%+: Hero text scrolls up via translateY, about follows immediately
  */
 (function() {
   'use strict';
@@ -15,14 +15,35 @@
 
   if (!video || !heroSection) return;
 
-  // Scroll distance for video phase (70% of 200vh = 140vh)
+  // Scroll distance for full animation (200vh)
   const scrollDistance = window.innerHeight * 2;
-  const videoEndPoint = scrollDistance * 0.7; // 140vh
+  const videoEndPoint = scrollDistance * 0.7; // 140vh - video completes here
+  const heroHeight = window.innerHeight; // Hero scroll-off distance
 
-  // Small spacer just for video scrub phase
+  // Spacer = video phase + hero scroll-off phase
+  // This ensures about section appears as hero scrolls away
   const spacer = document.createElement('div');
-  spacer.style.cssText = 'height:' + videoEndPoint + 'px;';
+  spacer.style.cssText = 'height:' + (videoEndPoint + heroHeight) + 'px;';
   heroSection.after(spacer);
+
+  // Hero stays fixed throughout, we use translateY to scroll it up
+  heroSection.style.cssText = [
+    'position:fixed',
+    'top:64px',
+    'left:0',
+    'right:0',
+    'width:100%',
+    'height:calc(100vh - 64px)',
+    'z-index:1',
+    'display:flex',
+    'flex-direction:column',
+    'justify-content:flex-end',
+    'align-items:center',
+    'padding:2rem',
+    'padding-bottom:4rem',
+    'box-sizing:border-box',
+    'transform:translateY(0)'
+  ].join(';');
 
   function onScroll() {
     const scrollY = window.scrollY;
@@ -34,40 +55,22 @@
       video.currentTime = videoProgress * video.duration;
     }
 
-    // HERO: Fixed during video (0-70%), then scrolls naturally
-    if (scrollY < videoEndPoint) {
-      // Fixed positioning during video phase
-      heroSection.style.cssText = [
-        'position:fixed',
-        'top:64px',
-        'left:0',
-        'right:0',
-        'width:100%',
-        'height:calc(100vh - 64px)',
-        'z-index:1',
-        'display:flex',
-        'flex-direction:column',
-        'justify-content:flex-end',
-        'align-items:center',
-        'padding:2rem',
-        'padding-bottom:4rem',
-        'box-sizing:border-box'
-      ].join(';');
+    // HERO: Fixed during video (0-70%), then scrolls up via translateY
+    if (scrollY <= videoEndPoint) {
+      // During video phase - hero stays in place
+      heroSection.style.transform = 'translateY(0)';
+      heroSection.style.visibility = 'visible';
     } else {
-      // Switch to relative - scrolls naturally with page
-      heroSection.style.cssText = [
-        'position:relative',
-        'width:100%',
-        'min-height:calc(100vh - 64px)',
-        'z-index:1',
-        'display:flex',
-        'flex-direction:column',
-        'justify-content:flex-end',
-        'align-items:center',
-        'padding:2rem',
-        'padding-bottom:4rem',
-        'box-sizing:border-box'
-      ].join(';');
+      // After video - hero scrolls up naturally
+      const scrollBeyond = scrollY - videoEndPoint;
+      heroSection.style.transform = 'translateY(' + (-scrollBeyond) + 'px)';
+
+      // Hide hero once it's fully scrolled off
+      if (scrollBeyond > heroHeight) {
+        heroSection.style.visibility = 'hidden';
+      } else {
+        heroSection.style.visibility = 'visible';
+      }
     }
 
     // HERO BACKGROUND: Fade out during 70-100%
