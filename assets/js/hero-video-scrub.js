@@ -8,6 +8,7 @@
  * Optimizations:
  * - requestAnimationFrame throttling for smooth 60fps
  * - Seek threshold to reduce expensive video.currentTime calls
+ * - Mobile: wait for video ready state before scrubbing
  */
 (function() {
   'use strict';
@@ -52,20 +53,52 @@
   // Throttling state
   let ticking = false;
   let lastVideoTime = 0;
+  let videoReady = false;
+
+  // Check if video is ready for scrubbing
+  function checkVideoReady() {
+    // readyState 3+ means enough data to seek
+    if (video.readyState >= 3) {
+      videoReady = true;
+      return true;
+    }
+    return false;
+  }
+
+  // Prime video on mobile - needs user interaction
+  function primeVideoForMobile() {
+    if (videoReady) return;
+
+    // Try to play briefly to initialize decoder
+    var playPromise = video.play();
+    if (playPromise !== undefined) {
+      playPromise.then(function() {
+        video.pause();
+        video.currentTime = 0;
+        videoReady = true;
+      }).catch(function() {
+        // Autoplay blocked, video will init on first successful seek
+      });
+    }
+  }
 
   function updateOnScroll() {
     const scrollY = window.scrollY;
     const progress = Math.min(scrollY / scrollDistance, 1);
 
     // VIDEO: 0-70% scroll = 0-100% video
-    if (video.duration) {
+    if (video.duration && (videoReady || checkVideoReady())) {
       const videoProgress = Math.min(progress / 0.7, 1);
       const targetTime = videoProgress * video.duration;
 
       // Only seek if difference > 0.05s (reduces jank on fast scroll)
       if (Math.abs(targetTime - lastVideoTime) > 0.05) {
-        video.currentTime = targetTime;
-        lastVideoTime = targetTime;
+        try {
+          video.currentTime = targetTime;
+          lastVideoTime = targetTime;
+        } catch (e) {
+          // Video not ready, ignore
+        }
       }
     }
 
@@ -139,6 +172,27 @@
     ].join(';');
   }
 
+  // Wait for video to be ready
+  video.addEventListener('canplaythrough', function() {
+    videoReady = true;
+    updateOnScroll();
+  });
+
+  // Also try when enough data loaded
+  video.addEventListener('loadeddata', function() {
+    checkVideoReady();
+    primeVideoForMobile();
+  });
+
+  // Prime video on first touch (mobile needs this)
+  document.addEventListener('touchstart', function initTouch() {
+    primeVideoForMobile();
+    document.removeEventListener('touchstart', initTouch);
+  }, { once: true, passive: true });
+
   window.addEventListener('scroll', onScroll, { passive: true });
+
+  // Initial check
+  checkVideoReady();
   updateOnScroll();
 })();
