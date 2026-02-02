@@ -1111,7 +1111,7 @@ strong, b {
   text-align: center;
   position: relative;
   z-index: 10;
-  background: var(--bg-primary);
+  background: var(--bg-color);
   // Full-bleed background
   margin-left: calc(-50vw + 50%);
   margin-right: calc(-50vw + 50%);
@@ -1143,7 +1143,7 @@ strong, b {
 }
 
 [data-theme="dark"] .about-section {
-  background: var(--bg-primary);
+  background: var(--bg-color);
 
   &::before,
   &::after {
@@ -1182,7 +1182,7 @@ strong, b {
   padding: 4rem 2rem 5rem;
   position: relative;
   z-index: 10;
-  background: var(--bg-primary);
+  background: var(--bg-color);
   // Full-bleed background
   margin-left: calc(-50vw + 50%);
   margin-right: calc(-50vw + 50%);

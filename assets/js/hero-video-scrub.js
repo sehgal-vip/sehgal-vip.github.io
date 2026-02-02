@@ -144,10 +144,13 @@
     if (heroContent) {
       if (progress <= 0.7) {
         heroContent.style.opacity = '1';
+        heroContent.style.visibility = 'visible';
       } else if (progress < 1) {
         heroContent.style.opacity = (1 - (progress - 0.7) / 0.3).toFixed(2);
+        heroContent.style.visibility = 'visible';
       } else {
         heroContent.style.opacity = '0';
+        heroContent.style.visibility = 'hidden';
       }
     }
 
