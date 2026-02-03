@@ -1,9 +1,9 @@
 /**
  * Hero Video Scroll Scrub
  *
- * Sequence:
- * - 0-70%: Video scrubs, hero text fixed at bottom
- * - 70%+: Hero text scrolls up via translateY, about follows immediately
+ * High-resolution video scrubbing synced to scroll position.
+ * - 0-70%: Video scrubs 0-100%
+ * - 70%+: Hero scrolls up, content fades
  */
 (function() {
   'use strict';
@@ -18,16 +18,15 @@
 
   // Scroll distance for full animation (200vh)
   const scrollDistance = window.innerHeight * 2;
-  const videoEndPoint = scrollDistance * 0.7; // 140vh - video completes here
-  const heroHeight = window.innerHeight; // Hero scroll-off distance
+  const videoEndPoint = scrollDistance * 0.7;
+  const heroHeight = window.innerHeight;
 
-  // Spacer = video phase + hero scroll-off phase
-  // This ensures about section appears as hero scrolls away
+  // Spacer for scroll space
   const spacer = document.createElement('div');
   spacer.style.cssText = 'height:' + (videoEndPoint + heroHeight) + 'px;';
   heroSection.after(spacer);
 
-  // Hero stays fixed throughout, we use translateY to scroll it up
+  // Hero fixed positioning
   heroSection.style.cssText = [
     'position:fixed',
     'top:64px',
@@ -46,42 +45,43 @@
     'transform:translateY(0)'
   ].join(';');
 
-  function onScroll() {
+  // State
+  let ticking = false;
+  let lastTime = -1;
+
+  function updateScroll() {
     const scrollY = window.scrollY;
     const progress = Math.min(scrollY / scrollDistance, 1);
 
-    // VIDEO: 0-70% scroll = 0-100% video
-    if (video.duration) {
+    // VIDEO SCRUB: 0-70% scroll = 0-100% video (high resolution)
+    if (video.duration && video.readyState >= 2) {
       const videoProgress = Math.min(progress / 0.7, 1);
-      video.currentTime = videoProgress * video.duration;
-    }
+      const targetTime = videoProgress * video.duration;
 
-    // HERO: Fixed during video (0-70%), then scrolls up via translateY
-    if (scrollY <= videoEndPoint) {
-      // During video phase - hero stays in place
-      heroSection.style.transform = 'translateY(0)';
-      heroSection.style.visibility = 'visible';
-    } else {
-      // After video - hero scrolls up naturally
-      const scrollBeyond = scrollY - videoEndPoint;
-      heroSection.style.transform = 'translateY(' + (-scrollBeyond) + 'px)';
-
-      // Hide hero once it's fully scrolled off
-      if (scrollBeyond > heroHeight) {
-        heroSection.style.visibility = 'hidden';
-      } else {
-        heroSection.style.visibility = 'visible';
+      // Very small threshold for high-res scrubbing (0.016s = 1 frame at 60fps)
+      if (Math.abs(targetTime - lastTime) > 0.016) {
+        video.currentTime = targetTime;
+        lastTime = targetTime;
       }
     }
 
-    // HERO BACKGROUND: Fade out during 70-100%
+    // HERO TRANSFORM
+    if (scrollY <= videoEndPoint) {
+      heroSection.style.transform = 'translateY(0)';
+      heroSection.style.visibility = 'visible';
+    } else {
+      const scrollBeyond = scrollY - videoEndPoint;
+      heroSection.style.transform = 'translateY(' + (-scrollBeyond) + 'px)';
+      heroSection.style.visibility = scrollBeyond > heroHeight ? 'hidden' : 'visible';
+    }
+
+    // HERO BACKGROUND FADE: 70-100%
     if (heroBg) {
       if (progress <= 0.7) {
         heroBg.style.opacity = '1';
         heroBg.style.visibility = 'visible';
       } else if (progress < 1) {
-        const fadeProgress = (progress - 0.7) / 0.3;
-        heroBg.style.opacity = 1 - fadeProgress;
+        heroBg.style.opacity = 1 - (progress - 0.7) / 0.3;
         heroBg.style.visibility = 'visible';
       } else {
         heroBg.style.opacity = '0';
@@ -89,14 +89,13 @@
       }
     }
 
-    // HERO CONTENT: Fade with background 70-100%
+    // HERO CONTENT FADE: 70-100%
     if (heroContent) {
       if (progress <= 0.7) {
         heroContent.style.opacity = '1';
         heroContent.style.visibility = 'visible';
       } else if (progress < 1) {
-        const fadeProgress = (progress - 0.7) / 0.3;
-        heroContent.style.opacity = 1 - fadeProgress;
+        heroContent.style.opacity = 1 - (progress - 0.7) / 0.3;
         heroContent.style.visibility = 'visible';
       } else {
         heroContent.style.opacity = '0';
@@ -104,21 +103,30 @@
       }
     }
 
-    // SCROLL INDICATOR: Fades 40-60%
+    // SCROLL INDICATOR: 40-60%
     if (scrollIndicator) {
       if (progress <= 0.4) {
         scrollIndicator.style.opacity = '1';
         scrollIndicator.style.visibility = 'visible';
       } else if (progress < 0.6) {
-        scrollIndicator.style.opacity = 1 - ((progress - 0.4) / 0.2);
+        scrollIndicator.style.opacity = 1 - (progress - 0.4) / 0.2;
       } else {
         scrollIndicator.style.opacity = '0';
         scrollIndicator.style.visibility = 'hidden';
       }
     }
+
+    ticking = false;
   }
 
-  // Fixed scroll indicator positioning
+  function onScroll() {
+    if (!ticking) {
+      requestAnimationFrame(updateScroll);
+      ticking = true;
+    }
+  }
+
+  // Scroll indicator positioning
   if (scrollIndicator) {
     scrollIndicator.style.cssText = [
       'position:fixed',
@@ -131,6 +139,9 @@
     ].join(';');
   }
 
+  // Preload video for smooth scrubbing
+  video.preload = 'auto';
+
   window.addEventListener('scroll', onScroll, { passive: true });
-  onScroll();
+  updateScroll();
 })();
