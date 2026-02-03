@@ -1,3 +1,5 @@
 title,author,description,year,url
-"Wait But Why: The AI Revolution","Tim Urban","Two-part series on the future of AI",2015,https://waitbutwhy.com/2015/01/artificial-intelligence-revolution-1.html
-"Paul Graham Essays","Paul Graham","Essays on startups, programming, and life",2024,http://paulgraham.com/articles.html
+Paper page - Can LLMs Predict Their Own Failures? Self-Awareness via Internal Circuits,,Join the discussion on this paper page,2026,https://huggingface.co/papers/2512.20578
+The Unreasonable Effectiveness of Recurrent Neural Networks,,,,https://karpathy.github.io/2015/05/21/rnn-effectiveness/
+Aman's AI Journal • Primers • Hyperparameter Tuning,,,,https://aman.ai/primers/ai/hyperparameter-tuning/#hyperparameter-tuning
+"Attention, You Had One Job!!",Vipul Sehgal,"DeepSeek shrank it, Moonshot hacked it, and now the whole architecture playbook is up for grabs",,https://substack.com/inbox
