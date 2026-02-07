@@ -1,5 +1,6 @@
 title,description,year,url
-"Personal Blog","This Jekyll-powered blog with command palette, dark mode, and GitHub Pages hosting",2024,www.vipulsehgal.com
+"Text Editor","Convert between Markdown, HTML, Plain Text & RTF in the browser",2026,/projects/texteditor/
+"Personal Blog","This Jekyll-powered blog with command palette, dark mode, and GitHub Pages hosting",2024,https://vipulsehgal.com
 "AI Writing Assistant","Chrome extension for contextual writing suggestions using GPT-4",2024,
 "Product Analytics Dashboard","Real-time metrics visualization for product teams built with React and D3",2024,
 "Hindi Codenames","Multiplayer word game in Hindi - built with Next.js and WebSockets",2023,

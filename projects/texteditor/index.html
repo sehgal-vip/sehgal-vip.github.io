@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Text Convertor — Convert between Markdown, HTML, TXT & RTF</title>
+  <meta name="description" content="Free online text format converter. Convert between Markdown, HTML, Plain Text, and RTF instantly in your browser. No uploads, no server — 100% client-side.">
+  <meta property="og:title" content="Text Convertor — Convert between Markdown, HTML, TXT & RTF">
+  <meta property="og:description" content="Free online text format converter. Convert between Markdown, HTML, Plain Text, and RTF instantly in your browser.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://vipulsehgal.com/projects/texteditor">
+  <base href="/projects/texteditor/">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📝</text></svg>">
+  <link rel="manifest" href="manifest.json">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <!-- Accessibility: Skip to main content -->
+  <a href="#main-content" class="skip-link">Skip to main content</a>
+
+  <!-- #24: CDN load failure banner -->
+  <div id="cdnError" class="cdn-error" hidden role="alert" aria-live="assertive">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+    Required libraries failed to load. Please check your internet connection and reload.
+  </div>
+
+  <div class="container">
+
+    <header role="banner">
+      <div class="header-content">
+        <div class="logo">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <line x1="16" y1="13" x2="8" y2="13"/>
+            <line x1="16" y1="17" x2="8" y2="17"/>
+            <polyline points="10 9 9 9 8 9"/>
+          </svg>
+          <h1>Text Convertor</h1>
+        </div>
+        <p class="header-sub">Convert between Markdown, HTML, Plain Text & RTF</p>
+        <!-- #23: Privacy badge -->
+        <span class="privacy-badge" aria-label="Privacy: All processing happens in your browser. No data is sent to servers.">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          100% client-side
+        </span>
+      </div>
+    </header>
+
+    <main id="main-content" class="editor-layout" role="main" aria-label="Text conversion interface">
+
+      <!-- Left: Input Panel -->
+      <section class="panel panel-input" id="panelInput" aria-labelledby="input-heading">
+        <div class="panel-header">
+          <div class="panel-title" id="input-heading">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+            </svg>
+            <span>Input</span>
+          </div>
+          <div class="panel-format">
+            <select id="inputFormat" tabindex="1" aria-label="Input format">
+              <option value="auto" selected>Auto-detect</option>
+              <option value="md">Markdown</option>
+              <option value="html">HTML</option>
+              <option value="txt">Plain Text</option>
+              <option value="rtf">RTF</option>
+            </select>
+            <span id="detectedFormat" class="detected-label" aria-live="polite" aria-atomic="true"></span>
+          </div>
+        </div>
+
+        <div class="panel-body">
+          <div class="input-wrapper" id="inputWrapper" role="region" aria-label="Input text area">
+            <textarea 
+              id="inputArea" 
+              placeholder="Paste or type your text here, or drag & drop a file..." 
+              spellcheck="false" 
+              tabindex="2"
+              aria-label="Input text to convert"
+              aria-describedby="input-help"
+              aria-multiline="true"
+            ></textarea>
+            <span id="input-help" class="sr-only">Press Ctrl+Enter to convert after entering text</span>
+            <button id="clearBtn" class="clear-btn" title="Clear input" tabindex="3" aria-label="Clear input text">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+              </svg>
+              Clear
+            </button>
+            <div id="dragOverlay" class="drag-overlay" aria-hidden="true">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="7 10 12 15 17 10"/>
+                <line x1="12" y1="15" x2="12" y2="3"/>
+              </svg>
+              <span>Drop file here</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel-footer">
+          <!-- #13: Paste button -->
+          <button id="pasteBtn" class="btn btn-foot" tabindex="4" aria-label="Paste from clipboard">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>
+            Paste
+          </button>
+          <button id="uploadBtn" class="btn btn-foot" tabindex="5" aria-label="Upload file from computer">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="17 8 12 3 7 8"/>
+              <line x1="12" y1="3" x2="12" y2="15"/>
+            </svg>
+            <span id="uploadBtnText">Upload File</span>
+          </button>
+          <input type="file" id="fileInput" accept=".md,.html,.htm,.txt,.rtf" hidden aria-label="File input">
+          <!-- #9: Stats -->
+          <span class="stats" id="inputStats" aria-live="polite" aria-atomic="true"></span>
+        </div>
+      </section>
+
+      <!-- Center: Convert Action -->
+      <div class="convert-column" role="region" aria-label="Convert action">
+        <!-- #2: Convert button with label + #1: shortcut hint -->
+        <button 
+          id="convertBtn" 
+          class="btn-convert" 
+          disabled 
+          tabindex="6" 
+          title="Convert"
+          aria-label="Convert text from input format to output format"
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <line x1="5" y1="12" x2="19" y2="12"/>
+            <polyline points="12 5 19 12 12 19"/>
+          </svg>
+          <span class="convert-label">Convert</span>
+        </button>
+        <kbd class="shortcut-hint" id="shortcutHint" aria-label="Keyboard shortcut">Ctrl+Enter</kbd>
+        <script>
+          // Detect platform and show correct shortcut
+          (function() {
+            var isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+            var shortcut = isMac ? 'Cmd+Enter' : 'Ctrl+Enter';
+            var hint = document.getElementById('shortcutHint');
+            var convertBtn = document.getElementById('convertBtn');
+            var inputHelp = document.getElementById('input-help');
+            
+            if (hint) {
+              hint.textContent = shortcut;
+              hint.setAttribute('aria-label', 'Keyboard shortcut: ' + (isMac ? 'Command plus Enter' : 'Control plus Enter'));
+            }
+            
+            if (convertBtn) {
+              convertBtn.setAttribute('title', 'Convert (' + shortcut + ')');
+            }
+            
+            if (inputHelp) {
+              inputHelp.textContent = 'Press ' + shortcut + ' to convert after entering text';
+            }
+          })();
+        </script>
+      </div>
+
+      <!-- Right: Output Panel -->
+      <section class="panel panel-output" id="panelOutput" aria-labelledby="output-heading">
+        <div class="panel-header">
+          <div class="panel-title" id="output-heading">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+              <line x1="16" y1="13" x2="8" y2="13"/>
+              <line x1="16" y1="17" x2="8" y2="17"/>
+            </svg>
+            <span>Output</span>
+          </div>
+          <div class="panel-format">
+            <select id="outputFormat" tabindex="7" aria-label="Output format">
+              <option value="md">Markdown</option>
+              <option value="html" selected>HTML</option>
+              <option value="txt">Plain Text</option>
+              <option value="rtf">RTF</option>
+            </select>
+            <div id="htmlToggle" class="html-toggle" hidden role="group" aria-label="View mode toggle">
+              <button id="toggleRaw" class="toggle-btn active" tabindex="8" aria-pressed="true">Raw</button>
+              <button id="toggleRendered" class="toggle-btn" tabindex="9" aria-pressed="false">Rendered</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel-body">
+          <div class="output-wrapper" id="outputWrapper" role="region" aria-label="Converted output">
+            <textarea 
+              id="outputArea" 
+              readonly 
+              placeholder="Converted output will appear here..." 
+              spellcheck="false" 
+              tabindex="10"
+              aria-label="Converted text output"
+              aria-readonly="true"
+            ></textarea>
+            <div 
+              id="renderedView" 
+              class="rendered-view" 
+              hidden 
+              tabindex="10"
+              aria-label="Rendered preview of converted text"
+              role="document"
+            ></div>
+          </div>
+        </div>
+
+        <div class="panel-footer">
+          <button id="copyBtn" class="btn btn-foot" disabled tabindex="11" aria-label="Copy output to clipboard">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+            </svg>
+            <span id="copyBtnText">Copy</span>
+          </button>
+          <button id="downloadBtn" class="btn btn-foot" disabled tabindex="12" aria-label="Download output as file">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="7 10 12 15 17 10"/>
+              <line x1="12" y1="15" x2="12" y2="3"/>
+            </svg>
+            Download
+          </button>
+          <!-- #8: Swap/Use as Input -->
+          <button id="swapBtn" class="btn btn-foot" disabled tabindex="13" title="Use output as new input" aria-label="Use converted output as new input">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <polyline points="1 4 1 10 7 10"/><polyline points="23 20 23 14 17 14"/>
+              <path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"/>
+            </svg>
+            Use as Input
+          </button>
+          <!-- #9: Stats -->
+          <span class="stats" id="outputStats" aria-live="polite" aria-atomic="true"></span>
+        </div>
+      </section>
+    </main>
+
+    <!-- #4: Lossy warning — full-width below editor -->
+    <div id="lossyWarning" class="lossy-warning" hidden role="status" aria-live="polite">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+        <line x1="12" y1="9" x2="12" y2="13"/>
+        <line x1="12" y1="17" x2="12.01" y2="17"/>
+      </svg>
+      <span id="lossyMessage"></span>
+    </div>
+
+    <!-- #21: Undo banner -->
+    <div id="undoBanner" class="undo-banner" hidden role="status" aria-live="polite">
+      <span>Content cleared.</span>
+      <button id="undoBtn" class="btn btn-undo" aria-label="Undo clear action">Undo</button>
+    </div>
+
+    <footer role="contentinfo">
+      <p>Your text never leaves your browser. <a href="https://github.com/vipulsehgal/textconvert" target="_blank" rel="noopener noreferrer">GitHub</a></p>
+    </footer>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/turndown/dist/turndown.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/turndown-plugin-gfm/dist/turndown-plugin-gfm.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dompurify/dist/purify.min.js"></script>
+  <script src="js/app.js"></script>
+  
+  <!-- Register Service Worker for offline support -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function() {
+        navigator.serviceWorker.register('sw.js')
+          .then(function(registration) {
+            console.log('SW registered: ', registration.scope);
+          })
+          .catch(function(error) {
+            console.log('SW registration failed: ', error);
+          });
+      });
+    }
+  </script>
+</body>
+</html>
