@@ -620,6 +620,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Update pagination UI
     updatePaginationUI(section, sectionName, filteredRows.length);
+
+    // Clear selection if filtered or paged out
+    if (selectedRow && selectedRow.style.display === 'none') {
+      setSelectedRow(null);
+    }
   };
 
   // Update pagination UI elements
@@ -719,6 +724,163 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         applyPagination(section, sectionName);
       });
+    }
+  });
+
+  // Keyboard navigation
+  const selectionClass = 'row-selected';
+  let selectedRow = null;
+
+  const isTypingInInput = (el) => {
+    if (!el) return false;
+    const tag = el.tagName ? el.tagName.toLowerCase() : '';
+    return el.isContentEditable || tag === 'input' || tag === 'textarea' || tag === 'select';
+  };
+
+  const isCommandPaletteOpen = () => {
+    if (window.ModalManager && typeof window.ModalManager.isOpen === 'function') {
+      if (window.ModalManager.isOpen('command-palette')) return true;
+    }
+    return !!document.querySelector('#command-palette.is-open');
+  };
+
+  const getVisibleRows = (section) => {
+    if (!section) return [];
+    return Array.from(section.querySelectorAll('tbody tr'))
+      .filter(row => row.style.display !== 'none');
+  };
+
+  const setSelectedRow = (row) => {
+    if (selectedRow) {
+      selectedRow.classList.remove(selectionClass);
+      selectedRow.removeAttribute('aria-selected');
+    }
+    selectedRow = row;
+    if (selectedRow) {
+      selectedRow.classList.add(selectionClass);
+      selectedRow.setAttribute('aria-selected', 'true');
+      selectedRow.scrollIntoView({ block: 'nearest' });
+    }
+  };
+
+  const openSelectedRowLink = () => {
+    if (!selectedRow) return;
+    const link = selectedRow.querySelector('a');
+    if (link) link.click();
+  };
+
+  const getSectionIndex = (section) => {
+    return Array.from(sections).indexOf(section);
+  };
+
+  const getNextSectionWithRows = (fromIndex) => {
+    for (let i = fromIndex + 1; i < sections.length; i++) {
+      if (getVisibleRows(sections[i]).length > 0) return sections[i];
+    }
+    return null;
+  };
+
+  const getPrevSectionWithRows = (fromIndex) => {
+    for (let i = fromIndex - 1; i >= 0; i--) {
+      if (getVisibleRows(sections[i]).length > 0) return sections[i];
+    }
+    return null;
+  };
+
+  const moveToSection = (section, position) => {
+    if (!section) return;
+    const sectionName = section.dataset.section;
+    const state = paginationState[sectionName];
+    if (state && !state.showAll) {
+      const filteredRows = getFilteredRows(section);
+      const totalPages = Math.ceil(filteredRows.length / state.perPage);
+      if (position === 'start') {
+        state.page = 1;
+      } else if (position === 'end') {
+        state.page = Math.max(1, totalPages);
+      }
+      applyPagination(section, sectionName);
+    }
+    const rows = getVisibleRows(section);
+    if (!rows.length) return;
+    setSelectedRow(position === 'end' ? rows[rows.length - 1] : rows[0]);
+  };
+
+  const moveSelection = (direction) => {
+    const allSections = Array.from(sections);
+    if (!allSections.length) return;
+
+    if (!selectedRow) {
+      if (direction === 'down') {
+        const firstSection = getNextSectionWithRows(-1);
+        moveToSection(firstSection, 'start');
+      } else {
+        const lastSection = getPrevSectionWithRows(allSections.length);
+        moveToSection(lastSection, 'end');
+      }
+      return;
+    }
+
+    const currentSection = selectedRow.closest('.collapsible-section');
+    if (!currentSection) return;
+    const sectionName = currentSection.dataset.section;
+    const state = paginationState[sectionName];
+    const visibleRows = getVisibleRows(currentSection);
+    const rowIndex = visibleRows.indexOf(selectedRow);
+
+    if (direction === 'down') {
+      if (rowIndex < visibleRows.length - 1) {
+        setSelectedRow(visibleRows[rowIndex + 1]);
+        return;
+      }
+      if (state && !state.showAll) {
+        const filteredRows = getFilteredRows(currentSection);
+        const totalPages = Math.ceil(filteredRows.length / state.perPage);
+        if (state.page < totalPages) {
+          state.page++;
+          applyPagination(currentSection, sectionName);
+          const rows = getVisibleRows(currentSection);
+          if (rows.length) setSelectedRow(rows[0]);
+          return;
+        }
+      }
+      const nextSection = getNextSectionWithRows(getSectionIndex(currentSection));
+      moveToSection(nextSection, 'start');
+    } else {
+      if (rowIndex > 0) {
+        setSelectedRow(visibleRows[rowIndex - 1]);
+        return;
+      }
+      if (state && !state.showAll) {
+        if (state.page > 1) {
+          state.page--;
+          applyPagination(currentSection, sectionName);
+          const rows = getVisibleRows(currentSection);
+          if (rows.length) setSelectedRow(rows[rows.length - 1]);
+          return;
+        }
+      }
+      const prevSection = getPrevSectionWithRows(getSectionIndex(currentSection));
+      moveToSection(prevSection, 'end');
+    }
+  };
+
+  document.addEventListener('keydown', function(e) {
+    if (isCommandPaletteOpen()) return;
+    if (isTypingInInput(e.target)) return;
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      moveSelection('down');
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      moveSelection('up');
+    } else if (e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar') {
+      if (selectedRow) {
+        e.preventDefault();
+        openSelectedRowLink();
+      }
     }
   });
 

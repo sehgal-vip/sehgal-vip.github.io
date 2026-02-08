@@ -2715,6 +2715,12 @@ strong, b {
       transform: none;
       box-shadow: none;
     }
+
+    tbody tr.row-selected {
+      background: var(--bg-tertiary);
+      outline: 2px solid var(--color-primary);
+      outline-offset: -2px;
+    }
     
     tbody tr:nth-child(even) {
       background: transparent;
