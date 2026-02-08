@@ -1,0 +1,930 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Format And Beautify</title>
+  <meta name="description" content="Client-side code formatter, beautifier, and minifier. Supports 18 languages with syntax highlighting and 10 themes.">
+  <meta property="og:title" content="Format And Beautify">
+  <meta property="og:description" content="Client-side code formatter, beautifier, and minifier. 18 languages, 10 themes.">
+  <meta property="og:type" content="website">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>✨</text></svg>">
+
+  <!-- Prism.js CSS (base, overridden by our themes) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.min.css">
+
+  <!-- App CSS -->
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/themes.css">
+</head>
+<body>
+
+<div class="container">
+  <header class="header">
+    <h1>Format And Beautify</h1>
+    <p>Code formatter, beautifier &amp; minifier — runs entirely in your browser</p>
+  </header>
+
+  <!-- Error / Warning Banner -->
+  <!-- #1: Add role="alert" and aria-live="polite" -->
+  <div class="banner" id="banner" role="alert" aria-live="polite">
+    <span id="banner-message"></span>
+    <!-- #2: Add aria-label to dismiss button -->
+    <button class="dismiss-btn" id="dismiss-btn" aria-label="Dismiss message">&times;</button>
+  </div>
+
+  <!-- Detected Language Label -->
+  <!-- #3: Add aria-live="polite" to detected-label -->
+  <div class="detected-label" id="detected-label" aria-live="polite"></div>
+
+  <!-- Editor Layout: input | actions | output -->
+  <div class="editor-layout">
+    <!-- Left Column: Input -->
+    <div class="editor-column" id="input-column">
+      <div class="column-actions">
+        <div class="control-group">
+          <label for="language-select">Language</label>
+          <select id="language-select">
+            <option value="auto">Auto-detect</option>
+            <option value="json">JSON</option>
+            <option value="xml">XML</option>
+            <option value="yaml">YAML</option>
+            <option value="toml">TOML</option>
+            <option value="html">HTML</option>
+            <option value="css">CSS</option>
+            <option value="javascript">JavaScript</option>
+            <option value="typescript">TypeScript</option>
+            <option value="sql">SQL</option>
+            <option value="python">Python</option>
+            <option value="java">Java</option>
+            <option value="c">C / C++</option>
+            <option value="go">Go</option>
+            <option value="rust">Rust</option>
+            <option value="php">PHP</option>
+            <option value="ruby">Ruby</option>
+            <option value="shell">Shell</option>
+            <option value="markdown">Markdown</option>
+          </select>
+        </div>
+        <div class="control-group">
+          <label for="indent-select">Indent</label>
+          <select id="indent-select">
+            <option value="2">2 Spaces</option>
+            <option value="4">4 Spaces</option>
+            <option value="tab">Tab</option>
+          </select>
+        </div>
+        <button class="btn btn-secondary action-right" id="upload-btn">Upload File</button>
+        <input type="file" class="upload-input" id="upload-input" aria-label="Upload a code file"
+          accept=".json,.xml,.yaml,.yml,.toml,.html,.htm,.css,.js,.ts,.py,.sql,.java,.c,.cpp,.h,.go,.rs,.php,.rb,.md,.sh,.bash">
+        <button class="btn btn-secondary collapse-toggle" id="toggle-input" aria-label="Collapse input panel" title="Collapse input">&#x25BC;</button>
+      </div>
+      <div class="input-wrapper" id="input-wrapper">
+        <!-- #6: Add spellcheck="false" and autocapitalize="off" to textarea -->
+        <textarea class="input-area" id="input-area" placeholder="Paste your code here, or drag & drop a file..." spellcheck="false" autocapitalize="off"></textarea>
+        <!-- #2: Add aria-label to clear button -->
+        <button class="clear-btn" id="clear-btn" aria-label="Clear input" title="Clear">&times;</button>
+        <div class="drag-overlay" id="drag-overlay">Drop file here</div>
+      </div>
+    </div>
+
+    <!-- Center: Beautify / Minify -->
+    <div class="center-actions">
+      <!-- #20: Add title explaining why disabled -->
+      <button class="btn btn-primary" id="beautify-btn" disabled title="Enter code to enable">Beautify</button>
+      <button class="btn btn-secondary" id="minify-btn" disabled title="Enter code to enable">Minify</button>
+      <!-- #33: Keyboard shortcut hint -->
+      <span class="shortcut-hint" id="shortcut-hint">Ctrl+Enter to beautify</span>
+    </div>
+
+    <!-- Right Column: Output -->
+    <div class="editor-column" id="output-column">
+      <div class="column-actions">
+        <div class="control-group">
+          <label for="theme-select">Theme</label>
+          <select id="theme-select">
+            <option value="vscode-dark">VS Code Dark+</option>
+            <option value="monokai">Monokai</option>
+            <option value="github-light">GitHub Light</option>
+            <option value="github-dark">GitHub Dark</option>
+            <option value="dracula">Dracula</option>
+            <option value="one-dark">One Dark</option>
+            <option value="solarized-light">Solarized Light</option>
+            <option value="solarized-dark">Solarized Dark</option>
+            <option value="nord">Nord</option>
+            <option value="tomorrow-night">Tomorrow Night</option>
+          </select>
+        </div>
+        <div class="control-group">
+          <label for="fontsize-select">Text Size</label>
+          <select id="fontsize-select">
+            <option value="10">10px</option>
+            <option value="12">12px</option>
+            <option value="14" selected>14px</option>
+            <option value="16">16px</option>
+            <option value="18">18px</option>
+            <option value="20">20px</option>
+            <option value="24">24px</option>
+            <option value="28">28px</option>
+            <option value="32">32px</option>
+            <option value="36">36px</option>
+          </select>
+        </div>
+        <button class="btn btn-secondary action-right" id="copy-btn" disabled>Copy to Clipboard</button>
+        <button class="btn btn-secondary" id="download-btn" disabled>Download File</button>
+        <button class="btn btn-secondary collapse-toggle" id="toggle-output" aria-label="Collapse output panel" title="Collapse output">&#x25BC;</button>
+      </div>
+      <div class="output-panel" id="output-panel" data-theme="vscode-dark">
+        <!-- #34: Instructional placeholder text -->
+        <div class="output-placeholder" id="output-placeholder">Paste code, then click Beautify or Minify</div>
+        <div class="output-wrapper" id="output-wrapper" style="display:none;">
+          <div class="output-gutter" id="output-gutter"></div>
+          <div class="output-code" id="output-code">
+            <pre><code id="output-highlight"></code></pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer class="footer">
+    Format And Beautify &mdash; runs entirely in your browser. No data sent to any server.
+  </footer>
+</div>
+
+<!-- Prism.js -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-json.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-markup.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-xml-doc.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-yaml.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-toml.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-css.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-javascript.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-typescript.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-java.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-c.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-cpp.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-go.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-rust.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-php.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-ruby.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-bash.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-sql.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-markdown.min.js"></script>
+
+<!-- Prettier -->
+<script src="https://unpkg.com/prettier@3.3.3/standalone.js"></script>
+<script src="https://unpkg.com/prettier@3.3.3/plugins/babel.js"></script>
+<script src="https://unpkg.com/prettier@3.3.3/plugins/html.js"></script>
+<script src="https://unpkg.com/prettier@3.3.3/plugins/postcss.js"></script>
+<script src="https://unpkg.com/prettier@3.3.3/plugins/typescript.js"></script>
+<script src="https://unpkg.com/prettier@3.3.3/plugins/estree.js"></script>
+
+<!-- SQL Formatter -->
+<script src="https://cdn.jsdelivr.net/npm/sql-formatter@15.3.1/dist/sql-formatter.min.js"></script>
+
+<!-- js-yaml -->
+<script src="https://cdn.jsdelivr.net/npm/js-yaml@4.1.0/dist/js-yaml.min.js"></script>
+
+<script>
+// Global error handler — surfaces silent failures in the UI
+window.onerror = function(msg) {
+  var b = document.getElementById('banner');
+  if (b) { b.className = 'banner visible error'; document.getElementById('banner-message').textContent = 'Error: ' + msg; }
+};
+window.onunhandledrejection = function(e) {
+  var b = document.getElementById('banner');
+  if (b) { b.className = 'banner visible error'; document.getElementById('banner-message').textContent = 'Error: ' + (e.reason && e.reason.message || e.reason || 'Unknown'); }
+};
+
+// ===== Inline app logic for browser =====
+(function() {
+  'use strict';
+
+  // === Language Detection ===
+  function detectLanguage(input) {
+    if (!input || typeof input !== 'string' || input.trim() === '') {
+      return { language: 'text', minified: false };
+    }
+    const trimmed = input.trim();
+    const lines = input.split('\n');
+    const lineCount = lines.length;
+    const isMinified = lineCount === 1 && trimmed.length > 500;
+
+    if (trimmed.startsWith('{\\rtf')) return { language: 'unsupported', minified: false };
+
+    if (/^[\{\[]/.test(trimmed)) {
+      try { JSON.parse(trimmed); return { language: 'json', minified: !input.includes('\n') || isMinified }; } catch(e) {}
+    }
+    if (/^<\?xml\b/i.test(trimmed)) return { language: 'xml', minified: lineCount <= 1 || isMinified };
+    if (/^<!DOCTYPE\s+html/i.test(trimmed) || /^<html[\s>]/i.test(trimmed)) return { language: 'html', minified: lineCount <= 1 || isMinified };
+    if (/^<\?php\b/i.test(trimmed)) return { language: 'php', minified: false };
+    if (/^---\s*$/m.test(trimmed) || (/^[a-zA-Z_]\w*\s*:\s*.+/m.test(trimmed) && !trimmed.startsWith('{') && !trimmed.startsWith('[') && /^\s*-\s+/m.test(trimmed)))
+      return { language: 'yaml', minified: false };
+    if (/^\[[\w.-]+\]\s*$/m.test(trimmed) && /^\w[\w.-]*\s*=\s*.+/m.test(trimmed))
+      return { language: 'toml', minified: false };
+    if (/^\s*(SELECT|INSERT|UPDATE|DELETE|CREATE|ALTER|DROP|WITH|EXPLAIN|SHOW|DESCRIBE|USE|SET)\b/i.test(trimmed))
+      return { language: 'sql', minified: false };
+    if (/[a-zA-Z.*#@:\[\]][^{]*\{[^}]*(margin|padding|color|font|display|width|height|border|background|position|text-align|float|overflow)\s*:/im.test(trimmed) &&
+        !/(const |let |var |function |=>|require\(|import |def |class |interface |fn |println|pub fn)/m.test(trimmed))
+      return { language: 'css', minified: lineCount <= 1 || isMinified };
+    if (/^#!\/bin\/(bash|sh|zsh)/m.test(trimmed)) return { language: 'shell', minified: false };
+    if (/(^|\n)\s*(fn |let mut |impl |pub fn |println!)/m.test(trimmed)) return { language: 'rust', minified: false };
+    if (/(^|\n)\s*package\s+\w+/m.test(trimmed) && /(^|\n)\s*func\s+/m.test(trimmed)) return { language: 'go', minified: false };
+    if (/(^|\n)\s*(interface |type \w+ =|:\s*(string|number|boolean|any)\b)/m.test(trimmed)) return { language: 'typescript', minified: false };
+    if (/(^|\n)\s*(const |let |var |function\s+\w+|=>\s*\{|require\s*\(|module\.exports)/m.test(trimmed)) return { language: 'javascript', minified: false };
+    if (/(^|\n)\s*(public\s+class\s+|System\.out|private\s+static)/m.test(trimmed)) return { language: 'java', minified: false };
+    if (/(^|\n)\s*#include\s*[<"]/m.test(trimmed) || /(^|\n)\s*int\s+main\s*\(/m.test(trimmed)) return { language: 'c', minified: false };
+    if (/\$[a-zA-Z_]\w*/.test(trimmed)) return { language: 'php', minified: false };
+    if (/(^|\n)\s*(puts |def \w+)/m.test(trimmed) && /(^|\n)\s*end\s*$/m.test(trimmed)) return { language: 'ruby', minified: false };
+    if (/(^|\n)\s*(def |import |from .+ import |class \w+)/m.test(trimmed)) return { language: 'python', minified: false };
+    if (/^#{1,6}\s+.+/m.test(trimmed) || /\*\*[^*]+\*\*/m.test(trimmed)) return { language: 'markdown', minified: false };
+    return { language: 'text', minified: false };
+  }
+
+  // === Extension Maps ===
+  const extensionMap = {
+    json:'.json', xml:'.xml', yaml:'.yaml', toml:'.toml', html:'.html', css:'.css',
+    javascript:'.js', typescript:'.ts', python:'.py', java:'.java', c:'.c',
+    go:'.go', rust:'.rs', php:'.php', ruby:'.rb', shell:'.sh', markdown:'.md', sql:'.sql', text:'.txt'
+  };
+  const reverseExtMap = {
+    '.json':'json','.xml':'xml','.yaml':'yaml','.yml':'yaml','.toml':'toml',
+    '.html':'html','.htm':'html','.css':'css','.js':'javascript','.ts':'typescript',
+    '.py':'python','.java':'java','.c':'c','.cpp':'c','.h':'c','.go':'go',
+    '.rs':'rust','.php':'php','.rb':'ruby','.sh':'shell','.bash':'shell',
+    '.md':'markdown','.sql':'sql'
+  };
+  const prismLangMap = {
+    json:'json', xml:'xml', yaml:'yaml', toml:'toml', html:'markup', css:'css',
+    javascript:'javascript', typescript:'typescript', python:'python', java:'java',
+    c:'c', go:'go', rust:'rust', php:'php', ruby:'ruby', shell:'bash', sql:'sql',
+    markdown:'markdown', text:'plaintext', toml:'toml'
+  };
+
+  function canMinify(lang) {
+    return ['json','xml','html','css','javascript','typescript','sql','yaml'].includes(lang);
+  }
+
+  // === Indentation Beautifier ===
+  function indentBeautify(input, language, indent) {
+    if (!input || !input.trim()) return input || '';
+    const indentStr = typeof indent === 'number' ? ' '.repeat(indent) : (indent || '  ');
+    const lines = input.split('\n').map(l => l.trimStart());
+    const isKW = ['python','shell','ruby'].includes(language);
+    if (isKW) return indentKW(lines, language, indentStr);
+    return indentBrace(lines, language, indentStr);
+  }
+
+  function indentKW(lines, lang, s) {
+    const r = []; let lv = 0;
+    if (lang === 'python') {
+      for (let i = 0; i < lines.length; i++) {
+        const l = lines[i]; if (!l) { r.push(''); continue; }
+        if (/^(elif |else:|except|finally:)/.test(l)) lv = Math.max(0, lv-1);
+        if (/^(def |class )/.test(l) && lv > 0) {
+          let d = true;
+          for (let j = i-1; j >= 0; j--) { const p = lines[j].trim(); if (!p) continue; if (p.endsWith(':')) { d = false; } break; }
+          if (d) lv = Math.max(0, lv-1);
+        }
+        r.push(s.repeat(lv) + l);
+        if (l.endsWith(':')) lv++;
+      }
+    } else if (lang === 'shell') {
+      for (const l of lines) {
+        if (!l) { r.push(''); continue; }
+        if (/^(fi|done|esac)\b/.test(l)) lv = Math.max(0, lv-1);
+        r.push(s.repeat(lv) + l);
+        if (/;\s*then\s*$|\bthen\s*$/.test(l)) lv++;
+        if (/;\s*do\s*$|\bdo\s*$/.test(l)) lv++;
+      }
+    } else if (lang === 'ruby') {
+      for (const l of lines) {
+        if (!l) { r.push(''); continue; }
+        if (/^(end|else|elsif|when|rescue|ensure)\b/.test(l)) lv = Math.max(0, lv-1);
+        r.push(s.repeat(lv) + l);
+        if (/^(def |class |module |if |unless |while |until |for |do\b|begin\b|case\b)/.test(l) && !l.includes(' end')) lv++;
+      }
+    }
+    return r.join('\n');
+  }
+
+  function indentBrace(lines, lang, s) {
+    const r = []; let lv = 0;
+    for (const l of lines) {
+      if (!l) { r.push(''); continue; }
+      if (lang === 'c' && l.startsWith('#')) { r.push(l); continue; }
+      if (lang === 'php' && l.startsWith('<?php')) { r.push(l); const o=(l.match(/{/g)||[]).length, c=(l.match(/}/g)||[]).length; lv+=o-c; continue; }
+      if (l.startsWith('}')) lv = Math.max(0, lv-1);
+      r.push(s.repeat(lv) + l);
+      const o = (l.match(/{/g)||[]).length, c = (l.match(/}/g)||[]).length;
+      if (l.startsWith('}')) lv += o - c + 1; else lv += o - c;
+      if (lv < 0) lv = 0;
+    }
+    return r.join('\n');
+  }
+
+  // === TOML formatter ===
+  function beautifyTOML(input, indent) {
+    if (!input || !input.trim()) return { error: true, message: 'Empty input' };
+    const lines = input.split('\n'), result = [];
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i].trim();
+      if (!line || line.startsWith('#')) { result.push(line); continue; }
+      if (/^\[[\w.-]+\]$/.test(line) || /^\[\[[\w.-]+\]\]$/.test(line)) {
+        if (result.length > 0 && result[result.length-1] !== '') result.push('');
+        result.push(line); continue;
+      }
+      if (/^[\w.-]+\s*=/.test(line)) {
+        const eq = line.indexOf('='), key = line.substring(0, eq).trim(), val = line.substring(eq+1).trim();
+        if (!val) return { error: true, message: 'Invalid TOML at line '+(i+1)+': empty value for key "'+key+'"' };
+        result.push(key+' = '+val); continue;
+      }
+      if (line.startsWith('[') && !line.endsWith(']')) return { error: true, message: 'Invalid TOML at line '+(i+1)+': unclosed section header' };
+      result.push(line);
+    }
+    return result.join('\n');
+  }
+
+  // === XML formatter ===
+  function beautifyXML(input, indent) {
+    if (!input || !input.trim()) return { error: true, message: 'Empty input' };
+    const s = typeof indent === 'number' ? ' '.repeat(indent) : indent;
+    let lv = 0, warn = false, wm = '';
+    const tokens = [], lines = [];
+    let rem = input.trim();
+    while (rem.length > 0) {
+      if (rem.startsWith('<?')) { const e = rem.indexOf('?>'); if (e===-1) { warn=true; wm='Unclosed PI'; tokens.push(rem); break; } tokens.push(rem.substring(0,e+2)); rem=rem.substring(e+2); }
+      else if (rem.startsWith('<!--')) { const e = rem.indexOf('-->'); if (e===-1) { warn=true; wm='Unclosed comment'; tokens.push(rem); break; } tokens.push(rem.substring(0,e+3)); rem=rem.substring(e+3); }
+      else if (rem.startsWith('<![CDATA[')) { const e = rem.indexOf(']]>'); if (e===-1) { warn=true; wm='Unclosed CDATA'; tokens.push(rem); break; } tokens.push(rem.substring(0,e+3)); rem=rem.substring(e+3); }
+      else if (rem.startsWith('</')) { const e = rem.indexOf('>'); if (e===-1) { warn=true; wm='Unclosed closing tag'; tokens.push(rem); break; } tokens.push(rem.substring(0,e+1)); rem=rem.substring(e+1); }
+      else if (rem.startsWith('<')) { const e = rem.indexOf('>'); if (e===-1) { warn=true; wm='Unclosed tag'; tokens.push(rem); break; } tokens.push(rem.substring(0,e+1)); rem=rem.substring(e+1); }
+      else { const n = rem.indexOf('<'); if (n===-1) { if (rem.trim()) tokens.push(rem.trim()); break; } const t = rem.substring(0,n); if (t.trim()) tokens.push(t.trim()); rem=rem.substring(n); }
+    }
+    for (let i = 0; i < tokens.length; i++) {
+      const t = tokens[i];
+      if (t.startsWith('<?') || t.startsWith('<!--') || t.startsWith('<![CDATA[')) { lines.push(s.repeat(lv)+t); }
+      else if (t.startsWith('</')) { lv = Math.max(0, lv-1); lines.push(s.repeat(lv)+t); }
+      else if (t.startsWith('<')) {
+        const sc = t.endsWith('/>');
+        if (!sc && i+2<tokens.length && !tokens[i+1].startsWith('<') && tokens[i+2].startsWith('</')) { lines.push(s.repeat(lv)+t+tokens[i+1]+tokens[i+2]); i+=2; }
+        else if (!sc) { lines.push(s.repeat(lv)+t); lv++; }
+        else { lines.push(s.repeat(lv)+t); }
+      } else { lines.push(s.repeat(lv)+t); }
+    }
+    const formatted = lines.join('\n');
+    if (warn) return { warning: true, message: wm, result: formatted };
+    return formatted;
+  }
+
+  function minifyXML(input) {
+    if (!input || !input.trim()) return { error: true, message: 'Empty input' };
+    return input.replace(/>\s+</g, '><').trim();
+  }
+
+  // === Formatters (Prettier-based, browser) ===
+  async function beautifyHTML(input, indent) {
+    if (!input || !input.trim()) return { error: true, message: 'Empty input' };
+    try {
+      const n = typeof indent === 'number' ? indent : 2, t = indent === '\t';
+      const r = await prettier.format(input, { parser:'html', tabWidth: t?2:n, useTabs:t, printWidth:120, plugins: pPlugins });
+      return r.trimEnd();
+    } catch(e) { return { error: true, message: e.message }; }
+  }
+  async function minifyHTML(input) {
+    if (!input || !input.trim()) return { error: true, message: 'Empty input' };
+    return input.replace(/>\s+</g,'><').replace(/\n\s*/g,'').replace(/\s{2,}/g,' ').trim();
+  }
+  async function beautifyCSS(input, indent) {
+    if (!input || !input.trim()) return { error: true, message: 'Empty input' };
+    try {
+      const n = typeof indent === 'number' ? indent : 2, t = indent === '\t';
+      const r = await prettier.format(input, { parser:'css', tabWidth: t?2:n, useTabs:t, printWidth:120, plugins: pPlugins });
+      return r.trimEnd();
+    } catch(e) { return { error: true, message: e.message }; }
+  }
+  async function minifyCSS(input) {
+    if (!input || !input.trim()) return { error: true, message: 'Empty input' };
+    return input.replace(/\/\*[\s\S]*?\*\//g,'').replace(/\s*\n\s*/g,'').replace(/\s*{\s*/g,'{').replace(/\s*}\s*/g,'}').replace(/\s*;\s*/g,';').replace(/\s*:\s*/g,':').replace(/\s*,\s*/g,',').replace(/;}/g,'}').trim();
+  }
+  async function beautifyJS(input, indent) {
+    if (!input || !input.trim()) return { error: true, message: 'Empty input' };
+    try {
+      const n = typeof indent === 'number' ? indent : 2, t = indent === '\t';
+      const r = await prettier.format(input, { parser:'babel', tabWidth: t?2:n, useTabs:t, printWidth:80, semi:true, singleQuote:false, plugins: pPlugins });
+      return r.trimEnd();
+    } catch(e) { return { error: true, message: e.message }; }
+  }
+  async function minifyJS(input) {
+    if (!input || !input.trim()) return { error: true, message: 'Empty input' };
+    return input.replace(/\/\/.*$/gm,'').replace(/\/\*[\s\S]*?\*\//g,'').replace(/\n\s*/g,'').replace(/\s{2,}/g,' ').trim();
+  }
+  async function beautifyTS(input, indent) {
+    if (!input || !input.trim()) return { error: true, message: 'Empty input' };
+    try {
+      const n = typeof indent === 'number' ? indent : 2, t = indent === '\t';
+      const r = await prettier.format(input, { parser:'typescript', tabWidth: t?2:n, useTabs:t, printWidth:80, semi:true, singleQuote:false, plugins: pPlugins });
+      return r.trimEnd();
+    } catch(e) { return { error: true, message: e.message }; }
+  }
+  async function minifyTS(input) {
+    if (!input || !input.trim()) return { error: true, message: 'Empty input' };
+    return input.replace(/\/\/.*$/gm,'').replace(/\/\*[\s\S]*?\*\//g,'').replace(/\n\s*/g,'').replace(/\s{2,}/g,' ').trim();
+  }
+
+  // === JSON ===
+  function beautifyJSON(input, indent) {
+    if (!input || !input.trim()) return { error: true, message: 'Empty input' };
+    try { return JSON.stringify(JSON.parse(input), null, indent); } catch(e) { return { error: true, message: e.message }; }
+  }
+  function minifyJSON(input) {
+    if (!input || !input.trim()) return { error: true, message: 'Empty input' };
+    try { return JSON.stringify(JSON.parse(input)); } catch(e) { return { error: true, message: e.message }; }
+  }
+
+  // === YAML ===
+  function beautifyYAML(input, indent) {
+    if (!input || !input.trim()) return { error: true, message: 'Empty input' };
+    try {
+      const n = typeof indent === 'number' ? indent : 2;
+      const parts = input.split(/^---\s*$/m);
+      if (parts.length > 1 && input.includes('---')) {
+        const docs = [];
+        for (const p of parts) { if (p.trim()) { const d = jsyaml.load(p); docs.push('---\n'+jsyaml.dump(d,{indent:n,lineWidth:-1}).trimEnd()); } }
+        return docs.join('\n');
+      }
+      const parsed = jsyaml.load(input);
+      if (parsed === undefined || parsed === null) return { error: true, message: 'Empty or null YAML document' };
+      return jsyaml.dump(parsed, { indent: n, lineWidth: -1 }).trimEnd();
+    } catch(e) { return { error: true, message: e.message || 'Invalid YAML' }; }
+  }
+  function minifyYAML(input) {
+    if (!input || !input.trim()) return { error: true, message: 'Empty input' };
+    try { return jsyaml.dump(jsyaml.load(input), { flowLevel: 0, lineWidth: -1 }).trimEnd(); } catch(e) { return { error: true, message: e.message }; }
+  }
+
+  // === SQL ===
+  function beautifySQL(input, indent) {
+    if (!input || !input.trim()) return { error: true, message: 'Empty input' };
+    try {
+      const n = typeof indent === 'number' ? indent : 2, t = indent === '\t';
+      return sqlFormatter.format(input, { tabWidth: t?1:n, useTabs:t, keywordCase:'upper' });
+    } catch(e) { return { error: true, message: e.message }; }
+  }
+  function minifySQL(input) {
+    if (!input || !input.trim()) return { error: true, message: 'Empty input' };
+    return input.replace(/--.*$/gm,'').replace(/\/\*[\s\S]*?\*\//g,'').replace(/\s+/g,' ').trim();
+  }
+
+  // === Prettier plugins ref (guarded — CDN may fail to load) ===
+  // Prettier 3.x CDN scripts add plugins to window.prettierPlugins object
+  var pPlugins = [];
+  try {
+    if (window.prettierPlugins) {
+      pPlugins = Object.values(window.prettierPlugins);
+    }
+  } catch(e) {
+    // CDN scripts not loaded — Prettier-based formatters will show errors, but core app still works
+  }
+
+  // === DOM elements ===
+  const $ = id => document.getElementById(id);
+  const langSelect = $('language-select');
+  const indentSelect = $('indent-select');
+  const themeSelect = $('theme-select');
+  const detectedLabel = $('detected-label');
+  const inputArea = $('input-area');
+  const clearBtn = $('clear-btn');
+  const dragOverlay = $('drag-overlay');
+  const uploadBtn = $('upload-btn');
+  const uploadInput = $('upload-input');
+  const banner = $('banner');
+  const bannerMsg = $('banner-message');
+  const dismissBtn = $('dismiss-btn');
+  const beautifyBtn = $('beautify-btn');
+  const minifyBtn = $('minify-btn');
+  const outputPanel = $('output-panel');
+  const outputPlaceholder = $('output-placeholder');
+  const outputWrapper = $('output-wrapper');
+  const outputGutter = $('output-gutter');
+  const outputCode = $('output-code');
+  const outputHighlight = $('output-highlight');
+  const copyBtn = $('copy-btn');
+  const downloadBtn = $('download-btn');
+  const fontSizeSelect = $('fontsize-select');
+
+  let currentLanguage = 'text';
+  let currentResult = '';
+  let isMinified = false;
+
+  // === Helpers ===
+  function getIndent() {
+    const v = indentSelect.value;
+    if (v === 'tab') return '\t';
+    return parseInt(v);
+  }
+
+  function getIndentNum() {
+    const v = indentSelect.value;
+    if (v === 'tab') return '\t';
+    return parseInt(v);
+  }
+
+  function updateDetection() {
+    const input = inputArea.value;
+    if (!input.trim()) {
+      detectedLabel.textContent = '';
+      currentLanguage = 'text';
+      beautifyBtn.disabled = true;
+      minifyBtn.disabled = true;
+      // #20: Restore tooltip for disabled state
+      beautifyBtn.title = 'Enter code to enable';
+      minifyBtn.title = 'Enter code to enable';
+      return;
+    }
+
+    beautifyBtn.disabled = false;
+    beautifyBtn.title = '';
+
+    if (langSelect.value !== 'auto') {
+      currentLanguage = langSelect.value;
+      detectedLabel.textContent = '';
+    } else {
+      const detected = detectLanguage(input);
+      currentLanguage = detected.language;
+      isMinified = detected.minified;
+      let label = 'Detected: ' + currentLanguage.charAt(0).toUpperCase() + currentLanguage.slice(1);
+      if (detected.minified) label += ' (minified)';
+      detectedLabel.textContent = label;
+    }
+
+    if (canMinify(currentLanguage)) {
+      minifyBtn.disabled = false;
+      minifyBtn.title = '';
+    } else {
+      minifyBtn.disabled = true;
+      minifyBtn.title = 'Minification not available for ' + currentLanguage;
+    }
+  }
+
+  function showBanner(type, message) {
+    banner.className = 'banner visible ' + type;
+    bannerMsg.textContent = message;
+  }
+
+  function hideBanner() {
+    banner.className = 'banner';
+  }
+
+  function showOutput(code, language) {
+    currentResult = code;
+    outputPlaceholder.style.display = 'none';
+    outputWrapper.style.display = 'flex';
+
+    // #31: Use DocumentFragment for line number generation
+    const lines = code.split('\n');
+    const fragment = document.createDocumentFragment();
+    for (let i = 0; i < lines.length; i++) {
+      const span = document.createElement('span');
+      span.className = 'line-num';
+      span.textContent = i + 1;
+      fragment.appendChild(span);
+    }
+    outputGutter.innerHTML = '';
+    outputGutter.appendChild(fragment);
+
+    // #30: Guard Prism.js usage — wrap in try-catch since language grammars can be broken
+    const prismLang = prismLangMap[language] || 'plaintext';
+    let highlighted;
+    try {
+      if (typeof Prism !== 'undefined' && Prism.languages[prismLang]) {
+        highlighted = Prism.highlight(code, Prism.languages[prismLang], prismLang);
+      } else if (typeof Prism !== 'undefined') {
+        highlighted = Prism.util.encode(code);
+      } else {
+        throw new Error('no Prism');
+      }
+    } catch(e) {
+      // Fallback: HTML-escaped text
+      const div = document.createElement('div');
+      div.textContent = code;
+      highlighted = div.innerHTML;
+    }
+    outputHighlight.innerHTML = highlighted;
+    outputHighlight.className = 'language-' + prismLang;
+
+    copyBtn.disabled = false;
+    downloadBtn.disabled = false;
+  }
+
+  function clearOutput() {
+    outputPlaceholder.style.display = 'block';
+    outputWrapper.style.display = 'none';
+    outputGutter.innerHTML = '';
+    outputHighlight.innerHTML = '';
+    currentResult = '';
+    copyBtn.disabled = true;
+    downloadBtn.disabled = true;
+  }
+
+  // === Main actions ===
+  async function doBeautify() {
+    try {
+      var input = inputArea.value;
+      if (!input.trim()) {
+        showBanner('warning', 'Paste or upload code first');
+        return;
+      }
+      hideBanner();
+
+      beautifyBtn.disabled = true;
+      beautifyBtn.textContent = 'Processing...';
+
+      var indent = getIndent();
+      var result;
+
+      switch (currentLanguage) {
+        case 'json': result = beautifyJSON(input, indent); break;
+        case 'xml': result = beautifyXML(input, indent); break;
+        case 'yaml': result = beautifyYAML(input, indent); break;
+        case 'toml': result = beautifyTOML(input, indent); break;
+        case 'html': result = await beautifyHTML(input, indent); break;
+        case 'css': result = await beautifyCSS(input, indent); break;
+        case 'javascript': result = await beautifyJS(input, indent); break;
+        case 'typescript': result = await beautifyTS(input, indent); break;
+        case 'sql': result = beautifySQL(input, indent); break;
+        default:
+          result = indentBeautify(input, currentLanguage, indent);
+          break;
+      }
+
+      beautifyBtn.textContent = 'Beautify';
+      beautifyBtn.disabled = false;
+
+      if (result && typeof result === 'object' && result.error) {
+        showBanner('error', result.message);
+        clearOutput();
+      } else if (result && typeof result === 'object' && result.warning) {
+        showBanner('warning', result.message);
+        showOutput(result.result, currentLanguage);
+      } else if (typeof result === 'string') {
+        showOutput(result, currentLanguage);
+      }
+    } catch (e) {
+      beautifyBtn.textContent = 'Beautify';
+      beautifyBtn.disabled = false;
+      showBanner('error', 'Beautify failed: ' + e.message);
+    }
+  }
+
+  async function doMinify() {
+    try {
+      var input = inputArea.value;
+      if (!input.trim()) {
+        showBanner('warning', 'Paste or upload code first');
+        return;
+      }
+      hideBanner();
+
+      minifyBtn.disabled = true;
+      minifyBtn.textContent = 'Processing...';
+
+      var result;
+      switch (currentLanguage) {
+        case 'json': result = minifyJSON(input); break;
+        case 'xml': result = minifyXML(input); break;
+        case 'yaml': result = minifyYAML(input); break;
+        case 'html': result = await minifyHTML(input); break;
+        case 'css': result = await minifyCSS(input); break;
+        case 'javascript': result = await minifyJS(input); break;
+        case 'typescript': result = await minifyTS(input); break;
+        case 'sql': result = minifySQL(input); break;
+        default:
+          minifyBtn.textContent = 'Minify';
+          minifyBtn.disabled = false;
+          return;
+      }
+
+      minifyBtn.textContent = 'Minify';
+      minifyBtn.disabled = false;
+
+      if (result && typeof result === 'object' && result.error) {
+        showBanner('error', result.message);
+        clearOutput();
+      } else if (typeof result === 'string') {
+        showOutput(result, currentLanguage);
+      }
+    } catch (e) {
+      minifyBtn.textContent = 'Minify';
+      minifyBtn.disabled = false;
+      showBanner('error', 'Minify failed: ' + e.message);
+    }
+  }
+
+  // === Event Listeners ===
+  inputArea.addEventListener('input', updateDetection);
+  langSelect.addEventListener('change', updateDetection);
+
+  // Auto-beautify on paste
+  inputArea.addEventListener('paste', function() {
+    setTimeout(function() {
+      updateDetection();
+      if (inputArea.value.trim()) doBeautify();
+    }, 0);
+  });
+
+  // #18: Persist theme/indent to localStorage and restore on load
+  themeSelect.addEventListener('change', function() {
+    outputPanel.setAttribute('data-theme', themeSelect.value);
+    try { localStorage.setItem('cfb-theme', themeSelect.value); } catch(e) {}
+  });
+
+  indentSelect.addEventListener('change', function() {
+    try { localStorage.setItem('cfb-indent', indentSelect.value); } catch(e) {}
+  });
+
+  function applyFontSize(size) {
+    var px = size + 'px';
+    inputArea.style.fontSize = px;
+    outputGutter.style.fontSize = px;
+    var pre = outputCode.querySelector('pre');
+    if (pre) pre.style.fontSize = px;
+  }
+
+  fontSizeSelect.addEventListener('change', function() {
+    applyFontSize(fontSizeSelect.value);
+    try { localStorage.setItem('cfb-fontsize', fontSizeSelect.value); } catch(e) {}
+  });
+
+  // Restore persisted preferences
+  try {
+    var savedTheme = localStorage.getItem('cfb-theme');
+    if (savedTheme) {
+      themeSelect.value = savedTheme;
+      outputPanel.setAttribute('data-theme', savedTheme);
+    }
+    var savedIndent = localStorage.getItem('cfb-indent');
+    if (savedIndent) {
+      indentSelect.value = savedIndent;
+    }
+    var savedFontSize = localStorage.getItem('cfb-fontsize');
+    if (savedFontSize) {
+      fontSizeSelect.value = savedFontSize;
+      applyFontSize(savedFontSize);
+    } else {
+      applyFontSize(fontSizeSelect.value);
+    }
+  } catch(e) {}
+
+  clearBtn.addEventListener('click', function() {
+    inputArea.value = '';
+    detectedLabel.textContent = '';
+    hideBanner();
+    clearOutput();
+    beautifyBtn.disabled = true;
+    minifyBtn.disabled = true;
+    beautifyBtn.title = 'Enter code to enable';
+    minifyBtn.title = 'Enter code to enable';
+    langSelect.value = 'auto';
+  });
+
+  beautifyBtn.addEventListener('click', doBeautify);
+  minifyBtn.addEventListener('click', doMinify);
+  dismissBtn.addEventListener('click', hideBanner);
+
+  // File upload
+  uploadBtn.addEventListener('click', function() { uploadInput.click(); });
+  uploadInput.addEventListener('change', function(e) {
+    var file = e.target.files[0];
+    if (!file) return;
+    loadFile(file);
+  });
+
+  function loadFile(file) {
+    // #17/#35: File size limit (5MB)
+    var MAX_SIZE = 5 * 1024 * 1024;
+    if (file.size > MAX_SIZE) {
+      showBanner('warning', 'File is larger than 5 MB. Large files may slow down formatting.');
+    }
+
+    var ext = '.' + file.name.split('.').pop().toLowerCase();
+    var lang = reverseExtMap[ext];
+    if (lang) {
+      langSelect.value = lang;
+    }
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      inputArea.value = e.target.result;
+      updateDetection();
+    };
+    // #17: Error handling for file upload
+    reader.onerror = function() {
+      showBanner('error', 'Failed to read file: ' + (reader.error ? reader.error.message : 'Unknown error'));
+    };
+    reader.readAsText(file);
+  }
+
+  // Drag and drop
+  var inputWrapper = $('input-wrapper');
+  inputWrapper.addEventListener('dragover', function(e) {
+    e.preventDefault();
+    dragOverlay.classList.add('active');
+  });
+  inputWrapper.addEventListener('dragleave', function(e) {
+    e.preventDefault();
+    dragOverlay.classList.remove('active');
+  });
+  inputWrapper.addEventListener('drop', function(e) {
+    e.preventDefault();
+    dragOverlay.classList.remove('active');
+    // #36: Multiple file drop warning
+    if (e.dataTransfer.files.length > 1) {
+      showBanner('warning', 'Only one file can be loaded at a time. Using the first file.');
+    }
+    var file = e.dataTransfer.files[0];
+    if (file) loadFile(file);
+  });
+
+  // #16/#29: Copy with clipboard API fallback and error handling
+  copyBtn.addEventListener('click', function() {
+    if (!currentResult) return;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(currentResult).then(function() {
+        var orig = copyBtn.textContent;
+        copyBtn.textContent = 'Copied!';
+        setTimeout(function() { copyBtn.textContent = orig; }, 2000);
+      }).catch(function() {
+        fallbackCopy();
+      });
+    } else {
+      fallbackCopy();
+    }
+  });
+
+  // #29: Clipboard fallback using execCommand
+  function fallbackCopy() {
+    try {
+      var textarea = document.createElement('textarea');
+      textarea.value = currentResult;
+      textarea.style.position = 'fixed';
+      textarea.style.left = '-9999px';
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textarea);
+      var orig = copyBtn.textContent;
+      copyBtn.textContent = 'Copied!';
+      setTimeout(function() { copyBtn.textContent = orig; }, 2000);
+    } catch (err) {
+      showBanner('error', 'Failed to copy to clipboard');
+    }
+  }
+
+  // Download
+  downloadBtn.addEventListener('click', function() {
+    if (!currentResult) return;
+    var ext = extensionMap[currentLanguage] || '.txt';
+    var filename = 'formatted' + ext;
+    var blob = new Blob([currentResult], { type: 'text/plain' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+  });
+
+  // Keyboard shortcut
+  document.addEventListener('keydown', function(e) {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+      e.preventDefault();
+      doBeautify();
+    }
+  });
+
+  // #33: Update shortcut hint for Mac
+  var shortcutHint = $('shortcut-hint');
+  if (shortcutHint && navigator.platform && /Mac|iPhone|iPad/.test(navigator.platform)) {
+    shortcutHint.textContent = '\u2318+Enter to beautify';
+  }
+
+})();
+</script>
+<script>
+// Collapse toggles (standalone so CDN failures can't break them)
+document.querySelectorAll('.collapse-toggle').forEach(function(btn) {
+  btn.addEventListener('click', function() {
+    var col = btn.closest('.editor-column');
+    col.classList.toggle('collapsed');
+    btn.innerHTML = col.classList.contains('collapsed') ? '\u25B6' : '\u25BC';
+    btn.title = col.classList.contains('collapsed') ? 'Expand' : 'Collapse';
+    // #2: Update aria-label for toggle state
+    var panel = col.id === 'input-column' ? 'input' : 'output';
+    btn.setAttribute('aria-label', (col.classList.contains('collapsed') ? 'Expand ' : 'Collapse ') + panel + ' panel');
+  });
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,548 @@
+/* Format And Beautify - Main Styles */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+
+:root {
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', 'Consolas', 'Monaco', monospace;
+  --accent: #0070f3;
+  --accent-hover: #005bb5;
+  --bg: #f9fafb;
+  --surface: #ffffff;
+  --border: #e5e7eb;
+  --text: #1f2937;
+  --text-muted: #6b7280;
+  --error-bg: #fef2f2;
+  --error-border: #fca5a5;
+  --error-text: #dc2626;
+  --warning-bg: #fffbeb;
+  --warning-border: #fcd34d;
+  --warning-text: #d97706;
+  --radius: 6px;
+  --max-width: 100%;
+}
+
+*,
+*::before,
+*::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* Force light color scheme so native selects/dropdowns don't inherit OS dark mode */
+:root {
+  color-scheme: light;
+}
+
+body {
+  font-family: var(--font-sans);
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.6;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.container {
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: 0.75rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+/* Header */
+.header {
+  text-align: center;
+  margin-bottom: 0.5rem;
+}
+
+.header h1 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text);
+  letter-spacing: -0.02em;
+}
+
+.header p {
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  margin-top: 0.25rem;
+}
+
+/* Inline Control Groups (inside column-actions rows) */
+.control-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  min-width: 0;
+}
+
+.control-group label {
+  font-size: 0.625rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  line-height: 1;
+}
+
+.control-group select {
+  padding: 0.3rem 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  font-family: var(--font-sans);
+  font-size: 0.8125rem;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.control-group select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(0, 112, 243, 0.1);
+}
+
+/* Push element to the right in a flex row */
+.action-right {
+  margin-left: auto;
+}
+
+/* Editor Layout */
+.editor-layout {
+  display: flex;
+  gap: 1.25rem;
+  flex: 1;
+  min-height: 0;
+}
+
+.editor-column {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Detection Label */
+.detected-label {
+  font-size: 0.75rem;
+  color: var(--accent);
+  font-weight: 500;
+  min-height: 1.2em;
+  margin-bottom: 0.25rem;
+}
+
+/* Input Area */
+.input-wrapper {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+}
+
+.input-area {
+  width: 100%;
+  height: 100%;
+  padding: 1rem;
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+  line-height: 1.5;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+  resize: vertical;
+  tab-size: 2;
+}
+
+.input-area:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(0, 112, 243, 0.1);
+}
+
+.input-area::placeholder {
+  color: var(--text-muted);
+}
+
+.clear-btn {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  width: 1.75rem;
+  height: 1.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  border-radius: var(--radius);
+  font-size: 1rem;
+  line-height: 1;
+}
+
+/* #27: Destructive clear button hover uses red tint */
+.clear-btn:hover {
+  background: var(--error-bg);
+  color: var(--error-text);
+}
+
+/* Drag-Drop Overlay */
+/* #28: Replace inset: 0 with explicit properties for Safari <14.1 */
+.drag-overlay {
+  display: none;
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  background: rgba(0, 112, 243, 0.08);
+  border: 2px dashed var(--accent);
+  border-radius: var(--radius);
+  align-items: center;
+  justify-content: center;
+  font-weight: 500;
+  color: var(--accent);
+  pointer-events: none;
+  z-index: 10;
+}
+
+.drag-overlay.active {
+  display: flex;
+}
+
+.upload-input {
+  display: none;
+}
+
+/* Error/Warning Banner */
+.banner {
+  display: none;
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius);
+  margin-bottom: 0.5rem;
+  font-size: 0.8125rem;
+  font-family: var(--font-mono);
+  line-height: 1.5;
+  position: relative;
+  padding-right: 2.5rem;
+}
+
+.banner.visible {
+  display: block;
+}
+
+.banner.error {
+  background: var(--error-bg);
+  border: 1px solid var(--error-border);
+  color: var(--error-text);
+}
+
+.banner.warning {
+  background: var(--warning-bg);
+  border: 1px solid var(--warning-border);
+  color: var(--warning-text);
+}
+
+.banner .dismiss-btn {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: inherit;
+  font-size: 1rem;
+  line-height: 1;
+  opacity: 0.6;
+}
+
+.banner .dismiss-btn:hover {
+  opacity: 1;
+}
+
+/* Column Actions (above each editor box) */
+.column-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.375rem;
+  align-items: flex-end;
+}
+
+.collapse-toggle {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.625rem;
+  line-height: 1;
+}
+
+/* #24: Smooth collapse animation */
+.editor-column.collapsed .input-wrapper,
+.editor-column.collapsed .output-panel {
+  display: none !important;
+}
+
+.editor-column.collapsed {
+  flex: 0 0 auto;
+  min-width: 0;
+}
+
+/* #25: Highlight toggle button when collapsed */
+.editor-column.collapsed .collapse-toggle {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+
+/* Center Actions (between boxes) */
+/* #11: Use align-self instead of fixed padding-top */
+.center-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  justify-content: center;
+  align-self: center;
+  align-items: center;
+}
+
+.center-actions .btn {
+  width: auto;
+}
+
+/* #33: Keyboard shortcut hint */
+.shortcut-hint {
+  font-size: 0.6875rem;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.btn {
+  padding: 0.375rem 0.75rem;
+  border-radius: var(--radius);
+  font-family: var(--font-sans);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  transition: background 150ms, opacity 150ms, border-color 150ms;
+}
+
+/* #5: Focus-visible styles for all buttons */
+.btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* #20: Improve disabled button visual — increase opacity, add tooltip cursor */
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  background: var(--accent);
+  color: #fff;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: var(--accent-hover);
+}
+
+.btn-secondary {
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+
+/* #26: Add hover accent to secondary buttons */
+.btn-secondary:hover:not(:disabled) {
+  background: var(--bg);
+  border-color: var(--accent);
+}
+
+/* #23: Removed orphaned .btn-secondary[title] rule — had no purpose */
+
+/* Output Panel */
+.output-panel {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  transition: background-color 200ms ease, color 200ms ease;
+  flex: 1;
+  min-height: 0;
+}
+
+.output-panel .output-wrapper {
+  display: flex;
+  overflow: auto;
+  height: 100%;
+}
+
+.output-gutter {
+  padding: 1rem 0.75rem;
+  text-align: right;
+  user-select: none;
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  min-width: 3rem;
+  flex-shrink: 0;
+  transition: background-color 200ms ease, color 200ms ease;
+}
+
+.output-gutter .line-num {
+  display: block;
+}
+
+.output-code {
+  flex: 1;
+  overflow-x: auto;
+  padding: 1rem;
+  transition: background-color 200ms ease, color 200ms ease;
+}
+
+/* #13: Add overflow-wrap for very long lines */
+.output-code pre {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  white-space: pre;
+  tab-size: 2;
+  overflow-wrap: break-word;
+}
+
+.output-code code {
+  font-family: inherit;
+}
+
+/* #34: Improve output placeholder with instructional text */
+.output-placeholder {
+  padding: 3rem 1rem;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.875rem;
+}
+
+/* #5: Focus-visible styles for non-btn interactive elements */
+.clear-btn:focus-visible,
+.dismiss-btn:focus-visible,
+.collapse-toggle:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.control-group select:focus-visible {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(0, 112, 243, 0.1);
+}
+
+/* Footer */
+.footer {
+  text-align: center;
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--border);
+  color: var(--text-muted);
+  font-size: 0.75rem;
+}
+
+/* Responsive */
+
+/* #9: Tablet breakpoint (769px–1024px) */
+@media (max-width: 1024px) {
+  .editor-layout {
+    gap: 0.75rem;
+  }
+
+  .center-actions {
+    gap: 0.375rem;
+  }
+
+  .container {
+    padding: 0.75rem 1rem;
+  }
+}
+
+@media (max-width: 768px) {
+  body {
+    height: auto;
+    overflow: auto;
+  }
+
+  .container {
+    padding: 1.25rem 1rem;
+    height: auto;
+  }
+
+  .editor-layout {
+    flex-direction: column;
+    flex: none;
+  }
+
+  .column-actions {
+    flex-wrap: wrap;
+  }
+
+  .control-group {
+    min-width: 0;
+    flex: 1;
+  }
+
+  .action-right {
+    margin-left: auto;
+  }
+
+  .center-actions {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+    padding-top: 0;
+    margin-bottom: 0.75rem;
+  }
+
+  .center-actions .shortcut-hint {
+    width: 100%;
+  }
+
+  .btn {
+    justify-content: center;
+    width: 100%;
+  }
+
+  .input-wrapper {
+    flex: none;
+  }
+
+  .input-area {
+    height: 300px;
+    min-height: 200px;
+  }
+
+  .output-panel {
+    flex: none;
+    height: 300px;
+    min-height: 200px;
+  }
+
+  /* #12: Hide collapse toggles on mobile — stacked layout makes them pointless */
+  .collapse-toggle {
+    display: none;
+  }
+}
+
+/* #7: Fix 375px breakpoint — decrease h1 font, not increase */
+@media (max-width: 375px) {
+  .header h1 {
+    font-size: 1.0625rem;
+  }
+
+  .input-area {
+    min-height: 200px;
+  }
+}
