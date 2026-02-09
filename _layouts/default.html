@@ -39,6 +39,9 @@
   </script>
 </head>
 <body>
+  <!-- Scroll progress indicator -->
+  <div class="scroll-progress" id="scroll-progress"></div>
+
   <!-- Skip to content link for accessibility -->
   <a href="#main-content" class="skip-link">Skip to content</a>
   
@@ -80,5 +83,22 @@
   <script src="{{ '/assets/js/toc.js' | relative_url }}" defer></script>
   <script src="{{ '/assets/js/toc-sticky-fix.js' | relative_url }}" defer></script>
   <script src="{{ '/assets/js/ripple-effect.js' | relative_url }}" defer></script>
+
+  <!-- Scroll progress bar -->
+  <script>
+    (function() {
+      var bar = document.getElementById('scroll-progress');
+      if (!bar) return;
+      function update() {
+        var scrollTop = window.scrollY || document.documentElement.scrollTop;
+        var docHeight = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+        var pct = docHeight > 0 ? (scrollTop / docHeight) : 0;
+        bar.style.width = (pct * 100) + '%';
+        bar.style.opacity = pct;
+      }
+      window.addEventListener('scroll', update, { passive: true });
+      update();
+    })();
+  </script>
 </body>
 </html>
