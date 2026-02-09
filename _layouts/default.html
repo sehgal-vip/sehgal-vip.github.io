@@ -4,14 +4,17 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <meta http-equiv="Strict-Transport-Security" content="max-age=31536000; includeSubDomains">
   
   <!-- SEO -->
   {% seo %}
+  <meta name="keywords" content="AI, technology, product management, first principles, blog, Vipul Sehgal">
   
-  <!-- Preload fonts -->
+  <!-- Preload fonts (non-blocking) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:wght@400;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:wght@400;600;700&family=JetBrains+Mono:wght@400;500&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:wght@400;600;700&family=JetBrains+Mono:wght@400;500&display=swap"></noscript>
   
   <!-- Styles -->
   <link rel="stylesheet" href="{{ '/assets/css/main.css' | relative_url }}">
@@ -21,6 +24,9 @@
   
   <!-- Favicon -->
   <link rel="icon" href="{{ '/favicon.ico' | relative_url }}" type="image/x-icon">
+  <link rel="icon" type="image/png" sizes="32x32" href="{{ '/favicon-32x32.png' | relative_url }}">
+  <link rel="icon" type="image/png" sizes="16x16" href="{{ '/favicon-16x16.png' | relative_url }}">
+  <link rel="apple-touch-icon" sizes="180x180" href="{{ '/apple-touch-icon.png' | relative_url }}">
   
   <!-- Theme initialization (prevent flash) -->
   <script>
@@ -66,13 +72,13 @@
   {% include analytics.html %}
   
   <!-- Scripts -->
-  <script src="{{ '/assets/js/theme-toggle.js' | relative_url }}"></script>
-  <script src="{{ '/assets/js/command-palette.js' | relative_url }}"></script>
-  <script src="{{ '/assets/js/search.js' | relative_url }}"></script>
-  <script src="{{ '/assets/js/main.js' | relative_url }}"></script>
-  <script src="{{ '/assets/js/hero-video-scrub.js' | relative_url }}"></script>
-  <script src="{{ '/assets/js/toc.js' | relative_url }}"></script>
-  <script src="{{ '/assets/js/toc-sticky-fix.js' | relative_url }}"></script>
+  <script src="{{ '/assets/js/theme-toggle.js' | relative_url }}" defer></script>
+  <script src="{{ '/assets/js/command-palette.js' | relative_url }}" defer></script>
+  <script src="{{ '/assets/js/search.js' | relative_url }}" defer></script>
+  <script src="{{ '/assets/js/main.js' | relative_url }}" defer></script>
+  <script src="{{ '/assets/js/hero-video-scrub.js' | relative_url }}" defer></script>
+  <script src="{{ '/assets/js/toc.js' | relative_url }}" defer></script>
+  <script src="{{ '/assets/js/toc-sticky-fix.js' | relative_url }}" defer></script>
   <script src="{{ '/assets/js/ripple-effect.js' | relative_url }}" defer></script>
 </body>
 </html>
