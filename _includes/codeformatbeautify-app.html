@@ -609,7 +609,10 @@ window.onunhandledrejection = function(e) {
   }
 
   // === Main actions ===
+  var beautifying = false;
   async function doBeautify() {
+    if (beautifying) return;
+    beautifying = true;
     try {
       var input = inputArea.value;
       if (!input.trim()) {
@@ -655,10 +658,15 @@ window.onunhandledrejection = function(e) {
       beautifyBtn.textContent = 'Beautify';
       beautifyBtn.disabled = false;
       showBanner('error', 'Beautify failed: ' + e.message);
+    } finally {
+      beautifying = false;
     }
   }
 
+  var minifying = false;
   async function doMinify() {
+    if (minifying) return;
+    minifying = true;
     try {
       var input = inputArea.value;
       if (!input.trim()) {
@@ -699,15 +707,25 @@ window.onunhandledrejection = function(e) {
       minifyBtn.textContent = 'Minify';
       minifyBtn.disabled = false;
       showBanner('error', 'Minify failed: ' + e.message);
+    } finally {
+      minifying = false;
     }
   }
 
   // === Event Listeners ===
-  inputArea.addEventListener('input', updateDetection);
+  var beautifyTimer = null;
+  inputArea.addEventListener('input', function() {
+    updateDetection();
+    clearTimeout(beautifyTimer);
+    beautifyTimer = setTimeout(function() {
+      if (inputArea.value.trim()) doBeautify();
+    }, 500);
+  });
   langSelect.addEventListener('change', updateDetection);
 
   // Auto-beautify on paste
   inputArea.addEventListener('paste', function() {
+    clearTimeout(beautifyTimer);
     setTimeout(function() {
       updateDetection();
       if (inputArea.value.trim()) doBeautify();
