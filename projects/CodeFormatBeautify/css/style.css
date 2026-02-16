@@ -86,7 +86,7 @@
   background: var(--bg);
 }
 .main-content.codeformatbeautify-page-wrap .editor-layout {
-  min-height: 420px;
+  min-height: 520px;
   flex: 1 1 auto;
 }
 .main-content.codeformatbeautify-page-wrap .footer {
@@ -608,14 +608,14 @@ body {
   }
 
   .input-area {
-    height: 300px;
-    min-height: 200px;
+    height: 380px;
+    min-height: 260px;
   }
 
   .output-panel {
     flex: none;
-    height: 300px;
-    min-height: 200px;
+    height: 380px;
+    min-height: 260px;
   }
 
   /* #12: Hide collapse toggles on mobile — stacked layout makes them pointless */
@@ -631,6 +631,6 @@ body {
   }
 
   .input-area {
-    min-height: 200px;
+    min-height: 260px;
   }
 }
