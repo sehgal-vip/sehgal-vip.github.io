@@ -48,6 +48,7 @@
   flex-direction: column;
   min-height: 70vh;
   height: auto;
+  background: var(--bg);
 }
 .main-content.codeformatbeautify-page-wrap .editor-layout {
   min-height: 420px;
@@ -55,22 +56,30 @@
 .main-content.codeformatbeautify-page-wrap .footer {
   margin-top: 1rem;
 }
-/* Tighter, cleaner title and subtitle block */
+/* Title and subtitle: always visible below site header, override site typography */
 .main-content.codeformatbeautify-page-wrap .header {
   margin-bottom: 0.25rem;
+  flex-shrink: 0;
+  display: block;
+  visibility: visible;
 }
 .main-content.codeformatbeautify-page-wrap .header h1 {
-  font-size: 1.125rem;
-  font-weight: 600;
-  line-height: 1.25;
-  margin: 0;
+  font-size: 1.125rem !important;
+  font-weight: 600 !important;
+  line-height: 1.25 !important;
+  margin: 0 !important;
+  padding: 0 !important;
   letter-spacing: -0.02em;
+  color: var(--text) !important;
+  font-family: var(--font-sans) !important;
 }
 .main-content.codeformatbeautify-page-wrap .header p {
-  font-size: 0.8125rem;
-  line-height: 1.35;
-  margin: 0.125rem 0 0;
-  color: var(--text-muted);
+  font-size: 0.8125rem !important;
+  line-height: 1.35 !important;
+  margin: 0.125rem 0 0 !important;
+  padding: 0 !important;
+  color: var(--text-muted) !important;
+  font-family: var(--font-sans) !important;
 }
 .main-content.codeformatbeautify-page-wrap .detected-label {
   margin-top: 0.125rem;

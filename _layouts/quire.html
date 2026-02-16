@@ -41,8 +41,30 @@
     })();
   </script>
   <style>
-    /* Quire app flush under header — no gap */
-    .main-content.quire-page-wrap { padding-top: 0; padding-bottom: 0; }
+    /* Quire app flush to header and footer — no gaps */
+    .main-content.quire-page-wrap {
+      padding-top: 0 !important;
+      padding-bottom: 0 !important;
+      margin: 0 !important;
+    }
+    .main-content.quire-page-wrap .quire-embed-wrap {
+      margin: 0 !important;
+      padding: 0 !important;
+      min-height: 60vh;
+    }
+    .main-content.quire-page-wrap .quire-embed-wrap #root,
+    .main-content.quire-page-wrap .quire-embed-wrap #root > * {
+      margin: 0 !important;
+      padding: 0 !important;
+    }
+    /* No gap between Quire app and footer */
+    main.quire-page-wrap + .site-footer {
+      margin-top: 0 !important;
+    }
+    /* Footer tight to bottom edge on Quire page */
+    .site-wrapper:has(main.quire-page-wrap) .site-footer {
+      padding: 0.5rem 0 !important;
+    }
   </style>
 </head>
 <body>
