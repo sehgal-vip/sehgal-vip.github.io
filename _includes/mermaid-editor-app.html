@@ -409,8 +409,6 @@ pie showData
     if (!clone.getAttribute('width')) clone.setAttribute('width', String(dims.width));
     if (!clone.getAttribute('height')) clone.setAttribute('height', String(dims.height));
     var svgString = new XMLSerializer().serializeToString(clone);
-    var svgBlob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
-    var url = URL.createObjectURL(svgBlob);
     var img = new Image();
     img.onload = function() {
       var scale = 2;
@@ -424,7 +422,6 @@ pie showData
       ctx.fillStyle = isDark ? '#1e1e2e' : '#ffffff';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-      URL.revokeObjectURL(url);
       canvas.toBlob(function(blob) {
         if (blob) {
           var u = URL.createObjectURL(blob);
@@ -441,10 +438,9 @@ pie showData
       }, 'image/png');
     };
     img.onerror = function() {
-      URL.revokeObjectURL(url);
       alert('Failed to generate PNG. Try exporting as SVG instead.');
     };
-    img.src = url;
+    img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgString);
   }
 
   exportSvgBtn.addEventListener('click', exportSVG);
