@@ -26,6 +26,12 @@ navigation:
     url: "/projects/texteditor/"
     icon: "edit"
     
+  - name: "Go to Mermaid Editor"
+    shortcut: "gm"
+    action: "navigate"
+    url: "/projects/Online-Mermaid/"
+    icon: "edit"
+    
   - name: "Go to Reading"
     shortcut: "gr"
     action: "navigate"
