@@ -607,6 +607,7 @@ let records = [], columns = [], currentView = 'table', currentPage = 1, pageSize
 let totalRecords = 0, validCount = 0, invalidCount = 0;
 let filteredIndices = null, sortField = null, sortDir = 'asc';
 let showErrorsOnly = false, searchQuery = '';
+let pendingParseBatches = 0, fileReadDone = false, finalized = false, finalizeFileRef = null;
 const columnSet = new Set();
 
 /* DOM */
@@ -682,9 +683,12 @@ $('jrParseBtn').addEventListener('click', () => {
   if (!text.trim()) return;
   if (text.length > 50*1024*1024 && !confirm('Over 50MB. May be slow. Continue?')) return;
   resetState();
+  finalizeFileRef = null;
+  fileReadDone = true;
   const lines = text.split('\n');
   showProgress(true);
-  worker.postMessage({type:'parse', payload:{lines, startIndex:0}});
+  sendLinesToWorker(lines, 0);
+  tryFinalizeLoading();
 });
 
 $('jrReloadBtn').addEventListener('click', () => {
@@ -698,6 +702,7 @@ $('jrReloadBtn').addEventListener('click', () => {
 
 function loadFile(file) {
   resetState();
+  finalizeFileRef = file;
   fileName.textContent = file.name;
   fileMeta.textContent = formatBytes(file.size);
   fileInfo.classList.add('visible');
@@ -707,8 +712,9 @@ function loadFile(file) {
   const reader = new FileReader();
   function readNext() {
     if (offset >= file.size) {
-      if (remainder.trim()) { worker.postMessage({type:'parse', payload:{lines:[remainder], startIndex:lineCount}}); lineCount++; }
-      finishLoading(file);
+      if (remainder.trim()) { sendLinesToWorker([remainder], lineCount); lineCount++; }
+      fileReadDone = true;
+      tryFinalizeLoading();
       return;
     }
     reader.readAsText(file.slice(offset, Math.min(offset + CHUNK, file.size)));
@@ -717,7 +723,7 @@ function loadFile(file) {
     const text = remainder + e.target.result;
     const lines = text.split('\n');
     remainder = lines.pop() || '';
-    if (lines.length > 0) { worker.postMessage({type:'parse', payload:{lines, startIndex:lineCount}}); lineCount += lines.length; }
+    if (lines.length > 0) { sendLinesToWorker(lines, lineCount); lineCount += lines.length; }
     offset += CHUNK;
     const pct = Math.min(100, (offset / file.size) * 100);
     progressFill.style.width = pct + '%';
@@ -730,7 +736,21 @@ function loadFile(file) {
 
 function showProgress(show) { progressWrap.classList.toggle('visible', show); if (show) { progressFill.style.width = '0'; progressText.textContent = 'Parsing...'; } }
 
+function sendLinesToWorker(lines, startIndex) {
+  pendingParseBatches++;
+  worker.postMessage({type:'parse', payload:{lines, startIndex}});
+}
+
+function tryFinalizeLoading() {
+  if (!fileReadDone) return;
+  if (pendingParseBatches > 0) return;
+  if (finalized) return;
+  finishLoading(finalizeFileRef);
+}
+
 function finishLoading(file) {
+  if (finalized) return;
+  finalized = true;
   progressFill.style.width = '100%';
   progressText.textContent = 'Done — ' + totalRecords.toLocaleString() + ' lines';
   setTimeout(() => showProgress(false), 1000);
@@ -749,12 +769,14 @@ function initWorker() {
   worker.onmessage = function(e) {
     const {type, payload} = e.data;
     if (type === 'parseBatch') {
+      pendingParseBatches = Math.max(0, pendingParseBatches - 1);
       for (const rec of payload.records) {
         records.push(rec);
         if (rec.valid) { validCount++; if (rec.parsed && typeof rec.parsed === 'object') extractColumns(rec.parsed, '', 0); }
         else invalidCount++;
       }
       totalRecords = records.length;
+      tryFinalizeLoading();
     }
     else if (type === 'searchResult') handleSearchResult(payload);
     else if (type === 'sortResult') handleSortResult(payload);
@@ -778,6 +800,7 @@ function resetState() {
   totalRecords = 0; validCount = 0; invalidCount = 0;
   filteredIndices = null; sortField = null; sortDir = 'asc';
   showErrorsOnly = false; currentPage = 1; searchQuery = '';
+  pendingParseBatches = 0; fileReadDone = false; finalized = false; finalizeFileRef = null;
   errorsToggle.classList.remove('active');
   tableHead.querySelector('tr').innerHTML = '';
   tableBody.innerHTML = '';
