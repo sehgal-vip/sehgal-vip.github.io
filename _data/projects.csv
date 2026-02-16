@@ -1,4 +1,5 @@
 title,description,year,url
+"JSONL Reader","Read, parse, and visualize JSONL files with streaming support for 1M+ lines",2026,/projects/jsonlreader/
 "Format And Beautify","Client-side code formatter, beautifier, and minifier for 18 languages with themes",2026,/projects/CodeFormatBeautify/
 "Mermaid Editor","Live Mermaid diagram editor and visualizer with templates, themes, and PNG/SVG export",2026,/projects/Online-Mermaid/
 "Text Editor","Convert between Markdown, HTML, Plain Text & RTF in the browser",2026,/projects/texteditor/
