@@ -1,0 +1,409 @@
+<div class="mermaid-editor-page">
+  <div id="mermaid-app">
+    <div class="mermaid-toolbar">
+      <div class="mermaid-toolbar-left">
+        <div class="mermaid-toolbar-title"><span>&#9670;</span> Mermaid Editor</div>
+        <select id="templateSelect" title="Load a template">
+          <option value="" disabled selected>Templates</option>
+          <option value="flowchart">Flowchart</option>
+          <option value="sequence">Sequence Diagram</option>
+          <option value="class">Class Diagram</option>
+          <option value="gantt">Gantt Chart</option>
+          <option value="er">ER Diagram</option>
+          <option value="state">State Diagram</option>
+          <option value="pie">Pie Chart</option>
+        </select>
+        <select id="diagramThemeSelect" title="Diagram theme">
+          <option value="default">Default</option>
+          <option value="neutral">Neutral</option>
+          <option value="dark">Dark</option>
+          <option value="forest">Forest</option>
+          <option value="base">Base</option>
+        </select>
+      </div>
+      <div class="mermaid-toolbar-right">
+        <button class="mermaid-btn" id="exportPngBtn" title="Export as PNG">
+          <span class="btn-icon">&#128247;</span>
+          <span class="btn-label">Export PNG</span>
+        </button>
+        <button class="mermaid-btn" id="exportSvgBtn" title="Export as SVG">
+          <span class="btn-icon">&#10697;</span>
+          <span class="btn-label">Export SVG</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="mermaid-main-container">
+      <div class="mermaid-editor-panel" id="editorPanel">
+        <div class="mermaid-editor-header">
+          <span class="mermaid-editor-header-title">Editor</span>
+        </div>
+        <div class="mermaid-editor-body">
+          <div class="mermaid-line-gutter" id="lineGutter"></div>
+          <textarea class="mermaid-code-editor" id="codeEditor" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off" placeholder="Type your Mermaid diagram here..."></textarea>
+        </div>
+      </div>
+
+      <button class="mermaid-collapse-btn" id="collapseBtn" title="Toggle editor panel">&#9664;</button>
+
+      <div class="mermaid-preview-panel" id="previewPanel">
+        <div class="mermaid-error-banner" id="errorBanner">
+          <div class="mermaid-error-banner-message" id="errorMessage"></div>
+          <button class="mermaid-error-banner-dismiss" id="errorDismiss" title="Dismiss">&times;</button>
+        </div>
+        <div class="mermaid-diagram-container" id="diagramContainer"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  const editorPanel = document.getElementById('editorPanel');
+  const codeEditor = document.getElementById('codeEditor');
+  const lineGutter = document.getElementById('lineGutter');
+  const collapseBtn = document.getElementById('collapseBtn');
+  const diagramContainer = document.getElementById('diagramContainer');
+  const errorBanner = document.getElementById('errorBanner');
+  const errorMessage = document.getElementById('errorMessage');
+  const errorDismiss = document.getElementById('errorDismiss');
+  const templateSelect = document.getElementById('templateSelect');
+  const exportPngBtn = document.getElementById('exportPngBtn');
+  const exportSvgBtn = document.getElementById('exportSvgBtn');
+  const diagramThemeSelect = document.getElementById('diagramThemeSelect');
+
+  let editorModified = false;
+  let renderTimeout = null;
+  let renderCounter = 0;
+  let currentDiagramTheme = localStorage.getItem('mermaid-editor-diagram-theme') || 'default';
+
+  const templates = {
+    flowchart: `%% Flowchart: User Authentication Flow
+%% Demonstrates decisions, processes, and multiple endpoints
+
+flowchart TD
+    A[User visits site] --> B{Is logged in?}
+    B -->|Yes| C[Show Dashboard]
+    B -->|No| D[Show Login Page]
+    D --> E[Enter Credentials]
+    E --> F{Valid credentials?}
+    F -->|Yes| G[Generate JWT Token]
+    G --> H[Store in Cookie]
+    H --> C
+    F -->|No| I{Attempts > 3?}
+    I -->|Yes| J[Lock Account 15min]
+    J --> K[Send Alert Email]
+    I -->|No| L[Show Error Message]
+    L --> D
+    C --> M[Load User Preferences]
+    M --> N[Render Personalized Content]`,
+    sequence: `%% Sequence Diagram: API Request Lifecycle
+sequenceDiagram
+    autonumber
+    actor User
+    participant Client as Frontend App
+    participant API as API Gateway
+    participant Cache as Redis Cache
+    participant DB as PostgreSQL
+    User->>Client: Click "Load Data"
+    Client->>API: GET /api/products
+    API->>Cache: Check cache key
+    alt Cache Hit
+        Cache-->>API: Return cached data
+        API-->>Client: 200 OK (cached)
+    else Cache Miss
+        Cache-->>API: null
+        API->>DB: SELECT * FROM products
+        DB-->>API: Result set
+        API->>Cache: SET cache key (TTL: 5min)
+        API-->>Client: 200 OK (fresh)
+    end
+    Client-->>User: Render product list`,
+    class: `%% Class Diagram: E-Commerce Domain Model
+classDiagram
+    class User {
+        +String id
+        +String email
+        +String name
+        +Date createdAt
+        +login(password) bool
+        +updateProfile(data) void
+    }
+    class Order {
+        +String id
+        +Date orderDate
+        +String status
+        +calculateTotal() float
+        +cancel() void
+    }
+    class Product {
+        +String id
+        +String name
+        +float price
+        +int stock
+        +isAvailable() bool
+    }
+    User "1" --> "*" Order : places
+    Order "1" --> "*" OrderItem : contains
+    OrderItem "*" --> "1" Product : references`,
+    gantt: `%% Gantt Chart: Product Launch Timeline
+gantt
+    title Product Launch Roadmap 2025
+    dateFormat  YYYY-MM-DD
+    section Research
+    Market Analysis        :done,    r1, 2025-01-06, 14d
+    User Interviews        :done,    r2, after r1, 10d
+    section Design
+    Wireframes             :done,    d1, after r3, 7d
+    UI Mockups             :active,  d2, after d1, 10d
+    section Development
+    Backend API            :         dev1, after d2, 21d
+    Frontend Build         :         dev2, after d2, 25d
+    section Release
+    Production Deploy      :milestone, m2, after t2, 0d`,
+    er: `%% ER Diagram: Blog Platform Database Schema
+erDiagram
+    USERS {
+        uuid id PK
+        varchar email UK
+        varchar username UK
+    }
+    POSTS {
+        uuid id PK
+        uuid author_id FK
+        varchar title
+        text content
+    }
+    USERS ||--o{ POSTS : writes
+    POSTS ||--o{ COMMENTS : receives`,
+    state: `%% State Diagram: Order Processing Lifecycle
+stateDiagram-v2
+    [*] --> Draft : Create Order
+    Draft --> Submitted : Submit
+    Draft --> Cancelled : Cancel
+    Submitted --> Processing : Payment Confirmed
+    Processing --> Shipped : Ship Items
+    Shipped --> Delivered : Delivery Confirmed
+    Delivered --> Completed : After 30 days
+    Completed --> [*]
+    Cancelled --> [*]`,
+    pie: `%% Pie Chart: Tech Stack Usage Survey 2025
+pie showData
+    title Developer Primary Language (2025 Survey)
+    "JavaScript/TypeScript" : 28.5
+    "Python" : 22.3
+    "Java" : 12.8
+    "C#" : 9.4
+    "Go" : 7.6
+    "Rust" : 5.2
+    "Other" : 5.3`
+  };
+
+  const defaultTemplate = templates.flowchart;
+
+  function initMermaid() {
+    mermaid.initialize({
+      startOnLoad: false,
+      theme: currentDiagramTheme,
+      securityLevel: 'loose',
+      fontFamily: 'Inter, -apple-system, system-ui, sans-serif'
+    });
+  }
+
+  function updateLineNumbers() {
+    const text = codeEditor.value;
+    const lineCount = text.split('\n').length;
+    let html = '';
+    for (let i = 1; i <= lineCount; i++) {
+      html += '<div class="mermaid-line-number" data-line="' + i + '">' + i + '</div>';
+    }
+    lineGutter.innerHTML = html;
+  }
+
+  codeEditor.addEventListener('scroll', function() {
+    lineGutter.scrollTop = codeEditor.scrollTop;
+  });
+
+  codeEditor.addEventListener('keydown', function(e) {
+    if (e.key === 'Tab') {
+      e.preventDefault();
+      const start = codeEditor.selectionStart;
+      const end = codeEditor.selectionEnd;
+      const value = codeEditor.value;
+      codeEditor.value = value.substring(0, start) + '  ' + value.substring(end);
+      codeEditor.selectionStart = codeEditor.selectionEnd = start + 2;
+      handleInput();
+    }
+  });
+
+  function handleInput() {
+    editorModified = true;
+    updateLineNumbers();
+    debouncedRender();
+  }
+
+  codeEditor.addEventListener('input', handleInput);
+
+  function debouncedRender() {
+    clearTimeout(renderTimeout);
+    renderTimeout = setTimeout(renderDiagram, 300);
+  }
+
+  function clearErrors() {
+    errorBanner.classList.remove('visible');
+    errorMessage.textContent = '';
+    lineGutter.querySelectorAll('.error-line').forEach(function(el) { el.classList.remove('error-line'); });
+  }
+
+  function showError(msg) {
+    errorMessage.textContent = msg;
+    errorBanner.classList.add('visible');
+    const lineMatch = msg.match(/line\s+(\d+)/i) || msg.match(/row\s+(\d+)/i) || msg.match(/at\s+line\s+(\d+)/i) || msg.match(/Parse error on line (\d+)/i);
+    if (lineMatch) {
+      const lineNum = parseInt(lineMatch[1], 10);
+      const lineEl = lineGutter.querySelector('[data-line="' + lineNum + '"]');
+      if (lineEl) lineEl.classList.add('error-line');
+    }
+  }
+
+  errorDismiss.addEventListener('click', function() {
+    errorBanner.classList.remove('visible');
+  });
+
+  async function renderDiagram() {
+    const code = codeEditor.value.trim();
+    if (!code) {
+      diagramContainer.innerHTML = '<p style="color: var(--me-text-muted); font-size: 14px;">Start typing to see your diagram...</p>';
+      clearErrors();
+      return;
+    }
+    renderCounter++;
+    const id = 'mermaid-graph-' + renderCounter;
+    try {
+      const result = await mermaid.render(id, code);
+      diagramContainer.innerHTML = result.svg;
+      clearErrors();
+    } catch (err) {
+      const errEl = document.getElementById('d' + id);
+      if (errEl) errEl.remove();
+      showError(err && (err.message || err.str) ? (err.message || err.str) : String(err));
+    }
+  }
+
+  function setDiagramTheme(theme) {
+    currentDiagramTheme = theme;
+    localStorage.setItem('mermaid-editor-diagram-theme', theme);
+    diagramThemeSelect.value = theme;
+    initMermaid();
+    clearTimeout(renderTimeout);
+    renderDiagram();
+  }
+
+  diagramThemeSelect.addEventListener('change', function() {
+    setDiagramTheme(diagramThemeSelect.value);
+  });
+
+  collapseBtn.addEventListener('click', function() {
+    const isCollapsed = editorPanel.classList.toggle('collapsed');
+    collapseBtn.classList.toggle('collapsed', isCollapsed);
+    collapseBtn.innerHTML = isCollapsed ? '&#9654;' : '&#9664;';
+    collapseBtn.title = isCollapsed ? 'Show editor panel' : 'Hide editor panel';
+  });
+
+  templateSelect.addEventListener('change', function() {
+    const key = templateSelect.value;
+    if (!key || !templates[key]) return;
+    if (editorModified && !confirm('Replace current editor content with the selected template?')) {
+      templateSelect.selectedIndex = 0;
+      return;
+    }
+    codeEditor.value = templates[key];
+    editorModified = false;
+    updateLineNumbers();
+    codeEditor.scrollTop = 0;
+    lineGutter.scrollTop = 0;
+    clearTimeout(renderTimeout);
+    renderDiagram();
+    templateSelect.selectedIndex = 0;
+  });
+
+  function exportSVG() {
+    const svgEl = diagramContainer.querySelector('svg');
+    if (!svgEl) {
+      alert('No diagram to export. Please create a valid diagram first.');
+      return;
+    }
+    const clone = svgEl.cloneNode(true);
+    clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+    clone.setAttribute('xmlns:xlink', 'http://www.w3.org/1999/xlink');
+    const svgString = new XMLSerializer().serializeToString(clone);
+    const blob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'mermaid-diagram-' + Date.now() + '.svg';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  function exportPNG() {
+    const svgEl = diagramContainer.querySelector('svg');
+    if (!svgEl) {
+      alert('No diagram to export. Please create a valid diagram first.');
+      return;
+    }
+    const clone = svgEl.cloneNode(true);
+    clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+    clone.setAttribute('xmlns:xlink', 'http://www.w3.org/1999/xlink');
+    const svgString = new XMLSerializer().serializeToString(clone);
+    const svgBlob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
+    const url = URL.createObjectURL(svgBlob);
+    const img = new Image();
+    img.onload = function() {
+      const scale = 2;
+      const canvas = document.createElement('canvas');
+      canvas.width = img.naturalWidth * scale;
+      canvas.height = img.naturalHeight * scale;
+      const ctx = canvas.getContext('2d');
+      const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+      ctx.fillStyle = isDark ? '#1e1e2e' : '#ffffff';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      URL.revokeObjectURL(url);
+      canvas.toBlob(function(blob) {
+        if (blob) {
+          const u = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = u;
+          a.download = 'mermaid-diagram-' + Date.now() + '.png';
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(u);
+        }
+      }, 'image/png');
+    };
+    img.onerror = function() {
+      URL.revokeObjectURL(url);
+      alert('Failed to generate PNG. Try exporting as SVG instead.');
+    };
+    img.src = url;
+  }
+
+  exportSvgBtn.addEventListener('click', exportSVG);
+  exportPngBtn.addEventListener('click', exportPNG);
+
+  function init() {
+    diagramThemeSelect.value = currentDiagramTheme;
+    initMermaid();
+    codeEditor.value = defaultTemplate;
+    editorModified = false;
+    updateLineNumbers();
+    renderDiagram();
+  }
+
+  init();
+})();
+</script>
