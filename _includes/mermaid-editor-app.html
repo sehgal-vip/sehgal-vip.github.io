@@ -202,12 +202,36 @@ pie showData
   const defaultTemplate = templates.flowchart;
 
   function initMermaid() {
-    mermaid.initialize({
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    const config = {
       startOnLoad: false,
-      theme: currentDiagramTheme,
+      theme: isDark ? 'base' : currentDiagramTheme,
       securityLevel: 'loose',
       fontFamily: 'Inter, -apple-system, system-ui, sans-serif'
-    });
+    };
+    if (isDark) {
+      config.themeVariables = {
+        darkMode: true,
+        background: '#1e1e2e',
+        lineColor: '#94a3b8',
+        primaryColor: '#252536',
+        primaryTextColor: '#e2e8f0',
+        primaryBorderColor: '#94a3b8',
+        secondaryColor: '#2d2d44',
+        secondaryTextColor: '#e2e8f0',
+        secondaryBorderColor: '#94a3b8',
+        tertiaryColor: '#3a3a56',
+        tertiaryTextColor: '#e2e8f0',
+        tertiaryBorderColor: '#94a3b8',
+        defaultLinkColor: '#94a3b8',
+        nodeBorder: '#94a3b8',
+        actorBorder: '#94a3b8',
+        actorLineColor: '#94a3b8',
+        signalColor: '#e2e8f0',
+        textColor: '#e2e8f0'
+      };
+    }
+    mermaid.initialize(config);
   }
 
   function updateLineNumbers() {
@@ -405,5 +429,16 @@ pie showData
   }
 
   init();
+
+  var observer = new MutationObserver(function(mutations) {
+    mutations.forEach(function(m) {
+      if (m.attributeName === 'data-theme') {
+        initMermaid();
+        clearTimeout(renderTimeout);
+        renderDiagram();
+      }
+    });
+  });
+  observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
 })();
 </script>
