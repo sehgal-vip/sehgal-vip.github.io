@@ -34,6 +34,42 @@
   color-scheme: light;
 }
 
+/* Sync with site header theme toggle: when [data-theme="dark"] use site dark palette */
+[data-theme="dark"] body {
+  background: var(--bg-color);
+  color: var(--text-color);
+}
+
+[data-theme="dark"] .main-content.codeformatbeautify-page-wrap .container,
+[data-theme="dark"] .main-content.codeformatbeautify-page-wrap {
+  --bg: var(--bg-color);
+  --surface: var(--bg-secondary);
+  --border: var(--border-color);
+  --text: var(--text-color);
+  --text-muted: var(--text-muted);
+  --accent: var(--color-accent);
+  --accent-hover: var(--color-primary-hover);
+  --error-bg: rgba(220, 38, 38, 0.15);
+  --error-border: #f87171;
+  --error-text: #fca5a5;
+  --warning-bg: rgba(217, 119, 6, 0.15);
+  --warning-border: #fbbf24;
+  --warning-text: #fcd34d;
+}
+
+[data-theme="dark"] .main-content.codeformatbeautify-page-wrap .cfb-page-title-block {
+  background: var(--bg-color) !important;
+  border-bottom-color: var(--border-color);
+}
+
+[data-theme="dark"] .main-content.codeformatbeautify-page-wrap .cfb-page-title-block h1 {
+  color: var(--text-color) !important;
+}
+
+[data-theme="dark"] .main-content.codeformatbeautify-page-wrap .cfb-page-title-block p {
+  color: var(--text-muted) !important;
+}
+
 /* Scoped for site embed: main must not grow so site footer stays visible */
 .main-content.codeformatbeautify-page-wrap {
   flex: 0 0 auto;
