@@ -372,40 +372,71 @@ pie showData
     URL.revokeObjectURL(url);
   }
 
+  function getSvgDimensions(svg) {
+    var w = svg.getAttribute('width');
+    var h = svg.getAttribute('height');
+    if (w && h) {
+      var wNum = parseFloat(w);
+      var hNum = parseFloat(h);
+      if (!isNaN(wNum) && !isNaN(hNum)) return { width: wNum, height: hNum };
+    }
+    var viewBox = svg.getAttribute('viewBox');
+    if (viewBox) {
+      var parts = viewBox.split(/\s+|,/);
+      if (parts.length >= 4) {
+        var width = parseFloat(parts[2]);
+        var height = parseFloat(parts[3]);
+        if (!isNaN(width) && !isNaN(height)) return { width: width, height: height };
+      }
+    }
+    if (svg.getBBox) {
+      var bbox = svg.getBBox();
+      if (bbox && bbox.width > 0 && bbox.height > 0) return { width: bbox.width, height: bbox.height };
+    }
+    return { width: 800, height: 600 };
+  }
+
   function exportPNG() {
     const svgEl = diagramContainer.querySelector('svg');
     if (!svgEl) {
       alert('No diagram to export. Please create a valid diagram first.');
       return;
     }
-    const clone = svgEl.cloneNode(true);
+    var dims = getSvgDimensions(svgEl);
+    var clone = svgEl.cloneNode(true);
     clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
     clone.setAttribute('xmlns:xlink', 'http://www.w3.org/1999/xlink');
-    const svgString = new XMLSerializer().serializeToString(clone);
-    const svgBlob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
-    const url = URL.createObjectURL(svgBlob);
-    const img = new Image();
+    if (!clone.getAttribute('width')) clone.setAttribute('width', String(dims.width));
+    if (!clone.getAttribute('height')) clone.setAttribute('height', String(dims.height));
+    var svgString = new XMLSerializer().serializeToString(clone);
+    var svgBlob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
+    var url = URL.createObjectURL(svgBlob);
+    var img = new Image();
     img.onload = function() {
-      const scale = 2;
-      const canvas = document.createElement('canvas');
-      canvas.width = img.naturalWidth * scale;
-      canvas.height = img.naturalHeight * scale;
-      const ctx = canvas.getContext('2d');
-      const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+      var scale = 2;
+      var w = img.naturalWidth || dims.width;
+      var h = img.naturalHeight || dims.height;
+      var canvas = document.createElement('canvas');
+      canvas.width = Math.max(1, w) * scale;
+      canvas.height = Math.max(1, h) * scale;
+      var ctx = canvas.getContext('2d');
+      var isDark = document.documentElement.getAttribute('data-theme') === 'dark';
       ctx.fillStyle = isDark ? '#1e1e2e' : '#ffffff';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
       URL.revokeObjectURL(url);
       canvas.toBlob(function(blob) {
         if (blob) {
-          const u = URL.createObjectURL(blob);
-          const a = document.createElement('a');
+          var u = URL.createObjectURL(blob);
+          var a = document.createElement('a');
           a.href = u;
           a.download = 'mermaid-diagram-' + Date.now() + '.png';
           document.body.appendChild(a);
           a.click();
           document.body.removeChild(a);
           URL.revokeObjectURL(u);
+        } else {
+          alert('Failed to generate PNG. Try exporting as SVG instead.');
         }
       }, 'image/png');
     };
