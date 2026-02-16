@@ -38,6 +38,12 @@ navigation:
     url: "/projects/jsonlreader/"
     icon: "edit"
     
+  - name: "Go to PDF Editor"
+    shortcut: "gpdf"
+    action: "navigate"
+    url: "/projects/pdfeditor/"
+    icon: "edit"
+    
   - name: "Go to Reading"
     shortcut: "gr"
     action: "navigate"
