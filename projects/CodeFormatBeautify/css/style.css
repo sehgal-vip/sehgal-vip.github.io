@@ -34,13 +34,57 @@
   color-scheme: light;
 }
 
+/* Scoped for site embed: main must not grow so site footer stays visible */
+.main-content.codeformatbeautify-page-wrap {
+  flex: 0 0 auto;
+  padding: 0;
+  padding-bottom: 2rem;
+}
+.main-content.codeformatbeautify-page-wrap .container {
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: 0.5rem 1.5rem 0.75rem;
+  display: flex;
+  flex-direction: column;
+  min-height: 70vh;
+  height: auto;
+}
+.main-content.codeformatbeautify-page-wrap .editor-layout {
+  min-height: 420px;
+}
+.main-content.codeformatbeautify-page-wrap .footer {
+  margin-top: 1rem;
+}
+/* Tighter, cleaner title and subtitle block */
+.main-content.codeformatbeautify-page-wrap .header {
+  margin-bottom: 0.25rem;
+}
+.main-content.codeformatbeautify-page-wrap .header h1 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  line-height: 1.25;
+  margin: 0;
+  letter-spacing: -0.02em;
+}
+.main-content.codeformatbeautify-page-wrap .header p {
+  font-size: 0.8125rem;
+  line-height: 1.35;
+  margin: 0.125rem 0 0;
+  color: var(--text-muted);
+}
+.main-content.codeformatbeautify-page-wrap .detected-label {
+  margin-top: 0.125rem;
+  margin-bottom: 0.2rem;
+}
+.main-content.codeformatbeautify-page-wrap .banner {
+  margin-top: 0.125rem;
+}
+
 body {
   font-family: var(--font-sans);
   background: var(--bg);
   color: var(--text);
   line-height: 1.6;
-  height: 100vh;
-  overflow: hidden;
 }
 
 .container {
@@ -49,7 +93,6 @@ body {
   padding: 0.75rem 1.5rem;
   display: flex;
   flex-direction: column;
-  height: 100vh;
 }
 
 /* Header */
@@ -470,14 +513,10 @@ body {
 }
 
 @media (max-width: 768px) {
-  body {
-    height: auto;
-    overflow: auto;
-  }
-
+  .main-content.codeformatbeautify-page-wrap .container,
   .container {
     padding: 1.25rem 1rem;
-    height: auto;
+    min-height: 0;
   }
 
   .editor-layout {

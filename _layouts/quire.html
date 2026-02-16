@@ -16,6 +16,14 @@
   
   <!-- Styles -->
   <link rel="stylesheet" href="{{ '/assets/css/main.css' | relative_url }}">
+  {% if site.data.quire-assets.css %}
+  <link rel="stylesheet" href="{{ site.data.quire-assets.css }}" crossorigin>
+  {% endif %}
+  
+  <!-- Quire theme init (no flash) -->
+  <script>
+    (function(){try{var m=localStorage.getItem('quire-theme');if(m==='dark'||(m!=='light'&&matchMedia('(prefers-color-scheme:dark)').matches))document.documentElement.classList.add('dark')}catch(e){}})();
+  </script>
   
   <!-- RSS Feed -->
   {% feed_meta %}
@@ -32,6 +40,10 @@
       document.documentElement.setAttribute('data-theme', theme);
     })();
   </script>
+  <style>
+    /* Quire app flush under header — no gap */
+    .main-content.quire-page-wrap { padding-top: 0; padding-bottom: 0; }
+  </style>
 </head>
 <body>
   <!-- Skip to content link for accessibility -->
@@ -65,5 +77,11 @@
   <script src="{{ '/assets/js/toc.js' | relative_url }}"></script>
   <script src="{{ '/assets/js/toc-sticky-fix.js' | relative_url }}"></script>
   <script src="{{ '/assets/js/ripple-effect.js' | relative_url }}" defer></script>
+  {% if site.data.quire-assets.register_sw %}
+  <script src="{{ site.data.quire-assets.register_sw }}" id="vite-plugin-pwa:register-sw"></script>
+  {% endif %}
+  {% if site.data.quire-assets.js %}
+  <script type="module" src="{{ site.data.quire-assets.js }}" crossorigin></script>
+  {% endif %}
 </body>
 </html>

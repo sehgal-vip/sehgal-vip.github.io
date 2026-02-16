@@ -35,6 +35,13 @@
       document.documentElement.setAttribute('data-theme', theme);
     })();
   </script>
+  <style>
+    /* Format And Beautify: no gap under header, main must not grow so footer is visible */
+    .main-content.codeformatbeautify-page-wrap {
+      padding-top: 0 !important;
+      flex: 0 0 auto !important;
+    }
+  </style>
 </head>
 <body>
   <!-- Skip to content link for accessibility -->
