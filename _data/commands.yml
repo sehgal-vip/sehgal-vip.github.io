@@ -38,10 +38,10 @@ navigation:
     url: "/projects/jsonlreader/"
     icon: "edit"
     
-  - name: "Go to PDF Editor"
-    shortcut: "gpdf"
+  - name: "Go to Quire"
+    shortcut: "gq"
     action: "navigate"
-    url: "/projects/pdfeditor/"
+    url: "/projects/quire/"
     icon: "edit"
     
   - name: "Go to Reading"
