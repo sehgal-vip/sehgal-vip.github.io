@@ -81,12 +81,12 @@
   padding: 0.5rem 1.5rem 0.75rem;
   display: flex;
   flex-direction: column;
-  min-height: 70vh;
+  min-height: calc(100vh - var(--header-height, 64px));
   height: auto;
   background: var(--bg);
 }
 .main-content.codeformatbeautify-page-wrap .editor-layout {
-  min-height: 520px;
+  min-height: 0;
   flex: 1 1 auto;
 }
 .main-content.codeformatbeautify-page-wrap .footer {
@@ -565,12 +565,21 @@ body {
   .main-content.codeformatbeautify-page-wrap .container,
   .container {
     padding: 1.25rem 1rem;
-    min-height: 0;
+  }
+
+  .main-content.codeformatbeautify-page-wrap .container {
+    min-height: calc(100vh - var(--header-height, 64px));
   }
 
   .editor-layout {
     flex-direction: column;
-    flex: none;
+    flex: 1 1 auto;
+    min-height: 0;
+  }
+
+  .editor-column {
+    flex: 1 1 auto;
+    min-height: 0;
   }
 
   .column-actions {
@@ -604,18 +613,23 @@ body {
   }
 
   .input-wrapper {
-    flex: none;
+    flex: 1 1 auto;
+    min-height: 0;
   }
 
   .input-area {
-    height: 380px;
-    min-height: 260px;
+    height: 100%;
+    min-height: 200px;
   }
 
   .output-panel {
-    flex: none;
-    height: 380px;
-    min-height: 260px;
+    flex: 1 1 auto;
+    min-height: 0;
+    height: auto;
+  }
+
+  .output-panel .output-wrapper {
+    min-height: 200px;
   }
 
   /* #12: Hide collapse toggles on mobile — stacked layout makes them pointless */
@@ -631,6 +645,6 @@ body {
   }
 
   .input-area {
-    min-height: 260px;
+    min-height: 200px;
   }
 }
