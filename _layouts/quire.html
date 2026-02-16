@@ -20,9 +20,14 @@
   <link rel="stylesheet" href="{{ site.data.quire-assets.css }}" crossorigin>
   {% endif %}
   
-  <!-- Quire theme init (no flash) -->
+  <!-- Quire theme init: follow site header toggle (theme-preference) so light/dark stay in sync -->
   <script>
-    (function(){try{var m=localStorage.getItem('quire-theme');if(m==='dark'||(m!=='light'&&matchMedia('(prefers-color-scheme:dark)').matches))document.documentElement.classList.add('dark')}catch(e){}})();
+    (function(){try{
+      var site=localStorage.getItem('theme-preference');
+      var q=localStorage.getItem('quire-theme');
+      var dark=site==='dark'||(!site&&(q==='dark'||(q!=='light'&&matchMedia('(prefers-color-scheme:dark)').matches)));
+      document.documentElement.classList.toggle('dark',!!dark);
+    }catch(e){}})();
   </script>
   
   <!-- RSS Feed -->

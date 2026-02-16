@@ -41,6 +41,10 @@
   function setTheme(theme) {
     document.documentElement.setAttribute('data-theme', theme);
     localStorage.setItem(STORAGE_KEY, theme);
+    // Sync Quire (embedded PDF app): same document, so .dark class and quire-theme must match
+    document.documentElement.classList.toggle('dark', theme === DARK_THEME);
+    try { localStorage.setItem('quire-theme', theme); } catch (e) {}
+    try { window.dispatchEvent(new CustomEvent('site-theme-change', { detail: { theme } })); } catch (e) {}
     
     // Update Giscus theme if it's loaded
     updateGiscusTheme(theme);
