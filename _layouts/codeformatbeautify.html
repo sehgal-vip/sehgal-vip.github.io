@@ -36,10 +36,25 @@
     })();
   </script>
   <style>
-    /* Format And Beautify: no gap under header, main must not grow so footer is visible */
+    /* Format And Beautify: content starts below fixed header (title visible), main does not grow, footer visible */
     .main-content.codeformatbeautify-page-wrap {
-      padding-top: 0 !important;
+      padding-top: var(--header-height) !important;
+      padding-bottom: 0 !important;
       flex: 0 0 auto !important;
+    }
+    /* Force title block visible in any theme: explicit colors, never hidden */
+    .main-content.codeformatbeautify-page-wrap .cfb-page-title-block {
+      display: block !important;
+      visibility: visible !important;
+      overflow: visible !important;
+      min-height: auto !important;
+      background: #f9fafb !important;
+    }
+    .main-content.codeformatbeautify-page-wrap .cfb-page-title-block h1 {
+      color: #1f2937 !important;
+    }
+    .main-content.codeformatbeautify-page-wrap .cfb-page-title-block p {
+      color: #6b7280 !important;
     }
   </style>
 </head>

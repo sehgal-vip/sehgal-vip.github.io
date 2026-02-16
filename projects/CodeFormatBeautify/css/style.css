@@ -38,7 +38,6 @@
 .main-content.codeformatbeautify-page-wrap {
   flex: 0 0 auto;
   padding: 0;
-  padding-bottom: 2rem;
 }
 .main-content.codeformatbeautify-page-wrap .container {
   max-width: var(--max-width);
@@ -52,18 +51,23 @@
 }
 .main-content.codeformatbeautify-page-wrap .editor-layout {
   min-height: 420px;
+  flex: 1 1 auto;
 }
 .main-content.codeformatbeautify-page-wrap .footer {
   margin-top: 1rem;
 }
-/* Title and subtitle: always visible below site header, override site typography */
-.main-content.codeformatbeautify-page-wrap .header {
+/* Title block: page-specific class so site styles cannot override */
+.main-content.codeformatbeautify-page-wrap .cfb-page-title-block {
   margin-bottom: 0.25rem;
   flex-shrink: 0;
-  display: block;
-  visibility: visible;
+  display: block !important;
+  visibility: visible !important;
+  overflow: visible;
+  min-height: auto;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--border);
 }
-.main-content.codeformatbeautify-page-wrap .header h1 {
+.main-content.codeformatbeautify-page-wrap .cfb-page-title-block h1 {
   font-size: 1.125rem !important;
   font-weight: 600 !important;
   line-height: 1.25 !important;
@@ -73,7 +77,7 @@
   color: var(--text) !important;
   font-family: var(--font-sans) !important;
 }
-.main-content.codeformatbeautify-page-wrap .header p {
+.main-content.codeformatbeautify-page-wrap .cfb-page-title-block p {
   font-size: 0.8125rem !important;
   line-height: 1.35 !important;
   margin: 0.125rem 0 0 !important;
