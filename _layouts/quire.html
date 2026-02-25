@@ -46,9 +46,9 @@
     })();
   </script>
   <style>
-    /* Quire app flush to header and footer — no gaps */
+    /* Quire app: respect site header height so content starts below fixed header */
     .main-content.quire-page-wrap {
-      padding-top: 0 !important;
+      padding-top: var(--header-height, 64px) !important;
       padding-bottom: 0 !important;
       margin: 0 !important;
     }
