@@ -69,6 +69,7 @@ permalink: /blog/
         <tr>
           <th>Title</th>
           <th>Date</th>
+          <th>Read</th>
           <th>Category</th>
           <th>Excerpt</th>
         </tr>
@@ -80,6 +81,9 @@ permalink: /blog/
             <a href="{{ post.url | relative_url }}">{{ post.title }}</a>
           </td>
           <td class="year-cell" data-label="Date">{{ post.date | date: "%b %d, %Y" }}</td>
+          {% assign words = post.content | strip_html | number_of_words %}
+          {% assign read_time = words | divided_by: 200 | plus: 1 %}
+          <td class="year-cell" data-label="Read">{{ read_time }} min</td>
           <td class="author-cell" data-label="Category">{% if post.categories.size > 0 %}{{ post.categories[0] }}{% else %}—{% endif %}</td>
           <td class="desc-cell" data-label="Excerpt">{% if post.excerpt %}{{ post.excerpt | strip_html | truncate: 100 }}{% else %}—{% endif %}</td>
         </tr>
@@ -178,6 +182,21 @@ document.addEventListener('DOMContentLoaded', function() {
         if (countBadge) {
           countBadge.textContent = count > 0 ? `(${count})` : '';
         }
+      }
+
+      // Empty state messaging
+      const visibleRows = Array.from(rows).filter(r => r.style.display !== 'none');
+      let emptyState = section.querySelector('.filter-empty-state');
+      if (visibleRows.length === 0) {
+        if (!emptyState) {
+          emptyState = document.createElement('div');
+          emptyState.className = 'filter-empty-state';
+          emptyState.innerHTML = '<p>No results match your filters.</p><button class="clear-filters-btn" onclick="this.closest(\'.collapsible-section\').querySelectorAll(\'.filter-dropdown input[value=all]\').forEach(function(cb){cb.checked=true;cb.dispatchEvent(new Event(\'change\',{bubbles:true}))})">Clear filters</button>';
+          table.parentNode.insertBefore(emptyState, table.nextSibling);
+        }
+        emptyState.style.display = '';
+      } else if (emptyState) {
+        emptyState.style.display = 'none';
       }
     });
   };

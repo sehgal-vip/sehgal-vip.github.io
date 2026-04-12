@@ -135,6 +135,21 @@ document.addEventListener('DOMContentLoaded', function() {
           countBadge.textContent = count > 0 ? `(${count})` : '';
         }
       }
+
+      // Empty state messaging
+      const visibleRows = Array.from(rows).filter(r => r.style.display !== 'none');
+      let emptyState = section.querySelector('.filter-empty-state');
+      if (visibleRows.length === 0) {
+        if (!emptyState) {
+          emptyState = document.createElement('div');
+          emptyState.className = 'filter-empty-state';
+          emptyState.innerHTML = '<p>No results match your filters.</p><button class="clear-filters-btn" onclick="this.closest(\'.collapsible-section\').querySelectorAll(\'.filter-dropdown input[value=all]\').forEach(function(cb){cb.checked=true;cb.dispatchEvent(new Event(\'change\',{bubbles:true}))})">Clear filters</button>';
+          table.parentNode.insertBefore(emptyState, table.nextSibling);
+        }
+        emptyState.style.display = '';
+      } else if (emptyState) {
+        emptyState.style.display = 'none';
+      }
     });
 
     // Clear selection if filtered out

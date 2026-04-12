@@ -6,6 +6,7 @@ author: Vipul Sehgal
 categories: [AI, Technology]
 tags: [ai, agents, confucius, scaffolding, swe-bench, dx, ux]
 description: "More context won't help if the cockpit is a pop-up ad storm. On the Confucius Code Agent paper, AX/UX/DX, and why scaffolding is architecture, not plumbing."
+image: "/assets/images/stop-building-chaos-3.webp"
 ---
 
 **More context won't help if the cockpit is a pop-up ad storm.**
@@ -14,7 +15,7 @@ description: "More context won't help if the cockpit is a pop-up ad storm. On th
 
 Picture this: An autopilot running a repair mission on a massive space station. Halfway through, it forgets what it was trying to fix. Every sensor reading, every failed attempt, every status update, all piled into one endless scroll until the original mission objective got buried under an avalanche of its own telemetry. The autopilot is still brilliant. But its cockpit has become unreadable.
 
-![Space station autopilot cockpit](/assets/images/stop-building-chaos-3.png)
+![Space station autopilot cockpit](/assets/images/stop-building-chaos-3.webp)
 
 Here's what makes this genuinely fascinating: a weaker model with better scaffolding can beat a stronger one. In recent benchmarks, a smaller Claude model with the right operational infrastructure outperformed a larger one with mediocre ops. Same evaluation harness, same benchmark. The difference was how information flowed to the AI.
 
@@ -26,7 +27,7 @@ We've been obsessing over engine horsepower when the bottleneck is cockpit desig
 
 Before we tour the station, you need to understand the paper's core breakthrough. It's almost embarrassingly simple once you see it.
 
-![Three audiences for agent systems](/assets/images/stop-building-chaos-5.png)
+![Three audiences for agent systems](/assets/images/stop-building-chaos-5.webp)
 
 There are three audiences for any agent system, and they need completely different views of what's happening.
 
@@ -38,7 +39,7 @@ The catastrophic mistake most frameworks make is conflating these three. They ta
 
 The Confucius SDK's rule is elegant: different views for different decks. Every mechanism that follows serves one or more of these three audiences. Keep AX, UX, and DX in mind as we walk through the architecture.
 
-![Confucius architecture](/assets/images/stop-building-chaos-4.png)
+![Confucius architecture](/assets/images/stop-building-chaos-4.webp)
 
 ---
 
@@ -46,7 +47,7 @@ The Confucius SDK's rule is elegant: different views for different decks. Every 
 
 Now picture a sprawling orbital station with thousands of modules: docking bays, laboratories, life support systems, cargo holds. That's your real world codebase. Thousands of files, services, tests, configurations, all interconnected in ways that nobody fully remembers.
 
-![Orbital station as codebase](/assets/images/stop-building-chaos-2.png)
+![Orbital station as codebase](/assets/images/stop-building-chaos-2.webp)
 
 There's always one config flag that breaks France if you remove it, and nobody knows why. That's exactly the kind of institutional memory your ops layer needs to preserve.
 
@@ -114,7 +115,7 @@ The resulting agent exhibits more reliable tool selection and recovery behaviors
 
 Here's what happens when you build mission control instead of just upgrading the autopilot.
 
-![SWE Bench Pro results](/assets/images/stop-building-chaos-1.png)
+![SWE Bench Pro results](/assets/images/stop-building-chaos-1.webp)
 
 On SWE Bench Pro, a collection of 731 real GitHub issues requiring agents to produce patches that pass all repository tests:
 

@@ -6,8 +6,9 @@ description: "Personal blog by Vipul Sehgal on AI, technology, product managemen
 author: "Vipul Sehgal"
 
 # Profile image (place your image in /assets/images/ and update this path)
-profile_image: "/assets/images/profile.jpg"
+profile_image: "/assets/images/profile.webp"
 url: "https://vipulsehgal.com"
+image: "/assets/images/hero-greek.webp"
 baseurl: ""
 
 # =============================================================================

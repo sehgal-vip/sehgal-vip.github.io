@@ -8,8 +8,8 @@ hide_breadcrumbs: true
   <video id="hero-video"
          muted
          playsinline
-         preload="auto"
-         poster="{{ '/assets/images/hero-greek.png' | relative_url }}">
+         preload="metadata"
+         poster="{{ '/assets/images/hero-greek.webp' | relative_url }}">
     <source src="{{ '/assets/videos/VipulVideo3.mp4' | relative_url }}" type="video/mp4">
   </video>
   <div class="hero-overlay"></div>
@@ -24,10 +24,13 @@ hide_breadcrumbs: true
     </div>
   </div>
   <div class="scroll-indicator animate-fade-in" style="animation-delay: 1.5s">
-    <span class="scroll-text">Scroll</span>
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-      <path d="M12 5v14M5 12l7 7 7-7"/>
+    <span class="scroll-text">Scroll to explore</span>
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="6 9 12 15 18 9"></polyline>
     </svg>
+    <div class="video-progress-bar" id="video-progress">
+      <div class="video-progress-fill" id="video-progress-fill"></div>
+    </div>
   </div>
 </section>
 
@@ -127,3 +130,5 @@ hide_breadcrumbs: true
     </p>
   {% endunless %}
 </section>
+
+<script src="{{ '/assets/js/hero-video-scrub.js' | relative_url }}" defer></script>

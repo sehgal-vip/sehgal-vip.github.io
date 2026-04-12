@@ -12,10 +12,11 @@ permalink: /reading/
   {% assign papers_years = papers_by_year_temp | map: "name" | sort | reverse %}
   {% assign papers_by_author_temp = site.data.reading_papers | group_by: "author" %}
   {% assign papers_authors = papers_by_author_temp | map: "name" | sort %}
-  <section class="collapsible-section" data-section="papers">
-    <h2 class="section-title">
+  <section class="collapsible-section collapsed" data-section="papers">
+    <h2 class="section-title section-toggle" role="button" tabindex="0" aria-expanded="false">
       <span class="section-icon">📄</span>
-      Papers
+      Papers ({{ site.data.reading_papers.size }})
+      <svg class="toggle-chevron" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
     </h2>
     <div class="section-filters" aria-label="Filter papers">
       <div class="filter-group">
@@ -110,10 +111,11 @@ permalink: /reading/
   {% assign books_years = books_by_year_temp | map: "name" | sort | reverse %}
   {% assign books_by_author_temp = site.data.reading_books | group_by: "author" %}
   {% assign books_authors = books_by_author_temp | map: "name" | sort %}
-  <section class="collapsible-section" data-section="books">
-    <h2 class="section-title">
+  <section class="collapsible-section collapsed" data-section="books">
+    <h2 class="section-title section-toggle" role="button" tabindex="0" aria-expanded="false">
       <span class="section-icon">📚</span>
-      Books
+      Books ({{ site.data.reading_books.size }})
+      <svg class="toggle-chevron" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
     </h2>
     <div class="section-filters" aria-label="Filter books">
       <div class="filter-group">
@@ -329,10 +331,11 @@ permalink: /reading/
   {% assign others_years = others_by_year_temp | map: "name" | sort | reverse %}
   {% assign others_by_author_temp = site.data.reading_others | group_by: "author" %}
   {% assign others_authors = others_by_author_temp | map: "name" | sort %}
-  <section class="collapsible-section" data-section="others">
-    <h2 class="section-title">
+  <section class="collapsible-section collapsed" data-section="others">
+    <h2 class="section-title section-toggle" role="button" tabindex="0" aria-expanded="false">
       <span class="section-icon">🔗</span>
-      Others
+      Others ({{ site.data.reading_others.size }})
+      <svg class="toggle-chevron" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
     </h2>
     <div class="section-filters" aria-label="Filter others">
       <div class="filter-group">
@@ -447,12 +450,28 @@ permalink: /reading/
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+  // Collapsible section toggles
+  document.querySelectorAll('.section-toggle').forEach(function(toggle) {
+    toggle.addEventListener('click', function() {
+      var section = this.closest('.collapsible-section');
+      section.classList.toggle('collapsed');
+      var expanded = !section.classList.contains('collapsed');
+      this.setAttribute('aria-expanded', expanded);
+    });
+    toggle.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        this.click();
+      }
+    });
+  });
+
   // Pagination state per section
   const paginationState = {
-    papers: { page: 1, perPage: 5, showAll: false },
-    books: { page: 1, perPage: 5, showAll: false },
-    articles: { page: 1, perPage: 5, showAll: false },
-    others: { page: 1, perPage: 5, showAll: false }
+    papers: { page: 1, perPage: 20, showAll: false },
+    books: { page: 1, perPage: 20, showAll: false },
+    articles: { page: 1, perPage: 20, showAll: false },
+    others: { page: 1, perPage: 20, showAll: false }
   };
 
   // Collapsible filter dropdowns

@@ -7,7 +7,13 @@
 {% assign words = post.content | number_of_words %}
 {% assign read_time = words | divided_by: 200 | plus: 1 %}
 
-<a href="{{ post.url | relative_url }}" class="post-card">
+<a href="{{ post.url | relative_url }}" class="post-card{% if post.image %} has-thumbnail{% endif %}">
+  {% if post.image %}
+  <div class="post-card-thumbnail">
+    <img src="{{ post.image | relative_url }}" alt="" loading="lazy" width="120" height="80">
+  </div>
+  {% endif %}
+  <div class="post-card-body">
   <div class="post-card-meta">
     <span class="post-card-date">
       <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -40,5 +46,6 @@
     {% for tag in post.tags limit:2 %}
       <span class="tag-badge">{{ tag }}</span>
     {% endfor %}
+  </div>
   </div>
 </a>

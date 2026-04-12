@@ -33,8 +33,9 @@ hide_sidebar: true
   </div>
   
   <div style="margin-top: 2rem;">
-    <p style="color: var(--text-muted); font-size: 0.875rem;">
-      Press <kbd style="padding: 0.25rem 0.5rem; background: var(--kbd-bg); border-radius: 4px; font-family: var(--font-mono);">⌘K</kbd> to search
-    </p>
+    <button onclick="document.dispatchEvent(new KeyboardEvent('keydown',{key:'k',metaKey:true,bubbles:true}))" style="background: var(--color-primary); color: #fff; border: none; padding: 0.6rem 1.5rem; border-radius: 8px; cursor: pointer; font-size: 0.9rem; display: inline-flex; align-items: center; gap: 0.5rem;">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+      Search the site
+    </button>
   </div>
 </div>

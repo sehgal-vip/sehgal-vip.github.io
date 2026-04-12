@@ -4,6 +4,8 @@
   "description": "A beautiful, minimalist blog built with Jekyll for GitHub Pages. Features a powerful command palette (⌘K), dark/light mode, and a zero-code publishing workflow.",
   "main": "index.js",
   "scripts": {
+    "build:js": "cat assets/js/theme-toggle.js assets/js/command-palette.js assets/js/search.js assets/js/main.js assets/js/ripple-effect.js | npx esbuild --minify > assets/js/main.bundle.min.js",
+    "build": "npm run build:js",
     "test": "playwright test"
   },
   "repository": {
@@ -19,6 +21,7 @@
   },
   "homepage": "https://github.com/sehgal-vip/sehgal-vip.github.io#readme",
   "devDependencies": {
-    "@playwright/test": "^1.58.2"
+    "@playwright/test": "^1.58.2",
+    "esbuild": "^0.28.0"
   }
 }

@@ -13,6 +13,7 @@
   const heroBg = document.querySelector('.hero-bg-fixed');
   const heroContent = document.querySelector('.hero-content');
   const scrollIndicator = document.querySelector('.scroll-indicator');
+  const progressFill = document.getElementById('video-progress-fill');
 
   if (!video || !heroSection) return;
 
@@ -63,6 +64,12 @@
         video.currentTime = targetTime;
         lastTime = targetTime;
       }
+    }
+
+    // VIDEO PROGRESS INDICATOR
+    if (progressFill) {
+      var videoProgress = Math.min(progress / 0.7, 1);
+      progressFill.style.width = (videoProgress * 100) + '%';
     }
 
     // HERO TRANSFORM
@@ -120,6 +127,7 @@
   }
 
   function onScroll() {
+    upgradePreload();
     if (!ticking) {
       requestAnimationFrame(updateScroll);
       ticking = true;
@@ -139,8 +147,14 @@
     ].join(';');
   }
 
-  // Preload video for smooth scrubbing
-  video.preload = 'auto';
+  // Upgrade preload to 'auto' on first scroll for smooth scrubbing
+  let preloadUpgraded = false;
+  function upgradePreload() {
+    if (!preloadUpgraded) {
+      video.preload = 'auto';
+      preloadUpgraded = true;
+    }
+  }
 
   window.addEventListener('scroll', onScroll, { passive: true });
   updateScroll();

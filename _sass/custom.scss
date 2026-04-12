@@ -65,10 +65,10 @@
   // Dark theme (Nyx - Midnight in the temple)
   // Deep obsidian, muted gold (torchlight), slate grey. Lower contrast, softer on eyes.
   --color-primary: #D4AF37;      // Gold/Ochre - Torchlight
-  --color-secondary: #1B2A41;    // Aegean Blue - Deep Night Sky
+  --color-secondary: #4A7FB5;    // Aegean Blue - Lighter for dark bg (5.0:1 contrast)
   --color-primary-hover: #E5C04A;
-  --color-secondary-hover: #243752;
-  --color-accent: #A85642;       // Terracotta - Fired Earth
+  --color-secondary-hover: #5A90C6;
+  --color-accent: #C46B55;       // Terracotta - Lighter for WCAG AA (4.8:1 contrast)
 
   --bg-color: #121619;           // Marble White (dark) - Shadowed Stone
   --bg-secondary: #1A1F24;
@@ -89,6 +89,32 @@
   --modal-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
   --kbd-bg: #323F4B;
   --kbd-color: #E1E7EF;
+}
+
+// =============================================================================
+// View Transitions (progressive enhancement)
+// =============================================================================
+
+@view-transition {
+  navigation: auto;
+}
+
+::view-transition-old(root) {
+  animation: 0.2s ease both fade-out;
+}
+
+::view-transition-new(root) {
+  animation: 0.2s ease both fade-in;
+}
+
+@keyframes fade-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 // =============================================================================
@@ -199,7 +225,7 @@ body {
   left: 0;
   height: 3px;
   width: 0%;
-  background: rgb(0, 128, 128); // teal
+  background: var(--color-primary);
   opacity: 0;
   z-index: 999; // below header (z-index: 1000)
   transition: width 0.1s linear, opacity 0.15s ease;
@@ -1115,6 +1141,23 @@ strong, b {
   svg {
     animation: bounce 2s ease-in-out infinite;
   }
+
+  .video-progress-bar {
+    width: 40px;
+    height: 3px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-top: 0.25rem;
+  }
+
+  .video-progress-fill {
+    height: 100%;
+    width: 0%;
+    background: var(--color-primary);
+    border-radius: 2px;
+    transition: width 0.1s linear;
+  }
 }
 
 @keyframes bounce {
@@ -1323,6 +1366,40 @@ strong, b {
 .posts-grid {
   display: grid;
   gap: 1.5rem;
+}
+
+.post-card.has-thumbnail {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+
+  .post-card-thumbnail {
+    flex-shrink: 0;
+    width: 120px;
+    height: 80px;
+    border-radius: 6px;
+    overflow: hidden;
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+  }
+
+  .post-card-body {
+    flex: 1;
+    min-width: 0;
+  }
+
+  @media (max-width: 767px) {
+    flex-direction: column;
+
+    .post-card-thumbnail {
+      width: 100%;
+      height: 140px;
+    }
+  }
 }
 
 .post-card {
@@ -3142,11 +3219,14 @@ strong, b {
 
     tr {
       padding: 1rem;
-      border-bottom: 1px solid var(--border-color);
+      margin-bottom: 0.5rem;
+      border-radius: 8px;
+      border: 1px solid var(--border-color);
       background: var(--card-bg);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
 
       &:last-child {
-        border-bottom: none;
+        margin-bottom: 0;
       }
     }
 
@@ -3199,16 +3279,7 @@ strong, b {
       }
 
       &.desc-cell {
-        font-size: 0.875rem;
-        color: var(--text-muted);
-        line-height: 1.5;
-
-        // Hide if empty
-        &:empty {
-          display: none !important;
-          margin: 0;
-          padding: 0;
-        }
+        display: none;
       }
     }
   }
@@ -3226,6 +3297,125 @@ strong, b {
 
   .filter-dropdown {
     min-width: 140px;
+  }
+}
+
+// =============================================================================
+// Keyboard Shortcut Hint Toast
+// =============================================================================
+
+.shortcut-hint-toast {
+  position: fixed;
+  bottom: 1.5rem;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--card-bg);
+  color: var(--text-color);
+  border: 1px solid var(--border-color);
+  padding: 0.65rem 1.25rem;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  box-shadow: var(--shadow-lg);
+  opacity: 0;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  z-index: 1001;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+
+  &.visible {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  kbd {
+    background: var(--kbd-bg, #e5e7eb);
+    padding: 0.15rem 0.4rem;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    font-family: var(--font-mono);
+  }
+
+  button {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 1.1rem;
+    padding: 0 0.25rem;
+    min-height: auto;
+    min-width: auto;
+    line-height: 1;
+
+    &:hover {
+      color: var(--text-color);
+    }
+  }
+}
+
+// =============================================================================
+// Empty State for Filters
+// =============================================================================
+
+.filter-empty-state {
+  text-align: center;
+  padding: 2rem 1rem;
+  color: var(--text-muted);
+
+  p {
+    margin-bottom: 0.75rem;
+    font-size: 0.95rem;
+  }
+}
+
+.clear-filters-btn {
+  background: var(--color-primary);
+  color: #fff;
+  border: none;
+  padding: 0.5rem 1.25rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: opacity var(--transition-fast);
+
+  &:hover {
+    opacity: 0.85;
+  }
+}
+
+// =============================================================================
+// Collapsible Sections
+// =============================================================================
+
+.section-toggle {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  user-select: none;
+
+  .toggle-chevron {
+    margin-left: auto;
+    transition: transform var(--transition-speed);
+    flex-shrink: 0;
+  }
+
+  &:hover {
+    color: var(--color-primary);
+  }
+}
+
+.collapsible-section {
+  &.collapsed {
+    .section-toggle .toggle-chevron {
+      transform: rotate(-90deg);
+    }
+
+    .section-filters,
+    .data-table,
+    .pagination-controls {
+      display: none;
+    }
   }
 }
 

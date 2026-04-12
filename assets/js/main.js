@@ -421,4 +421,27 @@
 
   // Export toast for external use
   window.showToast = showToast;
+
+  // First-visit keyboard shortcut hint
+  function showShortcutHint() {
+    if (localStorage.getItem('shortcut-hint-dismissed')) return;
+    var hint = document.createElement('div');
+    hint.className = 'shortcut-hint-toast';
+    var isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+    hint.innerHTML = 'Tip: Press <kbd>' + (isMac ? '⌘' : 'Ctrl') + '+K</kbd> for quick navigation <button aria-label="Dismiss">&times;</button>';
+    document.body.appendChild(hint);
+    requestAnimationFrame(function() { hint.classList.add('visible'); });
+    var dismiss = function() {
+      hint.classList.remove('visible');
+      localStorage.setItem('shortcut-hint-dismissed', '1');
+      setTimeout(function() { hint.remove(); }, 300);
+    };
+    hint.querySelector('button').addEventListener('click', dismiss);
+    setTimeout(dismiss, 8000);
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function() { setTimeout(showShortcutHint, 2000); });
+  } else {
+    setTimeout(showShortcutHint, 2000);
+  }
 })();
