@@ -22,14 +22,14 @@ How tokens look at each other — the mechanism that made transformers possible.
 </div>
 
 <!-- ========================================================== -->
-<h2>The problem attention solves</h2>
+<h2 data-toc="The problem">The problem attention solves</h2>
 
 <p class="prose">After the embedding step, you have a stack of vectors — one per token — each carrying meaning but in <em>isolation</em>. The vector for <em>"it"</em> in <em>"the cat sat on the mat because <strong>it</strong> was warm"</em> just says "this is the pronoun 'it'". It says nothing about what "it" refers to. To resolve that, the vector for "it" needs to <em>look at</em> the other vectors and pull in information from the relevant ones.</p>
 
 <p class="prose">That's the whole job of attention: <strong>let each token update itself based on a weighted blend of every other token in the sequence.</strong></p>
 
 <!-- ========================================================== -->
-<h2>Step by step on a 4-token toy example</h2>
+<h2 data-toc="Step by step">Step by step on a 4-token toy example</h2>
 
 <p class="prose">Take the sentence <em>"the cat sat down"</em>. Four tokens. Each starts with its own embedding vector (let's pretend each is just 4 numbers for illustration):</p>
 
@@ -85,7 +85,7 @@ down     [ 0.20   0.30   0.32   0.18 ]</pre>
 <p class="prose">Output: four new vectors, same shape, each having absorbed contextual information from the others according to learned attention patterns.</p>
 
 <!-- ========================================================== -->
-<h2>The pattern is context-sensitive — try it</h2>
+<h2 data-toc="Context-sensitive">The pattern is context-sensitive — try it</h2>
 
 <p class="prose">Here's a famous test case (a "Winograd schema") where flipping <em>one word</em> changes which earlier noun the pronoun <em>"it"</em> refers to. In the first version, <em>"too big"</em> implies the trophy is the problem. Flip to <em>"too small"</em> and the suitcase is now the issue. Hover <em>"it"</em> in each variant — the attention weights flip:</p>
 
@@ -96,7 +96,7 @@ down     [ 0.20   0.30   0.32   0.18 ]</pre>
 <p class="prose">This is the whole reason attention is powerful: it isn't a fixed lookup. The same word ("it") routes attention differently depending on the rest of the sentence, because Q, K, V are computed from the contextually-influenced embeddings flowing up through the layers.</p>
 
 <!-- ========================================================== -->
-<h2>Multi-head attention</h2>
+<h2 data-toc="Multi-head">Multi-head attention</h2>
 
 <p class="prose">A single attention computation captures <em>one</em> kind of relationship at a time — maybe "what does this pronoun refer to," maybe "what's the verb for this subject," maybe "which token came right before me." Real models run attention many times in parallel, with different learned Q/K/V projections. Each parallel run is called a <strong>head</strong>.</p>
 
@@ -107,7 +107,7 @@ down     [ 0.20   0.30   0.32   0.18 ]</pre>
 <p class="prose">Concretely: if your embedding dimension is 4096 and you use 32 heads, each head operates on a 128-dimensional slice of the embedding. The 32 heads' outputs (each 128-dim) are concatenated back into a 4096-dim vector and then linearly projected. This way the cost per head is small, but you get many parallel attention patterns.</p>
 
 <!-- ========================================================== -->
-<h2>The causal autoregressive property</h2>
+<h2 data-toc="Causal property">The causal autoregressive property</h2>
 
 <p class="prose">In a decoder-only LLM, each token can only attend to <em>itself and earlier tokens</em>, never later ones. This isn't a quirky training shortcut — it's the structural property that makes the model a next-token predictor at all.</p>
 
@@ -120,7 +120,7 @@ down     [ 0.20   0.30   0.32   0.18 ]</pre>
 </div>
 
 <!-- ========================================================== -->
-<h2>Why attention is O(n²) — and what that costs</h2>
+<h2 data-toc="O(n²) cost">Why attention is O(n²) — and what that costs</h2>
 
 <p class="prose">For a sequence of <em>n</em> tokens, attention computes a score for every pair. That's <em>n</em> × <em>n</em> = n² scores. Per layer. Per head. For modest contexts (say 4k tokens, 32 heads, 32 layers), that's already 16 million × 32 × 32 ≈ 16 billion attention scores. Double the context to 8k? You get <em>four times</em> the cost.</p>
 

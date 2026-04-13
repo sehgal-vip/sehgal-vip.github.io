@@ -22,7 +22,7 @@ Attention + MLP + residual + norm, repeated N times. What depth actually buys yo
 </div>
 
 <!-- ========================================================== -->
-<h2>Anatomy of a single block</h2>
+<h2 data-toc="Anatomy">Anatomy of a single block</h2>
 
 <p class="prose">A transformer block is a small, repeated unit. Modern decoder-only LLMs stack 30–80 of them. The block itself is short:</p>
 
@@ -93,7 +93,7 @@ Attention + MLP + residual + norm, repeated N times. What depth actually buys yo
 <p class="prose">That's one block. Output goes into the next block. Sixty times.</p>
 
 <!-- ========================================================== -->
-<h2>What the MLP actually does</h2>
+<h2 data-toc="The MLP">What the MLP actually does</h2>
 
 <p class="prose">After attention has let tokens swap information, the MLP runs on each token <em>independently</em> — no token-to-token communication, just a small neural network applied identically at every position. Typical structure: project up to ~4× the embedding dimension, apply a non-linearity (GELU or SwiGLU), project back down.</p>
 
@@ -104,7 +104,7 @@ Attention + MLP + residual + norm, repeated N times. What depth actually buys yo
 <p class="prose">A common research finding: a lot of factual knowledge in LLMs lives in the MLP weights. Fine-tuning that targets specific factual updates often touches MLP layers more than attention. This isn't a hard rule — it's more like "the MLP has more raw parameter capacity than attention, so that's where most knowledge ends up packed."</p>
 
 <!-- ========================================================== -->
-<h2>The residual stream — the highway through the model</h2>
+<h2 data-toc="Residual stream">The residual stream — the highway through the model</h2>
 
 <p class="prose">Notice the dotted lines bypassing both attention and MLP in the diagram. Those are <strong>residual connections</strong>. Their job is simple but profound: instead of replacing the token's vector at each block, attention and MLP <em>add</em> their contribution to it. The original information is always preserved.</p>
 
@@ -121,7 +121,7 @@ Attention + MLP + residual + norm, repeated N times. What depth actually buys yo
 </ul>
 
 <!-- ========================================================== -->
-<h2>What depth buys you — the layer slider</h2>
+<h2 data-toc="Depth">What depth buys you — the layer slider</h2>
 
 <p class="prose">As a token's vector travels up through the layers, what gets added to it changes character. Empirically:</p>
 
@@ -136,7 +136,7 @@ Attention + MLP + residual + norm, repeated N times. What depth actually buys yo
 <div data-widget="layer-stack"></div>
 
 <!-- ========================================================== -->
-<h2>Why deeper isn't always better</h2>
+<h2 data-toc="Depth limits">Why deeper isn't always better</h2>
 
 <p class="prose">More layers means more capacity — but capacity costs both compute (each forward pass scales linearly with depth) and parameters (each layer is millions to hundreds of millions of weights). Diminishing returns kick in: a 200-layer model is rarely twice as good as a 100-layer model, but it's twice as expensive and twice as slow.</p>
 

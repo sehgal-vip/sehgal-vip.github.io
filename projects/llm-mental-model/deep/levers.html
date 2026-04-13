@@ -21,7 +21,7 @@ Five levers — what each one actually changes inside the model, and what it cos
 </div>
 
 <!-- ========================================================== -->
-<h2><span class="num">1.</span> Fine-tuning</h2>
+<h2 data-toc="Fine-tuning"><span class="num">1.</span> Fine-tuning</h2>
 
 <div class="changes-where">
   <h4>What changes where?</h4>
@@ -74,7 +74,7 @@ config = LoraConfig(
 </div>
 
 <!-- ========================================================== -->
-<h2><span class="num">2.</span> Quantization</h2>
+<h2 data-toc="Quantization"><span class="num">2.</span> Quantization</h2>
 
 <div class="changes-where">
   <h4>What changes where?</h4>
@@ -123,7 +123,7 @@ config = LoraConfig(
 </div>
 
 <!-- ========================================================== -->
-<h2><span class="num">3.</span> Context extension</h2>
+<h2 data-toc="Context extension"><span class="num">3.</span> Context extension</h2>
 
 <div class="changes-where">
   <h4>What changes where?</h4>
@@ -169,7 +169,7 @@ config = LoraConfig(
 </div>
 
 <!-- ========================================================== -->
-<h2><span class="num">4.</span> Pruning</h2>
+<h2 data-toc="Pruning"><span class="num">4.</span> Pruning</h2>
 
 <div class="changes-where">
   <h4>What changes where?</h4>
@@ -206,7 +206,7 @@ config = LoraConfig(
 </ul>
 
 <!-- ========================================================== -->
-<h2><span class="num">5.</span> Decoding controls</h2>
+<h2 data-toc="Decoding"><span class="num">5.</span> Decoding controls</h2>
 
 <div class="changes-where">
   <h4>What changes where?</h4>
@@ -255,7 +255,7 @@ config = LoraConfig(
 <p class="prose">Also covered in inference.html. The setting you'd see in an inference engine is something like <code>--speculative-model llama-1b</code> alongside the main model. Output is identical to non-speculative decoding; only latency improves. If your serving infra supports it, almost always worth turning on.</p>
 
 <!-- ========================================================== -->
-<h2>Putting it together — diagnosis preview</h2>
+<h2 data-toc="Diagnosis preview">Putting it together — diagnosis preview</h2>
 
 <p class="prose">Once you have all five levers in your head, the diagnostic move is: <em>given a problem, which lever is most likely to fix it?</em></p>
 

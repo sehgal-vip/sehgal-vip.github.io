@@ -107,8 +107,24 @@ html[data-theme="dark"] {
   display: flex;
   align-items: center;
   padding: 0 18px;
+  gap: var(--space-3);
 }
 html[data-theme="dark"] #topbar { background: rgba(26, 24, 20, 0.85); }
+
+#topbar-left, #topbar-right {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+#topbar-right { justify-content: flex-end; }
+
+/* On wide viewports the body reserves 244px for the TOC. Match the same
+   right-padding on the topbar so its flex center aligns with the page
+   content center (not the viewport center). */
+@media (min-width: 1280px) {
+  #topbar { padding-right: calc(244px + 18px); }
+}
 
 #nav-toggle {
   width: 38px;
@@ -218,9 +234,7 @@ body { padding-top: 56px; }
 
 /* Top-bar brand title — visually centered to the page content area */
 #topbar-title {
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
+  flex-shrink: 0;
   font-family: Georgia, "Charter", serif;
   font-style: italic;
   font-weight: bold;
@@ -235,12 +249,9 @@ body { padding-top: 56px; }
 }
 #topbar-title:hover { background: var(--analogy-bg); }
 
-/* On wide screens the page is centered in (viewport - 244px right padding).
-   Shift the title left by half that amount so it sits over the page's
-   visual center, not the viewport's. */
-@media (min-width: 1280px) {
-  #topbar-title { left: calc(50% - 122px); }
-}
+/* Title centering is handled by flexbox in #topbar — no offset needed.
+   The topbar's padding-right matches body's on ≥1280px so the flex
+   center aligns with page content center. */
 
 @media (max-width: 560px) {
   #topbar-title { font-size: 0.95em; }
@@ -250,18 +261,14 @@ body { padding-top: 56px; }
   #topbar-title { display: none; }
 }
 
-/* Theme toggle button */
+/* Theme toggle button — mounted inside #topbar-right by theme.js */
 #theme-toggle {
-  position: fixed;
-  top: 9px;
-  right: 12px;
   width: 36px;
   height: 36px;
   border-radius: 50%;
   background: var(--bg-muted);
   border: 1px solid var(--rule);
   cursor: pointer;
-  z-index: 1001;
   font-size: 18px;
   color: var(--text);
   display: flex;
@@ -666,6 +673,32 @@ hr {
   background: var(--bg-muted);
   border-radius: 4px;
   font-size: 0.92em;
+}
+
+/* ---------- Hero image (hub top) ---------- */
+
+.hero {
+  max-width: 960px;
+  margin: var(--space-5) auto var(--space-6);
+  padding: 0;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--rule);
+}
+.hero img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.hero figcaption {
+  padding: var(--space-2) var(--space-4);
+  background: var(--bg-muted);
+  font-size: var(--fs-sm);
+  color: var(--text-soft);
+  font-style: italic;
+  text-align: center;
+  border-top: 1px solid var(--rule);
 }
 
 /* ---------- Skeletal architecture diagram (hub top) — vertical flow ---------- */

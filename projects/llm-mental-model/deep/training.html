@@ -21,7 +21,7 @@ Pretraining → SFT → RLHF / DPO. What each stage actually changes inside the 
 </div>
 
 <!-- ========================================================== -->
-<h2>The big picture: three stages</h2>
+<h2 data-toc="Three stages">The big picture: three stages</h2>
 
 <p class="prose">A modern instruction-following LLM goes through (at minimum) three distinct training stages. Each one uses gradient descent and roughly the same loss function — but the data and the goal differ.</p>
 
@@ -52,7 +52,7 @@ Pretraining → SFT → RLHF / DPO. What each stage actually changes inside the 
 <p class="prose">Notice the lopsidedness: pretraining costs roughly two orders of magnitude more compute than the post-training stages combined. Nearly all of the model's <em>capability</em> comes from pretraining; the post-training stages mostly shape <em>behavior</em>.</p>
 
 <!-- ========================================================== -->
-<h2>Stage 1: Pretraining</h2>
+<h2 data-toc="Pretraining">Stage 1: Pretraining</h2>
 
 <p class="prose">Take a colossal pile of text — Common Crawl scrapes, Wikipedia, GitHub code, books, papers, Reddit, StackOverflow, scientific repositories. After heavy filtering, deduplication, and quality scoring, you might end up with a few trillion tokens. The training objective is the same one you've seen all along: <em>predict the next token</em>.</p>
 
@@ -73,7 +73,7 @@ Pretraining → SFT → RLHF / DPO. What each stage actually changes inside the 
 <p class="prose">Training a frontier model takes thousands of GPUs running for weeks or months, costing tens to hundreds of millions of dollars. The numbers are eye-watering enough to be useless intuition pumps, so here's a more useful one: <em>pretraining is the most expensive thing humans regularly do with computers.</em> Genuinely. There is nothing else civilians spend as much compute on as one frontier-model pretraining run.</p>
 
 <!-- ========================================================== -->
-<h2>Stage 2: Supervised fine-tuning (SFT)</h2>
+<h2 data-toc="SFT">Stage 2: Supervised fine-tuning (SFT)</h2>
 
 <p class="prose">A pretrained model is a strange creature. Ask <em>"What is the capital of France?"</em> and it might continue with <em>"is a question often asked in geography classes…"</em> — because that's a plausible continuation of an internet article that <em>contains</em> that question. It's not refusing to answer; it just sees a string of text and predicts what comes next, having no concept of "you're asking me a question."</p>
 
@@ -91,7 +91,7 @@ Pretraining → SFT → RLHF / DPO. What each stage actually changes inside the 
 </div>
 
 <!-- ========================================================== -->
-<h2>Stage 3: RLHF or DPO</h2>
+<h2 data-toc="RLHF / DPO">Stage 3: RLHF or DPO</h2>
 
 <p class="prose">SFT teaches the model what good responses <em>look like</em>, but it can't directly teach <em>preferences</em>. Concise vs verbose, careful vs confident, this style vs that style — these are subtler than "right answer" and need a different signal.</p>
 
@@ -116,12 +116,12 @@ Pretraining → SFT → RLHF / DPO. What each stage actually changes inside the 
 <p class="prose">RLHF/DPO updates touch roughly the same parts of the model as SFT — final-layer behavioral subspaces — but they're sensitive in a way SFT isn't. Push too hard and you get "alignment tax": the model becomes obedient and bland, losing some of the sharpness it had before. This is one reason post-training is more art than science: the goal is to nudge behavior without flattening capability.</p>
 
 <!-- ========================================================== -->
-<h2>See it on a single prompt</h2>
+<h2 data-toc="Try a prompt">See it on a single prompt</h2>
 
 <div data-widget="training-stages" data-prompt="Convince me pineapple belongs on pizza."></div>
 
 <!-- ========================================================== -->
-<h2>What about RLAIF, constitutional AI, and the rest?</h2>
+<h2 data-toc="Other approaches">What about RLAIF, constitutional AI, and the rest?</h2>
 
 <p class="prose">The post-training landscape moves fast. A few names you'll see:</p>
 <ul class="prose">

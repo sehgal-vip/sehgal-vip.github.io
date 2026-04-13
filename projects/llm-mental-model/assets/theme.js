@@ -30,7 +30,8 @@
       btn = document.createElement('button');
       btn.id = 'theme-toggle';
       btn.title = 'Toggle dark mode';
-      document.body.appendChild(btn);
+      const host = document.getElementById('topbar-right') || document.body;
+      host.appendChild(btn);
     }
     btn.addEventListener('click', () => {
       const cur = document.documentElement.getAttribute('data-theme') || 'light';
@@ -41,9 +42,12 @@
     applyTheme(readTheme()); // re-apply to ensure button label is correct
   }
 
+  // Run init after nav.js has created the topbar. Use a tiny delay so that
+  // even if scripts race, we catch the topbar.
+  function run() { setTimeout(init, 0); }
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init);
+    document.addEventListener('DOMContentLoaded', run);
   } else {
-    init();
+    run();
   }
 })();

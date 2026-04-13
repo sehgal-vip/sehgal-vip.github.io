@@ -40,7 +40,8 @@
       const li = document.createElement('li');
       const a = document.createElement('a');
       a.href = '#' + h.id;
-      a.textContent = cleanHeadingText(h);
+      // Prefer the short data-toc label over the full heading text
+      a.textContent = h.dataset.toc || cleanHeadingText(h);
       li.appendChild(a);
       ul.appendChild(li);
       liByHeading.set(h, li);

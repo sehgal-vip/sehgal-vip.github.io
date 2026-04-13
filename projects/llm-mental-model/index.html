@@ -14,6 +14,11 @@
 A first-principles mental model — architecture first, then the levers you can pull.
 </p>
 
+<figure class="hero">
+  <img src="assets/hero-skeleton.png" alt="A neural-network skeleton — input data on the left, hidden layers in the middle, output predictions on the right" loading="eager">
+  <figcaption>The shape of a model, at a glance</figcaption>
+</figure>
+
 <div class="callout-invariant" data-label="📖 How to read this">
   <p>This page is the whole mental model in one sitting (~30 minutes). Every section ends with a <em>→ go deeper</em> link to a dedicated page if you want more. The artifact treats the <strong>vanilla decoder-only transformer</strong> (the GPT family) as the baseline; deviations like Mixture-of-Experts, multimodal, or encoder-decoder appear as <em>variant notes</em> on the deep pages where they most naturally attach.</p>
 </div>
@@ -180,7 +185,7 @@ A first-principles mental model — architecture first, then the levers you can 
 
 <!-- ===================================================================== -->
 <section class="hub-section" id="s0">
-<h2><span class="num">0.</span> So what <em>is</em> an LLM, really?</h2>
+<h2 data-toc="What is an LLM?"><span class="num">0.</span> So what <em>is</em> an LLM, really?</h2>
 
 <p class="prose">An LLM is a function. You hand it a sequence of text. It hands you back, for every possible next token, a number — how strongly it predicts that token comes next. Pick one of those tokens, append it to the sequence, and ask again. Keep going until you've grown the answer you wanted.</p>
 
@@ -212,7 +217,7 @@ A first-principles mental model — architecture first, then the levers you can 
 
 <!-- ===================================================================== -->
 <section class="hub-section" id="s1">
-<h2><span class="num">1.</span> Words don't fit in math — so we cheat: tokens, embeddings, and position</h2>
+<h2 data-toc="Tokens & embeddings"><span class="num">1.</span> Words don't fit in math — so we cheat: tokens, embeddings, and position</h2>
 
 <p class="prose">A model can't multiply <em>"hello"</em>. It can multiply numbers. So before anything else, every piece of text gets converted into numbers in three layers.</p>
 
@@ -244,7 +249,7 @@ A first-principles mental model — architecture first, then the levers you can 
 
 <!-- ===================================================================== -->
 <section class="hub-section" id="s2">
-<h2><span class="num">2.</span> Tokens have a group chat: attention</h2>
+<h2 data-toc="Attention"><span class="num">2.</span> Tokens have a group chat: attention</h2>
 
 <p class="prose">Now we have a sequence of position-aware vectors. The next problem: how does <em>each</em> token know what <em>other</em> tokens in the sequence say? In <em>"The cat sat on the mat because <strong>it</strong> was warm"</em>, what does <em>"it"</em> refer to — cat or mat? The model needs a way for tokens to <em>look at each other</em>.</p>
 
@@ -275,7 +280,7 @@ A first-principles mental model — architecture first, then the levers you can 
 
 <!-- ===================================================================== -->
 <section class="hub-section" id="s3">
-<h2><span class="num">3.</span> Same conversation, sixty times in a row: the transformer block</h2>
+<h2 data-toc="Transformer block"><span class="num">3.</span> Same conversation, sixty times in a row: the transformer block</h2>
 
 <p class="prose">One round of attention isn't enough. Modern LLMs stack the same operation dozens of times — Llama 3 70B has 80 layers; GPT-4 is reportedly more. Each layer is called a <strong>transformer block</strong>, and each block does roughly the same thing:</p>
 
@@ -307,7 +312,7 @@ A first-principles mental model — architecture first, then the levers you can 
 
 <!-- ===================================================================== -->
 <section class="hub-section" id="s4">
-<h2><span class="num">4.</span> From hidden state to next token: the full inference loop</h2>
+<h2 data-toc="Inference loop"><span class="num">4.</span> From hidden state to next token: the full inference loop</h2>
 
 <p class="prose">We've walked through the inside of the model. Now let's walk the full loop end-to-end — input text to next token to next next token. This is the part most explanations leave fuzzy.</p>
 
@@ -417,7 +422,7 @@ A first-principles mental model — architecture first, then the levers you can 
 
 <!-- ===================================================================== -->
 <section class="hub-section" id="s5">
-<h2><span class="num">5.</span> Four lenses for thinking about LLMs</h2>
+<h2 data-toc="Four lenses"><span class="num">5.</span> Four lenses for thinking about LLMs</h2>
 
 <p class="prose">Before we look at training and the levers, here's a sorting framework. When something interesting (or broken) happens with an LLM, it's almost always one of <em>four</em> categories. Confusing them is the single most common source of wrong diagnoses.</p>
 
@@ -462,7 +467,7 @@ A first-principles mental model — architecture first, then the levers you can 
 
 <!-- ===================================================================== -->
 <section class="hub-section" id="s6">
-<h2><span class="num">6.</span> How a model goes from "predicts the internet" to "answers your email"</h2>
+<h2 data-toc="Training"><span class="num">6.</span> How a model goes from "predicts the internet" to "answers your email"</h2>
 
 <p class="prose">Everything above describes how the model <em>runs</em>. Now: how does a model become any good in the first place? Modern LLMs go through three roughly distinct training stages — and each stage shapes the model in a different way. <span class="lens-tag weights">weights</span></p>
 
@@ -496,7 +501,7 @@ A first-principles mental model — architecture first, then the levers you can 
 
 <!-- ===================================================================== -->
 <section class="hub-section" id="s7">
-<h2><span class="num">7.</span> How do we know a change helped?</h2>
+<h2 data-toc="Evaluation"><span class="num">7.</span> How do we know a change helped?</h2>
 
 <p class="prose">Every lever we're about to discuss is a <em>change</em> to the model or the system. Fine-tuning, quantizing, extending context, swapping decoding settings — each one is supposed to make things better. <strong>How do we tell?</strong> That's evaluation.</p>
 
@@ -518,7 +523,7 @@ A first-principles mental model — architecture first, then the levers you can 
 
 <!-- ===================================================================== -->
 <section class="hub-section" id="s8">
-<h2><span class="num">8.</span> Knobs you can turn after the model is trained</h2>
+<h2 data-toc="Levers"><span class="num">8.</span> Knobs you can turn after the model is trained</h2>
 
 <p class="prose">Once a model exists, you have several distinct ways to change what it does. Each one touches a different lens.</p>
 

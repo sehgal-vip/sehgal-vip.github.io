@@ -38,23 +38,32 @@
   }
 
   function init() {
-    // Top bar
+    // Top bar — three flex regions for true title centering
     const bar = document.createElement('div');
     bar.id = 'topbar';
     document.body.appendChild(bar);
+
+    const left = document.createElement('div');
+    left.id = 'topbar-left';
+    bar.appendChild(left);
 
     const hamburger = document.createElement('button');
     hamburger.id = 'nav-toggle';
     hamburger.setAttribute('aria-label', 'Open navigation menu');
     hamburger.innerHTML = '<span></span><span></span><span></span>';
-    bar.appendChild(hamburger);
+    left.appendChild(hamburger);
 
-    // Brand title in the top bar — links back to hub
+    // Brand title — the static middle; equal flex left+right ensure true centering
     const title = document.createElement('a');
     title.id = 'topbar-title';
     title.href = resolveHref('index.html');
     title.textContent = 'How LLMs Work';
     bar.appendChild(title);
+
+    // Right region — theme.js mounts its toggle here
+    const right = document.createElement('div');
+    right.id = 'topbar-right';
+    bar.appendChild(right);
 
     // Panel (slide-out from left)
     const panel = document.createElement('nav');

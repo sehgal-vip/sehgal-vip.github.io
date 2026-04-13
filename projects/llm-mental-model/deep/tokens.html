@@ -22,7 +22,7 @@ How text becomes numbers — and how the model knows which number came first.
 </div>
 
 <!-- ========================================================== -->
-<h2>Tokens — chopping text into reusable pieces</h2>
+<h2 data-toc="Tokens">Tokens — chopping text into reusable pieces</h2>
 
 <p class="prose">A model can't operate on raw characters directly — well, it could, but you'd waste a lot of capacity making it re-learn that <em>"the"</em> is a recurring chunk every single time. Instead, text gets chopped into <strong>tokens</strong>: pieces that are usually shorter than a word but longer than a character, chosen so that common pieces are reused across many words.</p>
 
@@ -59,14 +59,14 @@ How text becomes numbers — and how the model knows which number came first.
 <p class="prose">The result: <em>"the"</em> is one token (cheap), <em>"establishment"</em> might be one token (cheap), and <em>"antidisestablishmentarianism"</em> splits into something like <code>["anti", "dis", "establishment", "arian", "ism"]</code> — five tokens, but built from familiar parts.</p>
 
 <!-- ========================================================== -->
-<h2>The tokenizer playground</h2>
+<h2 data-toc="Playground">The tokenizer playground</h2>
 
 <p class="prose">Type anything below to see what a model would actually receive.</p>
 
 <div data-widget="tokenizer"></div>
 
 <!-- ========================================================== -->
-<h2>Why tokenization is more interesting than it sounds</h2>
+<h2 data-toc="Why it matters">Why tokenization is more interesting than it sounds</h2>
 
 <p class="prose">Tokenization is one of those topics that <em>feels</em> mechanical until it bites you. A few cases worth internalizing:</p>
 
@@ -83,7 +83,7 @@ How text becomes numbers — and how the model knows which number came first.
 <p class="prose">Most tokenizers treat <em>" the"</em> (with leading space) as a different token than <em>"the"</em> (no space), because they often appear in different contexts. <em>"The"</em>, <em>"the"</em>, and <em>"THE"</em> are usually three separate tokens too. This is invisible to humans but very visible to the model.</p>
 
 <!-- ========================================================== -->
-<h2>Embeddings — turning IDs into geometry</h2>
+<h2 data-toc="Embeddings">Embeddings — turning IDs into geometry</h2>
 
 <p class="prose">A token ID like <code>1820</code> isn't useful to the math directly. The model needs each token represented as a <strong>vector</strong> — a list of (typically) 1024 to 8192 numbers. That vector is the token's <strong>embedding</strong>, and it's looked up from a giant table called the embedding matrix.</p>
 
@@ -100,7 +100,7 @@ How text becomes numbers — and how the model knows which number came first.
 </div>
 
 <!-- ========================================================== -->
-<h2>Position — how the model knows what came first</h2>
+<h2 data-toc="Position">Position — how the model knows what came first</h2>
 
 <p class="prose">Here's the gap that most explanations skip too long: by themselves, embeddings carry <em>no</em> information about word order. <em>"Dog bites man"</em> and <em>"man bites dog"</em> would produce identical sets of embeddings — same words, same vectors. The model would have no way to tell which word came first.</p>
 

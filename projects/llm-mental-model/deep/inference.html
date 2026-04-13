@@ -21,7 +21,7 @@ Forward pass, KV cache, prefill vs decode, batching, speculative decoding.
 </div>
 
 <!-- ========================================================== -->
-<h2>One token, end to end</h2>
+<h2 data-toc="End-to-end flow">One token, end to end</h2>
 
 <p class="prose">The hub showed the loop at a glance. Let's walk it more slowly.</p>
 
@@ -43,7 +43,7 @@ Forward pass, KV cache, prefill vs decode, batching, speculative decoding.
 </div>
 
 <!-- ========================================================== -->
-<h2>Prefill vs decode — two very different cost shapes</h2>
+<h2 data-toc="Prefill vs decode">Prefill vs decode — two very different cost shapes</h2>
 
 <p class="prose">If you've ever wondered why ChatGPT pauses for a second before starting to stream a response, then streams quickly word-by-word, you've experienced the <strong>prefill / decode</strong> split.</p>
 
@@ -66,7 +66,7 @@ Forward pass, KV cache, prefill vs decode, batching, speculative decoding.
 </ul>
 
 <!-- ========================================================== -->
-<h2>The KV cache — what it is, what it does, how big it gets</h2>
+<h2 data-toc="KV cache">The KV cache — what it is, what it does, how big it gets</h2>
 
 <p class="prose">If decode just kept re-running the entire forward pass over the entire growing sequence for every new token, generating 1,000 tokens would be horrendous — each token costs more than the last because the sequence is longer. The trick that makes decode feasible: cache the K and V vectors of past tokens.</p>
 
@@ -92,12 +92,12 @@ Forward pass, KV cache, prefill vs decode, batching, speculative decoding.
 </div>
 
 <!-- ========================================================== -->
-<h2>Try the loop yourself</h2>
+<h2 data-toc="Try it">Try the loop yourself</h2>
 
 <div data-widget="inference-stepper"></div>
 
 <!-- ========================================================== -->
-<h2>Batching — sharing the GPU across users</h2>
+<h2 data-toc="Batching">Batching — sharing the GPU across users</h2>
 
 <p class="prose">A single user's decode underutilizes a modern GPU dramatically — the matrix multiply for one token is too small to fill a chip designed to multiply enormous matrices. So inference servers <strong>batch</strong>: combine many users' decode steps into one forward pass that's wide instead of deep.</p>
 
@@ -108,7 +108,7 @@ Forward pass, KV cache, prefill vs decode, batching, speculative decoding.
 </div>
 
 <!-- ========================================================== -->
-<h2>Speculative decoding — letting a small model do the typing</h2>
+<h2 data-toc="Speculative decoding">Speculative decoding — letting a small model do the typing</h2>
 
 <p class="prose">Decode is serial — you can't generate token N+1 until token N exists. Or can you? <strong>Speculative decoding</strong> says: while the big slow model is busy with token N, let a small fast "draft" model guess tokens N+1, N+2, N+3 ahead. Then have the big model verify all four guesses in <em>one</em> forward pass (which it can do because verifying multiple positions in parallel is just like prefill). Accepted tokens get appended; the first wrong guess and everything after it gets thrown out.</p>
 
