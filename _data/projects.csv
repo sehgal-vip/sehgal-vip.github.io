@@ -1,5 +1,5 @@
 title,description,year,url
-"How LLMs Work","From tokens to next token: a visual walkthrough of the LLM stack",2026,https://sehgal-vip.github.io/llm-mental-model/
+"How LLMs Work","From tokens to next token: a visual walkthrough of the LLM stack",2026,/projects/llm-mental-model/
 "Quire","Split, merge, rotate, reorder, and more — client-side in the browser",2026,/projects/quire/
 "JSONL Reader","Read, parse, and visualize JSONL files with streaming support for 1M+ lines",2026,/projects/jsonlreader/
 "Format And Beautify","Client-side code formatter, beautifier, and minifier for 18 languages with themes",2026,/projects/CodeFormatBeautify/
