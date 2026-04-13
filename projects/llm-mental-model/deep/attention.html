@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Attention — Deep Dive</title>
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="page">
+
+<nav class="breadcrumb"><a href="../index.html">← Back to hub</a></nav>
+
+<h1>Attention</h1>
+<p class="prose" style="text-align:center; color:var(--text-soft); font-style:italic; margin-top:-0.5em;">
+How tokens look at each other — the mechanism that made transformers possible.
+</p>
+
+<div class="lens-block">
+  <span class="lens-tag context">context</span> Attention is how information flows <em>between</em> tokens in your input.
+  <span class="lens-tag weights">weights</span> The Q, K, V projection matrices are part of the model's learned weights.
+</div>
+
+<!-- ========================================================== -->
+<h2>The problem attention solves</h2>
+
+<p class="prose">After the embedding step, you have a stack of vectors — one per token — each carrying meaning but in <em>isolation</em>. The vector for <em>"it"</em> in <em>"the cat sat on the mat because <strong>it</strong> was warm"</em> just says "this is the pronoun 'it'". It says nothing about what "it" refers to. To resolve that, the vector for "it" needs to <em>look at</em> the other vectors and pull in information from the relevant ones.</p>
+
+<p class="prose">That's the whole job of attention: <strong>let each token update itself based on a weighted blend of every other token in the sequence.</strong></p>
+
+<!-- ========================================================== -->
+<h2>Step by step on a 4-token toy example</h2>
+
+<p class="prose">Take the sentence <em>"the cat sat down"</em>. Four tokens. Each starts with its own embedding vector (let's pretend each is just 4 numbers for illustration):</p>
+
+<pre>the    → [0.1, 0.5, 0.0, 0.2]
+cat    → [0.4, 0.1, 0.7, 0.0]
+sat    → [0.0, 0.6, 0.2, 0.4]
+down   → [0.2, 0.0, 0.5, 0.3]</pre>
+
+<p class="prose">Attention will produce four <em>new</em> vectors of the same shape — refined versions where each one has incorporated information from the others.</p>
+
+<h3>1. Compute Q, K, V for every token</h3>
+
+<p class="prose">The model has three learned weight matrices: <code>W_Q</code>, <code>W_K</code>, <code>W_V</code>. For each token's embedding, multiply by each of these to get three new vectors:</p>
+
+<ul class="prose">
+  <li><strong>Query (Q)</strong> — "what am I looking for from the others?"</li>
+  <li><strong>Key (K)</strong> — "what am I advertising about myself?"</li>
+  <li><strong>Value (V)</strong> — "what will I actually share if you choose to listen?"</li>
+</ul>
+
+<div class="callout-analogy">
+  <p>Imagine each token wears a name-tag (K) and is silently asking a question (Q). When two tokens look at each other, they check: how well does my question match your name-tag? If it's a strong match, I'll listen carefully to what you have to say (V). If it's a weak match, I'll mostly ignore you.</p>
+</div>
+
+<h3>2. Compute attention scores</h3>
+
+<p class="prose">For each token A and each other token B, compute the dot product of A's Q with B's K. That's the raw "how much should A attend to B" score. Do this for every pair and you get a matrix:</p>
+
+<pre>           the     cat     sat     down
+the      [ 0.6     0.3     0.1     0.0 ]
+cat      [ 0.2     0.7     0.4     0.1 ]
+sat      [ 0.1     0.6     0.5     0.3 ]
+down     [ 0.0     0.4     0.5     0.4 ]</pre>
+
+<p class="prose">Read row 2 left to right: "cat looks at <em>the</em> with score 0.2, at itself with 0.7, at <em>sat</em> with 0.4, at <em>down</em> with 0.1."</p>
+
+<h3>3. Softmax → attention weights</h3>
+
+<p class="prose">Apply softmax across each row. This turns the raw scores into a probability distribution that sums to 1:</p>
+
+<pre>           the     cat     sat     down
+the      [ 0.51   0.30   0.13   0.06 ]
+cat      [ 0.18   0.43   0.27   0.12 ]
+sat      [ 0.18   0.34   0.30   0.18 ]
+down     [ 0.20   0.30   0.32   0.18 ]</pre>
+
+<p class="prose">Each row now is "what fraction of attention each token pays to each other token."</p>
+
+<h3>4. Weighted sum of V's</h3>
+
+<p class="prose">For each token, compute its new vector as the weighted sum of all the V vectors, weighted by that token's attention row. So the new vector for "cat" = 0.18 × V(the) + 0.43 × V(cat) + 0.27 × V(sat) + 0.12 × V(down).</p>
+
+<p class="prose">Output: four new vectors, same shape, each having absorbed contextual information from the others according to learned attention patterns.</p>
+
+<!-- ========================================================== -->
+<h2>The pattern is context-sensitive — try it</h2>
+
+<p class="prose">Here's a famous test case (a "Winograd schema") where flipping <em>one word</em> changes which earlier noun the pronoun <em>"it"</em> refers to. In the first version, <em>"too big"</em> implies the trophy is the problem. Flip to <em>"too small"</em> and the suitcase is now the issue. Hover <em>"it"</em> in each variant — the attention weights flip:</p>
+
+<div data-widget="attention-hover"
+     data-sentences="The trophy didn't fit in the suitcase because it was too big .|The trophy didn't fit in the suitcase because it was too small ."
+     data-labels="…too BIG|…too SMALL"></div>
+
+<p class="prose">This is the whole reason attention is powerful: it isn't a fixed lookup. The same word ("it") routes attention differently depending on the rest of the sentence, because Q, K, V are computed from the contextually-influenced embeddings flowing up through the layers.</p>
+
+<!-- ========================================================== -->
+<h2>Multi-head attention</h2>
+
+<p class="prose">A single attention computation captures <em>one</em> kind of relationship at a time — maybe "what does this pronoun refer to," maybe "what's the verb for this subject," maybe "which token came right before me." Real models run attention many times in parallel, with different learned Q/K/V projections. Each parallel run is called a <strong>head</strong>.</p>
+
+<div class="callout-analogy">
+  <p>Picture the same meeting happening in eight rooms simultaneously, each room paying attention to a different aspect. Room 1 listens for grammatical agreement. Room 2 listens for "who is doing what to whom." Room 3 listens for proximity. After all rooms finish, their notes are collected and merged into a single update for each token.</p>
+</div>
+
+<p class="prose">Concretely: if your embedding dimension is 4096 and you use 32 heads, each head operates on a 128-dimensional slice of the embedding. The 32 heads' outputs (each 128-dim) are concatenated back into a 4096-dim vector and then linearly projected. This way the cost per head is small, but you get many parallel attention patterns.</p>
+
+<!-- ========================================================== -->
+<h2>The causal autoregressive property</h2>
+
+<p class="prose">In a decoder-only LLM, each token can only attend to <em>itself and earlier tokens</em>, never later ones. This isn't a quirky training shortcut — it's the structural property that makes the model a next-token predictor at all.</p>
+
+<div class="callout-analogy">
+  <p>If you're asked "what comes next?", you can only read what's been written so far, not what hasn't been written yet. The causal property is the model living by the same rule. During training, this is enforced by a "causal mask" that zeros out attention scores looking forward; during inference, the autoregressive loop enforces it naturally because future tokens literally don't exist yet.</p>
+</div>
+
+<div class="callout-break">
+  <p>It's tempting to call the causal mask a "training trick" because that's where you see the matrix mask code most often. But during inference there's nothing to mask — you only have past tokens. The deeper truth is that the entire architecture is designed around the principle that <em>each position predicts what comes next given only what came before</em>. The mask is just how you efficiently train this in parallel without leaking the future.</p>
+</div>
+
+<!-- ========================================================== -->
+<h2>Why attention is O(n²) — and what that costs</h2>
+
+<p class="prose">For a sequence of <em>n</em> tokens, attention computes a score for every pair. That's <em>n</em> × <em>n</em> = n² scores. Per layer. Per head. For modest contexts (say 4k tokens, 32 heads, 32 layers), that's already 16 million × 32 × 32 ≈ 16 billion attention scores. Double the context to 8k? You get <em>four times</em> the cost.</p>
+
+<p class="prose">This quadratic scaling is why long context is the most expensive lever you can pull. It's also why a parade of approximate attention schemes exist (sliding window, sparse, linear, FlashAttention) — all trying to reduce the wall-clock impact of that n² without losing too much quality.</p>
+
+<!-- ========================================================== -->
+<div class="callout-variant">
+  <p><strong>Multi-query attention (MQA) and grouped-query attention (GQA).</strong> In standard multi-head attention, every head has its own K and V. The KV cache (see <a href="inference.html">inference.html</a>) stores K and V for every past token, every head, every layer — and that scales with <code>n_heads</code>. <strong>MQA</strong> shares <em>one</em> K/V across all heads (cache shrinks dramatically; small quality cost). <strong>GQA</strong> groups heads — say, 32 heads share 8 K/V groups — for a middle ground. Most modern open models (Llama 3, Mistral, Mixtral) use GQA. This single change is the biggest reason their KV cache is small enough to ship on consumer hardware.</p>
+</div>
+
+<!-- ========================================================== -->
+<nav class="page-footer">
+  <a href="tokens.html">← Tokens</a>
+  <a href="block.html">Next: transformer block →</a>
+</nav>
+
+</main>
+<script src="../assets/shared.js"></script>
+<script src="../assets/widgets.js"></script>
+<script src="../assets/glossary.js"></script>
+<script src="../assets/progress.js"></script>
+<script src="../assets/shortcuts.js"></script>
+<script src="../assets/theme.js"></script>
+<script src="../assets/nav.js"></script>
+<script src="../assets/search-index.js"></script>
+<script src="../assets/search.js"></script>
+<script src="../assets/toc.js"></script>
+</body>
+</html>

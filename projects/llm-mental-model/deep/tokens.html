@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tokens, Embeddings, and Position — Deep Dive</title>
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="page">
+
+<nav class="breadcrumb"><a href="../index.html">← Back to hub</a></nav>
+
+<h1>Tokens, embeddings, and position</h1>
+<p class="prose" style="text-align:center; color:var(--text-soft); font-style:italic; margin-top:-0.5em;">
+How text becomes numbers — and how the model knows which number came first.
+</p>
+
+<div class="lens-block">
+  <span class="lens-tag context">context</span> Tokens and embeddings are how your input gets <em>encoded</em> for the model.
+  <span class="lens-tag weights">weights</span> The embedding lookup table itself is part of the model's <em>weights</em> — it's learned.
+</div>
+
+<!-- ========================================================== -->
+<h2>Tokens — chopping text into reusable pieces</h2>
+
+<p class="prose">A model can't operate on raw characters directly — well, it could, but you'd waste a lot of capacity making it re-learn that <em>"the"</em> is a recurring chunk every single time. Instead, text gets chopped into <strong>tokens</strong>: pieces that are usually shorter than a word but longer than a character, chosen so that common pieces are reused across many words.</p>
+
+<div class="callout-analogy">
+  <p>Tokens are like prefab Lego bricks for language. Common bricks (<em>"the"</em>, <em>"-ing"</em>, <em>"un-"</em>) are stocked in standard sizes so you snap them together fast. Rare bricks (<em>"antidisestablishmentarianism"</em>) get assembled out of multiple smaller pieces. The vocabulary is the catalog of available bricks — typically 50,000 to 200,000 entries.</p>
+</div>
+
+<h3>How merges are <em>learned</em> (BPE in plain terms)</h3>
+
+<p class="prose">Most modern tokenizers are built with a process called <strong>Byte-Pair Encoding (BPE)</strong>. The algorithm is dumber than it sounds:</p>
+
+<ol class="prose">
+  <li>Start with the rawest possible vocabulary: every individual character.</li>
+  <li>Look at all the text in your training corpus. Find the most common pair of adjacent characters.</li>
+  <li>Add that pair as a new token. From now on, treat it as one unit.</li>
+  <li>Repeat — find the next most common pair (now potentially involving your new token).</li>
+  <li>Stop when you've added enough tokens to hit your target vocabulary size.</li>
+</ol>
+
+<p class="prose">After thousands of iterations, you end up with a vocabulary where high-frequency patterns are single tokens and low-frequency ones decompose. No human chose them; they emerge from corpus statistics.</p>
+
+<table>
+  <thead><tr><th>Iteration</th><th>Pair found</th><th>New token</th><th>Why</th></tr></thead>
+  <tbody>
+    <tr><td>1</td><td>"t" + "h"</td><td>"th"</td><td>Most common digraph in English</td></tr>
+    <tr><td>2</td><td>"th" + "e"</td><td>"the"</td><td>"the" is everywhere</td></tr>
+    <tr><td>3</td><td>"i" + "n"</td><td>"in"</td><td>Very common</td></tr>
+    <tr><td>4</td><td>"in" + "g"</td><td>"ing"</td><td>Suffix everywhere</td></tr>
+    <tr><td>…</td><td>…</td><td>…</td><td>…</td></tr>
+    <tr><td>50,000</td><td>"establish" + "ment"</td><td>"establishment"</td><td>Frequent enough to deserve its own ID</td></tr>
+  </tbody>
+</table>
+
+<p class="prose">The result: <em>"the"</em> is one token (cheap), <em>"establishment"</em> might be one token (cheap), and <em>"antidisestablishmentarianism"</em> splits into something like <code>["anti", "dis", "establishment", "arian", "ism"]</code> — five tokens, but built from familiar parts.</p>
+
+<!-- ========================================================== -->
+<h2>The tokenizer playground</h2>
+
+<p class="prose">Type anything below to see what a model would actually receive.</p>
+
+<div data-widget="tokenizer"></div>
+
+<!-- ========================================================== -->
+<h2>Why tokenization is more interesting than it sounds</h2>
+
+<p class="prose">Tokenization is one of those topics that <em>feels</em> mechanical until it bites you. A few cases worth internalizing:</p>
+
+<h3>Numbers are often broken</h3>
+<p class="prose">A typical tokenizer might encode <code>1234</code> as a single token (because that exact sequence appeared often enough during BPE training) but <code>1235</code> as three: <code>["12", "3", "5"]</code>. To the model, those two numbers don't look at all alike. This is part of why arithmetic is hard for LLMs: the input representation actively obscures numeric structure.</p>
+
+<h3>Multilingual cost is asymmetric</h3>
+<p class="prose">English benefits massively from BPE — it's what the vocabulary was tuned on. Other languages, especially non-Latin scripts, often pay a "tokenization tax" of 2–5× more tokens for the same semantic content. <em>"Hello, how are you?"</em> might be 5 tokens in English; the equivalent Hindi sentence in Devanagari script could be 25. Per-token pricing turns directly into per-language pricing.</p>
+
+<h3>Code has its own dialect</h3>
+<p class="prose">Tokenizers trained mostly on prose handle code awkwardly: <code>function</code> might be a single token (good), but <code>HashMap&lt;String, Integer&gt;</code> could be a dozen tokens (bad). Models marketed for code (Code Llama, GPT-4 family) usually have vocabularies trained on more code, which makes them not just smarter at code but cheaper to run on it.</p>
+
+<h3>Whitespace and capitalization matter</h3>
+<p class="prose">Most tokenizers treat <em>" the"</em> (with leading space) as a different token than <em>"the"</em> (no space), because they often appear in different contexts. <em>"The"</em>, <em>"the"</em>, and <em>"THE"</em> are usually three separate tokens too. This is invisible to humans but very visible to the model.</p>
+
+<!-- ========================================================== -->
+<h2>Embeddings — turning IDs into geometry</h2>
+
+<p class="prose">A token ID like <code>1820</code> isn't useful to the math directly. The model needs each token represented as a <strong>vector</strong> — a list of (typically) 1024 to 8192 numbers. That vector is the token's <strong>embedding</strong>, and it's looked up from a giant table called the embedding matrix.</p>
+
+<div class="callout-analogy">
+  <p>The embedding matrix is a giant phone book where every token's "phone number" is a list of thousands of numbers. The phone numbers aren't random — they're learned during training such that tokens with related meanings end up with phone numbers that point to nearby places in a high-dimensional space.</p>
+</div>
+
+<p class="prose">The famous example: in the embedding space of GPT-2 and similar models, the vector arithmetic <em>king − man + woman</em> lands close to <em>queen</em>. Meaning has become geometry. This isn't programmed in — it's an emergent property of training the model to predict the next token across enormous amounts of text.</p>
+
+<div data-widget="embed-sim"></div>
+
+<div class="callout-break">
+  <p>The "phone book" analogy breaks because embeddings are <em>continuous</em>, not discrete. Two embeddings can be arbitrarily close. Also: real embedding spaces have hundreds or thousands of dimensions; you can't visualize them directly. The 2D plot above projects everything into two axes, losing most of the structure.</p>
+</div>
+
+<!-- ========================================================== -->
+<h2>Position — how the model knows what came first</h2>
+
+<p class="prose">Here's the gap that most explanations skip too long: by themselves, embeddings carry <em>no</em> information about word order. <em>"Dog bites man"</em> and <em>"man bites dog"</em> would produce identical sets of embeddings — same words, same vectors. The model would have no way to tell which word came first.</p>
+
+<p class="prose">So position information has to be injected separately. Several schemes exist; modern decoder-only LLMs almost universally use one called <strong>RoPE</strong> (Rotary Position Embedding).</p>
+
+<h3>RoPE in plain terms</h3>
+
+<p class="prose">RoPE works by <em>rotating</em> each token's query and key vectors by an angle that depends on the token's position. Same word at position 1 versus position 50 ends up rotated differently. When attention later compares two tokens (by computing the dot product of their Q and K), the rotation difference encodes the <em>relative</em> distance between them.</p>
+
+<div class="callout-analogy">
+  <p>Imagine each embedding is a tiny arrow. RoPE rotates each arrow clockwise a little bit for each step forward in the sequence. The arrow for <em>"cat"</em> at position 0 points up; the arrow for <em>"cat"</em> at position 50 points off to the side. Attention compares arrows by angle — so it can read "these two arrows are 50 steps of rotation apart, meaning the tokens are 50 positions apart."</p>
+</div>
+
+<div data-widget="rope-rotation"></div>
+
+<p class="prose">This trick has nice properties:</p>
+<ul class="prose">
+  <li><strong>Relative position is built in.</strong> Two tokens 5 apart always have the same angle difference, regardless of where in the sequence they are.</li>
+  <li><strong>It's parameter-free.</strong> No extra weights to learn — just a deterministic rotation formula.</li>
+  <li><strong>It can be "stretched" later.</strong> When you want a model trained on 4k context to handle 32k context, you can rescale the rotation frequencies (RoPE scaling — see <a href="levers.html">levers.html §3</a>). It's not perfect, but it's better than retraining.</li>
+</ul>
+
+<div class="callout-break">
+  <p>The "rotating arrow" picture suggests one rotation per token. In practice RoPE rotates pairs of dimensions of the embedding by different frequencies — fast oscillations in some dimensions, slow in others. This lets the model encode positions across a wide range of distances. The 2D arrow above is simplified to one rotation for visualization.</p>
+</div>
+
+<!-- ========================================================== -->
+<div class="callout-variant">
+  <p><strong>Multimodal models</strong> — vision and audio LLMs replace tokenization-of-text with something analogous. An image becomes a grid of patches (e.g., 16×16 pixel squares), each patch passed through a small encoder that produces a vector. Audio gets chunked similarly. Those vectors enter the same transformer downstream — so everything in the rest of this artifact applies. The architecture upstream of the residual stream changes; everything downstream stays the same.</p>
+</div>
+
+<!-- ========================================================== -->
+<nav class="page-footer">
+  <a href="../index.html">← Back to hub</a>
+  <a href="attention.html">Next: attention →</a>
+</nav>
+
+</main>
+<script src="../assets/gpt-tokenizer.js"></script>
+<script src="../assets/shared.js"></script>
+<script src="../assets/widgets.js"></script>
+<script src="../assets/glossary.js"></script>
+<script src="../assets/progress.js"></script>
+<script src="../assets/shortcuts.js"></script>
+<script src="../assets/theme.js"></script>
+<script src="../assets/nav.js"></script>
+<script src="../assets/search-index.js"></script>
+<script src="../assets/search.js"></script>
+<script src="../assets/toc.js"></script>
+</body>
+</html>

@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Diagnosis — Failure Modes Capstone</title>
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="page">
+
+<nav class="breadcrumb"><a href="../index.html">← Back to hub</a></nav>
+
+<h1>Diagnosis: when something breaks, look here first</h1>
+<p class="prose" style="text-align:center; color:var(--text-soft); font-style:italic; margin-top:-0.5em;">
+Ten common symptoms → which lens to suspect, how to confirm, what to try.
+</p>
+
+<div class="callout-invariant" data-label="📐 How to use this page">
+  <p>This is the artifact's payoff page. When something goes wrong with an LLM in your work, open this. Each entry follows the same template: <strong>symptom → suspect lens(es) → confirm by → try (in order)</strong>. The mental model from the rest of the artifact is what makes the diagnoses make sense; if any feel mysterious, that's a sign to revisit the relevant deep page.</p>
+</div>
+
+<!-- ========================================================== -->
+<h2>Warm-up — practice the four-lens diagnosis</h2>
+
+<div data-widget="lens-sorter" data-scenarios="warmup"></div>
+
+<!-- ========================================================== -->
+<h2>The ten failure modes</h2>
+
+<!-- 1 -->
+<div class="changes-where">
+  <h4>#1 — "It forgot something I told it five turns ago."</h4>
+  <p><span class="lens-tag context">context</span> <span class="lens-tag scaffolding">scaffolding</span></p>
+  <dl>
+    <dt>Confirm by:</dt> <dd>Inspect the <em>actual prompt</em> being sent to the model. Print it. Count tokens. Is the earlier turn even there?</dd>
+    <dt>Try (in order):</dt> <dd><ol>
+      <li>If the turn isn't in the prompt, your scaffolding is dropping it. Fix the system that builds the conversation history.</li>
+      <li>If the turn is in the prompt but the model ignores it, try a model with longer effective context, or summarize old turns instead of dumping raw.</li>
+      <li>If you're past the model's context limit, use context extension (<a href="levers.html">levers.html §3</a>) — but expect quality degradation in the middle ("lost in the middle").</li>
+      <li>For long-running conversations, reach for an external memory layer (a separate retrieval system over conversation history). This is a <em>scaffolding</em> fix, not a model fix.</li>
+    </ol></dd>
+  </dl>
+  <p style="font-size:0.92em; color:var(--text-soft); margin-top:8px;">Almost never weights — the model still <em>could</em> use the info if it were in front of it.</p>
+</div>
+
+<!-- 2 -->
+<div class="changes-where">
+  <h4>#2 — "Same question, different answers each time."</h4>
+  <p><span class="lens-tag decoding">decoding</span></p>
+  <dl>
+    <dt>Confirm by:</dt> <dd>Set <code>temperature=0</code> and rerun. If the answer is now consistent, decoding was the culprit.</dd>
+    <dt>Try (in order):</dt> <dd><ol>
+      <li>For deterministic tasks (Q&A, code, structured outputs): use <code>temperature=0</code> always.</li>
+      <li>For semi-deterministic tasks (helpful chat): <code>temperature=0.7, top_p=0.9</code>.</li>
+      <li>For creative tasks: accept that variance is the feature.</li>
+      <li>If <code>temp=0</code> still produces variation across runs: check that you're not getting different model versions from your provider, or different hardware (rare floating-point determinism issues).</li>
+    </ol></dd>
+  </dl>
+  <p style="font-size:0.92em; color:var(--text-soft); margin-top:8px;">The most common diagnostic mistake is blaming the model for variance that's coming from the sampler.</p>
+</div>
+
+<!-- 3 -->
+<div class="changes-where">
+  <h4>#3 — "It's confidently wrong about a fact."</h4>
+  <p><span class="lens-tag weights">weights</span> <span class="lens-tag scaffolding">scaffolding</span></p>
+  <dl>
+    <dt>Confirm by:</dt> <dd>Check known-good facts in the same domain. Is the model wrong about everything in this area, or just this fact? Search if the fact appears anywhere reliable on the public internet — if it doesn't, the model never had a chance.</dd>
+    <dt>Try (in order):</dt> <dd><ol>
+      <li><strong>Scaffolding fix first</strong> (cheaper, faster): RAG. Inject the correct fact into context as part of the prompt. Done in an afternoon; no model retraining.</li>
+      <li>If you control the data and the fact comes up often, fine-tune (LoRA) on a dataset including the correct fact. Slow; risks forgetting.</li>
+      <li>If the fact lives in a database you control, give the model a tool to look it up rather than memorizing it.</li>
+    </ol></dd>
+  </dl>
+  <p style="font-size:0.92em; color:var(--text-soft); margin-top:8px;">RAG vs fine-tune vs tools is a fundamental question — match the fix to how often the fact changes and how often it's queried.</p>
+</div>
+
+<!-- 4 -->
+<div class="changes-where">
+  <h4>#4 — "It hallucinated a citation that doesn't exist."</h4>
+  <p><span class="lens-tag weights">weights</span> <span class="lens-tag scaffolding">scaffolding</span></p>
+  <dl>
+    <dt>Confirm by:</dt> <dd>Trivial — try to look up the citation. If it doesn't exist, you have a hallucination.</dd>
+    <dt>Try (in order):</dt> <dd><ol>
+      <li><strong>Scaffolding fix:</strong> use RAG with real source URLs that the model is told to cite. The model still hallucinates wording, but the URLs are real and grounded.</li>
+      <li>System prompt: "Cite only sources from the provided context. If you don't know, say so."</li>
+      <li>Post-process: parse all URLs/citations in the model's output and verify them programmatically. If any fail, regenerate or flag.</li>
+      <li>Choose a model trained more aggressively against hallucination (newer Anthropic / OpenAI / Google models tend to be better here than 2-3 generations back).</li>
+    </ol></dd>
+  </dl>
+  <p style="font-size:0.92em; color:var(--text-soft); margin-top:8px;">Decoding tweaks (temperature) don't help — hallucinations live in the weights' tendency to confabulate plausible-looking outputs.</p>
+</div>
+
+<!-- 5 -->
+<div class="changes-where">
+  <h4>#5 — "It's worse since I quantized it."</h4>
+  <p><span class="lens-tag weights">weights — representation</span></p>
+  <dl>
+    <dt>Confirm by:</dt> <dd>Run your task eval before and after quantization. Don't trust perplexity alone — it can stay flat while specific capabilities collapse.</dd>
+    <dt>Try (in order):</dt> <dd><ol>
+      <li>Move up to a higher bit-depth: 4 → 5 → 6 → 8.</li>
+      <li>Switch quantization method: RTN → GPTQ → AWQ. Expect quality jumps especially at 4-bit.</li>
+      <li>Use mixed precision: keep sensitive layers (embedding, output projection, first/last few transformer layers) in higher precision.</li>
+      <li>If the task is narrow and capability sensitive, accept that quantization may not be viable for this combination — use the unquantized model on better hardware.</li>
+    </ol></dd>
+  </dl>
+</div>
+
+<!-- 6 -->
+<div class="changes-where">
+  <h4>#6 — "Longer context, but worse retrieval from the middle of it."</h4>
+  <p><span class="lens-tag context">context</span> <span class="lens-tag weights">weights</span></p>
+  <dl>
+    <dt>Confirm by:</dt> <dd>Run a Needle-in-a-Haystack-style probe: insert a unique fact at varying depths in a long context, ask about it. Plot accuracy by position. The "U-shaped" curve (good at start and end, bad in middle) is the signature.</dd>
+    <dt>Try (in order):</dt> <dd><ol>
+      <li>Restructure your prompt: put the most important info in the first 25% or last 25% of the context. The middle is where models forget.</li>
+      <li>Use a model trained for long context with explicit anti-lost-in-the-middle techniques (some long-context models from 2024+ help here).</li>
+      <li>Don't use long context if you don't have to. RAG with shorter context often beats stuffing everything in.</li>
+    </ol></dd>
+  </dl>
+</div>
+
+<!-- 7 -->
+<div class="changes-where">
+  <h4>#7 — "After LoRA fine-tune, great at my task but worse at everything else."</h4>
+  <p><span class="lens-tag weights">weights</span></p>
+  <dl>
+    <dt>Confirm by:</dt> <dd>Run a held-out general benchmark (MMLU, MT-Bench) before and after fine-tune. If it dropped significantly, that's catastrophic forgetting.</dd>
+    <dt>Try (in order):</dt> <dd><ol>
+      <li>Reduce LoRA rank (<code>r</code>) — smaller adapter = less overwriting of base behavior.</li>
+      <li>Reduce learning rate. Fine-tunes that overfit also overforget.</li>
+      <li>Mix in some general SFT data alongside your task data (10-20% mix). The model gets your task without losing breadth.</li>
+      <li>Switch from SFT to DPO if you have preference data — DPO tends to nudge less violently than SFT for the same goal.</li>
+      <li>Train fewer epochs. One epoch is often enough.</li>
+    </ol></dd>
+  </dl>
+</div>
+
+<!-- 8 -->
+<div class="changes-where">
+  <h4>#8 — "My RAG retrieves the right docs but the model still ignores them."</h4>
+  <p><span class="lens-tag scaffolding">scaffolding</span> <span class="lens-tag context">context</span></p>
+  <dl>
+    <dt>Confirm by:</dt> <dd>Print the actual final prompt the model receives. Are the docs really in there? In what format? Is the system prompt clear about how to use them?</dd>
+    <dt>Try (in order):</dt> <dd><ol>
+      <li>System prompt clarity: "Answer using only the information in the &lt;context&gt; tags below. If the answer isn't in the context, say 'I don't have that information.'"</li>
+      <li>Wrap retrieved docs in clear tags (<code>&lt;context&gt;...&lt;/context&gt;</code>) so the model can identify them.</li>
+      <li>Reranking: maybe the top-retrieved docs aren't actually the most relevant. A reranking step (often a smaller cross-encoder model) often helps.</li>
+      <li>Few-shot examples in the system prompt showing the desired "use the context" behavior.</li>
+    </ol></dd>
+  </dl>
+</div>
+
+<!-- 9 -->
+<div class="changes-where">
+  <h4>#9 — "It used the wrong tool, or called the API with bad arguments."</h4>
+  <p><span class="lens-tag scaffolding">scaffolding</span> <span class="lens-tag weights">weights</span></p>
+  <dl>
+    <dt>Confirm by:</dt> <dd>Test the same task with a known-good tool-use model (Claude 3.5+, GPT-4+, recent Llama). If they handle it, your model's tool-use training is the issue. If they don't either, your tool description is the issue.</dd>
+    <dt>Try (in order):</dt> <dd><ol>
+      <li>Improve the tool description: clear name, clear parameter docstrings, examples of when it should and shouldn't be called.</li>
+      <li>Add few-shot examples in the system prompt showing the tool being used correctly on representative inputs.</li>
+      <li>Switch to a model with stronger tool-use capability — function calling support has improved dramatically in recent generations.</li>
+      <li>For complex tool flows, use a structured framework (function calling APIs, JSON schema validation, retry on parse failure).</li>
+    </ol></dd>
+  </dl>
+</div>
+
+<!-- 10 -->
+<div class="changes-where">
+  <h4>#10 — "Output is super repetitive ('the the the…')."</h4>
+  <p><span class="lens-tag decoding">decoding</span> <span class="lens-tag weights">weights</span></p>
+  <dl>
+    <dt>Confirm by:</dt> <dd>Raise temperature slightly. Add a repetition penalty of 1.1. Does the repetition stop?</dd>
+    <dt>Try (in order):</dt> <dd><ol>
+      <li>Add <code>repetition_penalty=1.1</code> (or <code>1.05–1.15</code>).</li>
+      <li>Raise temperature from 0 to 0.3-0.7.</li>
+      <li>Check that you're not in a degenerate sampling mode (top_k=1 with temp=0 will deterministically loop on certain prompts).</li>
+      <li>If repetition persists across all settings: something is broken with the model — corrupted weights, wrong tokenizer, mismatched chat template. Reload from a clean source.</li>
+    </ol></dd>
+  </dl>
+</div>
+
+<!-- ========================================================== -->
+<h2>The diagnostic moves, summarized</h2>
+
+<p class="prose">After internalizing the ten cases, the pattern becomes:</p>
+
+<ol class="prose">
+  <li><strong>Always check decoding first.</strong> It's the cheapest possibility and the most often confused with model quality. Set temperature=0 and rerun. If the symptom changes, you've found it.</li>
+  <li><strong>Then check context.</strong> Print the actual prompt. Count tokens. Verify that the information you assume is there, is there.</li>
+  <li><strong>Then check scaffolding.</strong> What's your system doing between the user and the model? System prompt? Retrieval? Tool calls? Each is a potential confound.</li>
+  <li><strong>Then suspect weights.</strong> If decoding, context, and scaffolding all check out, you have a model-shape problem. Now you're choosing between fine-tune, swap to a different model, or accept the limitation.</li>
+</ol>
+
+<p class="prose">This ordering — decoding → context → scaffolding → weights — is roughly cheapest to most expensive to investigate <em>and</em> roughly most-common-cause to least-common-cause. Following it saves time.</p>
+
+<!-- ========================================================== -->
+<h2>If none of these match your symptom</h2>
+
+<p class="prose">Most LLM problems map to one of these ten or a close variant. If yours genuinely doesn't:</p>
+
+<ul class="prose">
+  <li>Try to <em>name</em> the symptom precisely. Often the act of naming reveals which lens is involved.</li>
+  <li>Ask: "if the model got rewired tomorrow, would this symptom go away?" If yes, it's weights. If no, it's one of the other three.</li>
+  <li>Ask: "if I rerun the exact same call ten times, do I get ten different answers?" High variance → decoding. Same answer always → not decoding.</li>
+  <li>If you're stuck, the answer is usually "I haven't actually inspected the prompt yet." Print it. The bug usually announces itself.</li>
+</ul>
+
+<!-- ========================================================== -->
+<nav class="page-footer">
+  <a href="levers.html">← Levers</a>
+  <a href="glossary.html">Glossary →</a>
+</nav>
+
+</main>
+<script src="../assets/shared.js"></script>
+<script src="../assets/widgets.js"></script>
+<script src="../assets/glossary.js"></script>
+<script src="../assets/progress.js"></script>
+<script src="../assets/shortcuts.js"></script>
+<script src="../assets/theme.js"></script>
+<script src="../assets/nav.js"></script>
+<script src="../assets/search-index.js"></script>
+<script src="../assets/search.js"></script>
+<script src="../assets/toc.js"></script>
+</body>
+</html>

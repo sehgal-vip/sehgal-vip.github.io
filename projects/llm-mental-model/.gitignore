@@ -1,0 +1,15 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Editor noise
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
+
+# Node (only if anyone ever runs npm here — we don't, but just in case)
+node_modules/
+package-lock.json

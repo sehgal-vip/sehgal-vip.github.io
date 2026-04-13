@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Levers — Deep Dive</title>
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="page">
+
+<nav class="breadcrumb"><a href="../index.html">← Back to hub</a></nav>
+
+<h1>Knobs you can turn after the model is trained</h1>
+<p class="prose" style="text-align:center; color:var(--text-soft); font-style:italic; margin-top:-0.5em;">
+Five levers — what each one actually changes inside the model, and what it costs.
+</p>
+
+<div class="callout-invariant" data-label="📐 The template">
+  <p>Every lever in this page follows the same structure: <strong>what concretely changes</strong>, <strong>when</strong>, <strong>where it lives</strong>, and <strong>which tradeoff surface it moves</strong>. If you can fill in those four boxes for any LLM intervention, you can predict its consequences.</p>
+</div>
+
+<!-- ========================================================== -->
+<h2><span class="num">1.</span> Fine-tuning</h2>
+
+<div class="changes-where">
+  <h4>What changes where?</h4>
+  <dl>
+    <dt>Object:</dt>     <dd>Weight tensors — either all of them (full fine-tune) or a small low-rank delta attached to selected matrices (LoRA).</dd>
+    <dt>When:</dt>       <dd>Fine-tune time (a separate training run, much shorter than pretraining).</dd>
+    <dt>Where it lives:</dt> <dd>On disk as updated weights (full) or as a separate small adapter file (LoRA). At inference: in VRAM with the rest of the model.</dd>
+    <dt>Tradeoffs:</dt>  <dd>Quality on your task ↑, capability elsewhere can ↓ (forgetting), training cost ↑, deployment complexity ↑ if managing multiple adapters.</dd>
+  </dl>
+  <p style="margin-top:8px;"><span class="lens-tag weights">weights</span></p>
+</div>
+
+<h3>Full fine-tune vs LoRA vs QLoRA</h3>
+
+<p class="prose"><strong>Full fine-tune</strong> updates every weight. Maximum flexibility — the model can change as much as needed. Maximum cost — for a 70B model, you need enough VRAM to hold the model, the gradients, the optimizer state, and the activations. In practice that's often hundreds of GB across multiple GPUs. Risk: if your fine-tune dataset is small or narrow, you can wreck capabilities the model had before (catastrophic forgetting).</p>
+
+<p class="prose"><strong>LoRA (Low-Rank Adaptation)</strong> is the workhorse of practical fine-tuning. Instead of updating the original weight matrix W (size d × d), you freeze W and learn two small matrices A (d × r) and B (r × d) where r is small (typically 4–64). The effective weight at inference time is W + A·B. Because r is tiny, the trainable parameter count drops by 100×–1000×.</p>
+
+<div class="callout-analogy">
+  <p>Full fine-tune is repainting the entire house. LoRA is hanging removable overlays in specific rooms — you can take them down, swap them, layer them. The walls (base weights) never change.</p>
+</div>
+
+<div data-widget="lora-rank"></div>
+
+<p class="prose"><strong>QLoRA</strong> combines LoRA with 4-bit quantization of the base model. The base weights are frozen <em>and</em> stored in 4 bits; only the LoRA adapter trains in normal precision. This makes it possible to fine-tune a 70B model on a single 24 GB consumer GPU. The trade is some numerical noise during training; in practice quality remains close to LoRA.</p>
+
+<h3>A real LoRA config, line by line</h3>
+
+<pre>from peft import LoraConfig
+
+config = LoraConfig(
+    r              = 16,                              # rank — bigger r, more capacity, more params
+    lora_alpha     = 32,                              # scaling factor (effective scale = alpha / r)
+    target_modules = ["q_proj", "k_proj", "v_proj", "o_proj"],  # which weights to adapt
+    lora_dropout   = 0.05,                            # regularization during training
+    bias           = "none",                          # don't train bias terms
+    task_type      = "CAUSAL_LM",                    # decoder-only LM
+)</pre>
+
+<ul class="prose">
+  <li><strong><code>r=16</code></strong> — rank of the adapter. Powers of 2 are conventional. r=4 is tiny (good for very narrow tasks); r=64 starts to compete with full fine-tune in capacity.</li>
+  <li><strong><code>lora_alpha=32</code></strong> — a scaling knob. The effective adapter contribution is <code>(alpha / r) × A·B</code>. Common pattern: alpha = 2×r.</li>
+  <li><strong><code>target_modules</code></strong> — which weight matrices in each layer get the adapter. Attention projections (q/k/v/o) are the standard set; adding MLP weights (<code>gate_proj</code>, <code>down_proj</code>, <code>up_proj</code>) increases capacity but also parameter count.</li>
+  <li><strong><code>lora_dropout=0.05</code></strong> — regularization. 0.05–0.1 is typical.</li>
+  <li><strong><code>bias="none"</code></strong> — don't train bias parameters. They're tiny anyway and excluded by convention.</li>
+</ul>
+
+<div class="callout-break">
+  <p>LoRA hyperparameters look magical until they bite you. Common failure mode: <em>r too small for the task</em> — the adapter doesn't have enough capacity, training loss plateaus high, eval barely moves. Common fix: bump r, increase target_modules to include MLP layers. Opposite failure: <em>r too high or training too long</em> — overfits the fine-tune set, forgets general capability. Always evaluate on a held-out general benchmark, not just your task.</p>
+</div>
+
+<!-- ========================================================== -->
+<h2><span class="num">2.</span> Quantization</h2>
+
+<div class="changes-where">
+  <h4>What changes where?</h4>
+  <dl>
+    <dt>Object:</dt>     <dd>The numerical representation of weight tensors. Same number of weights; fewer bits per weight.</dd>
+    <dt>When:</dt>       <dd>Load time (or as a separate one-time conversion step). The model is quantized once and stored.</dd>
+    <dt>Where it lives:</dt> <dd>On disk as smaller files; in VRAM as smaller tensors.</dd>
+    <dt>Tradeoffs:</dt>  <dd>Memory ↓ (4× from FP16→INT4), often speed ↑, accuracy ↓ slightly (a lot if done badly).</dd>
+  </dl>
+  <p style="margin-top:8px;"><span class="lens-tag weights">weights — representation</span></p>
+</div>
+
+<h3>The basic idea</h3>
+
+<p class="prose">A weight stored in FP16 is a 16-bit floating-point number — about 65,000 distinct possible values. Most weights in a trained LLM cluster near zero with a long tail of larger values. You don't need 65,000 values to represent that distribution well. Quantization picks a smaller set of representative values and rounds every weight to its nearest one.</p>
+
+<div class="callout-analogy">
+  <p>Quantization is replacing a high-resolution photo with a posterized version. Fewer color buckets, but the scene is still recognizable. Lower bit-depth = fewer buckets = more obvious posterization.</p>
+</div>
+
+<div data-widget="quantization"></div>
+
+<h3>The quantization zoo</h3>
+
+<p class="prose">Several methods exist; they differ in <em>how</em> they pick the buckets and <em>which</em> tensors they touch.</p>
+
+<ul class="prose">
+  <li><strong>RTN (round-to-nearest)</strong> — simplest. Define a uniform grid; round each weight to the nearest grid point. Fast to apply; quality OK at 8-bit, often poor at 4-bit.</li>
+  <li><strong>GPTQ</strong> — quantize one column of weights at a time, adjusting the not-yet-quantized columns to compensate for the rounding errors. Much better quality at 4-bit. Takes a few hours to apply.</li>
+  <li><strong>AWQ (Activation-aware Weight Quantization)</strong> — observes typical activation magnitudes and protects the weights that matter most for them. Often beats GPTQ on perplexity, especially at very low bit-depths.</li>
+  <li><strong>GGUF</strong> — the format used by llama.cpp. Mixes precision: some layers in 4-bit, others in 5- or 6-bit, with various trade-off "quants" you can pick (Q4_K_M, Q5_K_S, etc.). The de-facto standard for running LLMs on consumer hardware.</li>
+</ul>
+
+<h3>Where quantization fails</h3>
+
+<p class="prose">Not all layers tolerate low-bit representation equally. Some empirical patterns:</p>
+<ul class="prose">
+  <li><strong>Embedding and output layers</strong> are often more sensitive — many recipes leave these in higher precision.</li>
+  <li><strong>Attention K/V projections</strong> seem to tolerate aggressive quantization well.</li>
+  <li><strong>The very first and very last few layers</strong> of the stack are often more sensitive than the middle.</li>
+  <li><strong>4-bit is the practical floor for general use.</strong> 3-bit and 2-bit work for specific models with dedicated methods, but quality drops are real.</li>
+</ul>
+
+<div class="callout-break">
+  <p>The "4-bit is fine" mantra has caveats. For tasks the model was already weak at (uncommon languages, niche domains, edge-case reasoning), quantization can push the model from "barely working" to "broken." Always run a task-specific eval before and after — perplexity alone won't catch narrow capability collapse.</p>
+</div>
+
+<!-- ========================================================== -->
+<h2><span class="num">3.</span> Context extension</h2>
+
+<div class="changes-where">
+  <h4>What changes where?</h4>
+  <dl>
+    <dt>Object:</dt>     <dd>Positional encoding formula (RoPE scaling) or attention structure (sliding window). Sometimes also the model's training recipe (continued pretraining on long-context data).</dd>
+    <dt>When:</dt>       <dd>Load time (RoPE scaling factor changes), or as additional fine-tuning on longer sequences.</dd>
+    <dt>Where it lives:</dt> <dd>In the model config (RoPE base/scale parameters); in attention implementation (sliding window mask). KV cache memory grows linearly with the new max length.</dd>
+    <dt>Tradeoffs:</dt>  <dd>Max input length ↑, attention compute ↑↑ (quadratic), KV memory ↑, quality at long lengths often ↓ (especially in the middle of the context).</dd>
+  </dl>
+  <p style="margin-top:8px;"><span class="lens-tag context">context</span></p>
+</div>
+
+<h3>Why context isn't free</h3>
+
+<p class="prose">Two costs grow with context length:</p>
+<ul class="prose">
+  <li><strong>Attention compute is O(n²).</strong> Every pair of tokens computes a score. Double the context, four times the cost.</li>
+  <li><strong>KV cache memory is O(n).</strong> Linear in tokens, but with a large constant. For a 70B-class model, one token of cache is ~2 MB — so 128k tokens is ~256 GB of cache.</li>
+</ul>
+
+<div data-widget="context-length"></div>
+
+<h3>RoPE scaling — making old position formulas cover new lengths</h3>
+
+<p class="prose">A model trained with RoPE on 4k context has rotation angles tuned for positions 0–4096. If you naively feed it 16k tokens, the angles for positions 4097–16383 are out of distribution and quality collapses.</p>
+
+<p class="prose">The fix: rescale the rotation frequencies. Several flavors:</p>
+
+<ul class="prose">
+  <li><strong>Linear (Position Interpolation)</strong> — divide all positions by 4 so 16k tokens "fit" into the 0–4k range the model was trained on. Simple; degrades quality somewhat.</li>
+  <li><strong>NTK-aware</strong> — scale only the high-frequency dimensions, leaving the low-frequency ones (which encode coarse position) alone. Better quality than linear.</li>
+  <li><strong>YaRN</strong> — refines NTK with a few additional tricks (length-dependent scaling, attention temperature). The default for many recent long-context models.</li>
+</ul>
+
+<p class="prose">Often paired with a short fine-tuning run on long-context data to "heal" the model into the new range.</p>
+
+<h3>Sliding window attention</h3>
+
+<p class="prose">An alternative: instead of every token attending to every previous token, each token only attends to the last <em>k</em> tokens (typical k = 4096). Memory and compute become O(n × k) instead of O(n²). Mistral models use this. Trade: tokens far apart can't directly attend to each other, but the residual stream can carry information across the boundary indirectly through stacked layers.</p>
+
+<div class="callout-break">
+  <p>The dirty truth about long context: most models are <em>worse</em> at retrieving information from the middle of their context window than from the beginning or end. This is the "lost in the middle" effect, observed across many models. Putting the relevant info in the first or last 25% of the prompt usually works better than relying on the middle. Test this with Needle-in-a-Haystack-style probes before trusting long context.</p>
+</div>
+
+<!-- ========================================================== -->
+<h2><span class="num">4.</span> Pruning</h2>
+
+<div class="changes-where">
+  <h4>What changes where?</h4>
+  <dl>
+    <dt>Object:</dt>     <dd>Weight tensors — either individual values zeroed (unstructured) or whole heads/layers/dimensions removed (structured).</dd>
+    <dt>When:</dt>       <dd>Post-training, often followed by a "healing" fine-tune.</dd>
+    <dt>Where it lives:</dt> <dd>On disk as smaller files; in VRAM as smaller tensors (structured) or sparse tensors (unstructured, requires hardware support to actually save compute).</dd>
+    <dt>Tradeoffs:</dt>  <dd>Size ↓, speed ↑ (only with structured pruning on supported hardware), capacity ↓, often a quality drop that needs a recovery fine-tune.</dd>
+  </dl>
+  <p style="margin-top:8px;"><span class="lens-tag weights">weights — structure</span></p>
+</div>
+
+<h3>Unstructured vs structured</h3>
+
+<p class="prose"><strong>Unstructured pruning</strong> identifies the smallest individual weights (close to zero) and zeroes them. Easy to do, can prune 50%+ of weights with little quality loss. Catch: most hardware can't actually skip work for sparse matrices unless the sparsity is highly structured (e.g., 2:4 sparsity). So you save disk space and maybe memory, but rarely compute.</p>
+
+<p class="prose"><strong>Structured pruning</strong> removes whole units — entire attention heads, MLP dimensions, even entire layers. Quality drops more sharply but the resulting model is genuinely smaller and faster on standard hardware. Methods like LLM-Pruner score components by their "importance" and remove the lowest-scoring ones.</p>
+
+<div class="callout-analogy">
+  <p>Unstructured pruning is removing individual leaves from a tree. The tree looks slightly thinner; same shape, same shadow. Structured pruning is cutting whole branches. The tree is genuinely smaller — but it might look lopsided until it grows back.</p>
+</div>
+
+<h3>Healing fine-tune</h3>
+
+<p class="prose">After any nontrivial pruning, the model needs recovery training: same data as SFT (or even some pretraining data), short run, learning rate small. This re-routes information through the surviving weights. Skipping it usually leaves visible quality damage.</p>
+
+<h3>Pruning vs quantization — when to reach for which</h3>
+
+<p class="prose">For most "make this model smaller / cheaper" goals, <strong>quantization is the first tool to reach for</strong> — easier, less destructive, more predictable. Pruning becomes useful when:</p>
+<ul class="prose">
+  <li>You want to specifically reduce <em>compute</em>, not just memory (structured pruning helps; quantization mostly doesn't).</li>
+  <li>You're already at 4-bit quantization and need more reduction.</li>
+  <li>You want a smaller model that can be fully fine-tuned downstream (pruning gives you fewer parameters to train).</li>
+</ul>
+
+<!-- ========================================================== -->
+<h2><span class="num">5.</span> Decoding controls</h2>
+
+<div class="changes-where">
+  <h4>What changes where?</h4>
+  <dl>
+    <dt>Object:</dt>     <dd>The sampling step — how the model's probability output becomes a single chosen token.</dd>
+    <dt>When:</dt>       <dd>Inference time, per request. Configurable per call.</dd>
+    <dt>Where it lives:</dt> <dd>In the inference engine's sampling loop, after the model's forward pass. <strong>The model itself is unchanged.</strong></dd>
+    <dt>Tradeoffs:</dt>  <dd>Determinism vs creativity vs coherence vs latency.</dd>
+  </dl>
+  <p style="margin-top:8px;"><span class="lens-tag decoding">decoding</span></p>
+</div>
+
+<h3>The core controls</h3>
+
+<div data-widget="sampling"></div>
+
+<ul class="prose">
+  <li><strong>Temperature</strong> — divide all logits by T before softmax. T &lt; 1 sharpens the distribution (more deterministic); T &gt; 1 flattens it (more random). T = 0 picks the top token always (greedy decoding, fully deterministic). T = 1 leaves the distribution as the model emitted.</li>
+  <li><strong>Top-k</strong> — keep only the top K most-likely tokens; renormalize. K = 1 is greedy; K = 50 keeps the top 50 candidates regardless of their probabilities.</li>
+  <li><strong>Top-p (nucleus)</strong> — keep the smallest set of tokens whose probabilities sum to at least p. p = 1.0 keeps everything; p = 0.9 keeps the top "90% of probability mass," cutting whatever long tail is left.</li>
+  <li><strong>Repetition penalty</strong> — add a small penalty to tokens that have appeared recently, to prevent loops like "the the the." Usually 1.05–1.15.</li>
+</ul>
+
+<h3>Common combinations</h3>
+
+<table>
+  <thead><tr><th>Goal</th><th>Settings</th></tr></thead>
+  <tbody>
+    <tr><td>Deterministic answers (Q&A, code)</td><td>temperature=0, or temp=0.1 with top_p=0.95</td></tr>
+    <tr><td>Helpful chat (default)</td><td>temperature=0.7, top_p=0.9</td></tr>
+    <tr><td>Creative writing</td><td>temperature=1.0, top_p=0.95</td></tr>
+    <tr><td>Brainstorming / exploration</td><td>temperature=1.2, top_p=0.98</td></tr>
+  </tbody>
+</table>
+
+<div class="callout-break">
+  <p>The most common diagnostic mistake in production: <em>blaming the model for variance that's coming from temperature</em>. "The model gives different answers each time" is almost always temperature, not the model. "The model contradicts itself" might be the same. <strong>If you want determinism, set temperature=0 first, then debug.</strong></p>
+</div>
+
+<h3>KV cache tuning</h3>
+
+<p class="prose">Already covered in <a href="inference.html">inference.html</a>, but worth noting here as a "knob": for very long contexts you can configure cache behavior — eviction policies (drop oldest, drop least-attended), cache offloading (move parts to CPU), or attention sinks (always keep the first few tokens). All of these trade a small quality cost for memory savings.</p>
+
+<h3>Speculative decoding</h3>
+
+<p class="prose">Also covered in inference.html. The setting you'd see in an inference engine is something like <code>--speculative-model llama-1b</code> alongside the main model. Output is identical to non-speculative decoding; only latency improves. If your serving infra supports it, almost always worth turning on.</p>
+
+<!-- ========================================================== -->
+<h2>Putting it together — diagnosis preview</h2>
+
+<p class="prose">Once you have all five levers in your head, the diagnostic move is: <em>given a problem, which lever is most likely to fix it?</em></p>
+
+<table>
+  <thead><tr><th>Symptom</th><th>First lever to try</th></tr></thead>
+  <tbody>
+    <tr><td>Model is great in general but bad at my niche task</td><td>Fine-tuning (LoRA)</td></tr>
+    <tr><td>Model fits in memory but is too slow / too expensive</td><td>Quantization → speculative decoding</td></tr>
+    <tr><td>Model doesn't fit in my GPU at all</td><td>Quantization (4-bit) first; then maybe pruning</td></tr>
+    <tr><td>Model can't see enough of my prompt</td><td>Context extension (RoPE scaling) or use a long-context model</td></tr>
+    <tr><td>Model is too random / not random enough</td><td>Decoding controls — temperature, top-p</td></tr>
+    <tr><td>Model invents facts</td><td>Not a lever on this page — go to <a href="diagnosis.html">diagnosis.html</a>; usually a scaffolding (RAG) fix</td></tr>
+  </tbody>
+</table>
+
+<p class="prose">For the deeper "what broke and why," see the <a href="diagnosis.html">diagnosis page</a>.</p>
+
+<!-- ========================================================== -->
+<nav class="page-footer">
+  <a href="eval.html">← Evaluation</a>
+  <a href="diagnosis.html">Next: diagnosis →</a>
+</nav>
+
+</main>
+<script src="../assets/shared.js"></script>
+<script src="../assets/widgets.js"></script>
+<script src="../assets/glossary.js"></script>
+<script src="../assets/progress.js"></script>
+<script src="../assets/shortcuts.js"></script>
+<script src="../assets/theme.js"></script>
+<script src="../assets/nav.js"></script>
+<script src="../assets/search-index.js"></script>
+<script src="../assets/search.js"></script>
+<script src="../assets/toc.js"></script>
+</body>
+</html>

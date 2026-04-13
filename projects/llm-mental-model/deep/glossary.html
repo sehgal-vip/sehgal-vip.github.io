@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Glossary</title>
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="page">
+
+<nav class="breadcrumb"><a href="../index.html">← Back to hub</a></nav>
+
+<h1>Glossary</h1>
+<p class="prose" style="text-align:center; color:var(--text-soft); font-style:italic; margin-top:-0.5em;">
+One-line definitions for every technical term in the artifact. Each links back to where it's fully explained.
+</p>
+
+<div class="callout-invariant" data-label="📐 How definitions here differ from the deep pages">
+  <p>Glossary entries are <em>orienting</em> — what a term means in one sentence. The deep pages are <em>explaining</em> — why it works, what it implies, when it bites you. Use the glossary when you need to remember which term is which; use the deep pages when you want to actually understand.</p>
+</div>
+
+<!-- ========================================================== -->
+<h2>The four lenses</h2>
+
+<dl class="prose">
+  <dt><strong>Weights</strong> <span class="lens-tag weights">weights</span></dt>
+  <dd>The numbers learned during training; what the model "knows." Frozen at inference. <em>Changing weights = teaching new behavior.</em> → <a href="../index.html#s5">hub §5</a></dd>
+
+  <dt><strong>Context</strong> <span class="lens-tag context">context</span></dt>
+  <dd>What the model sees in the current turn — the input window. Changes per request, forgotten between requests. → <a href="../index.html#s5">hub §5</a></dd>
+
+  <dt><strong>Scaffolding</strong> <span class="lens-tag scaffolding">scaffolding</span></dt>
+  <dd>The system around the model — system prompts, retrieval, tools, agent loops. Doesn't change the model itself; changes what reaches it and what happens with its output. → <a href="../index.html#s5">hub §5</a></dd>
+
+  <dt><strong>Decoding</strong> <span class="lens-tag decoding">decoding</span></dt>
+  <dd>How the sampler turns the model's probability output into a single chosen token. Temperature, top-k, top-p. → <a href="../index.html#s5">hub §5</a></dd>
+
+  <dt><strong>Runtime state</strong> (<em>not</em> a fifth lens)</dt>
+  <dd>Transient computation state (KV cache, intermediate activations) that exists during one forward pass and disappears. Don't confuse with weights or context. → <a href="inference.html">inference.html</a></dd>
+</dl>
+
+<!-- ========================================================== -->
+<h2>Architecture</h2>
+
+<dl class="prose">
+  <dt><strong>Token</strong></dt>
+  <dd>A small piece of text (often a sub-word) mapped to an integer ID. The unit a model reads and writes. → <a href="tokens.html">tokens.html</a></dd>
+
+  <dt><strong>Embedding</strong></dt>
+  <dd>A vector representing a token's location in "meaning space." Tokens with related meanings sit near each other. → <a href="tokens.html">tokens.html</a></dd>
+
+  <dt><strong>Embedding matrix</strong></dt>
+  <dd>The lookup table that maps token IDs to embedding vectors. Part of the model's weights, learned during training.</dd>
+
+  <dt><strong>Positional encoding</strong></dt>
+  <dd>How the model knows token order. Modern models use <strong>RoPE</strong> (Rotary Position Embedding). → <a href="tokens.html">tokens.html</a></dd>
+
+  <dt><strong>RoPE</strong></dt>
+  <dd>Rotary Position Embedding. Rotates each token's Q and K vectors by an angle proportional to its position; attention then reads relative position from the rotation difference. → <a href="tokens.html">tokens.html</a></dd>
+
+  <dt><strong>Attention</strong></dt>
+  <dd>The mechanism by which each token looks at every other token in the sequence and updates itself based on a weighted blend of their information. → <a href="attention.html">attention.html</a></dd>
+
+  <dt><strong>Q, K, V (Query, Key, Value)</strong></dt>
+  <dd>Per-token vectors used in attention. Q = "what am I looking for", K = "what I'm advertising", V = "what I'll share if you listen." → <a href="attention.html">attention.html</a></dd>
+
+  <dt><strong>Attention head</strong></dt>
+  <dd>One parallel attention computation. Modern models run many heads simultaneously, each capturing a different relationship.</dd>
+
+  <dt><strong>Multi-head attention</strong></dt>
+  <dd>Standard pattern: run attention several times in parallel with different Q/K/V projections, concatenate, project. → <a href="attention.html">attention.html</a></dd>
+
+  <dt><strong>Causal autoregressive property</strong></dt>
+  <dd>Each token only attends to itself and earlier tokens, never later ones. The structural reason a decoder-only model is a next-token predictor. → <a href="attention.html">attention.html</a></dd>
+
+  <dt><strong>Causal mask</strong></dt>
+  <dd>The matrix mask that enforces the causal property during parallel training. Not a separate idea from autoregressive — just an implementation detail.</dd>
+
+  <dt><strong>Transformer block</strong></dt>
+  <dd>One unit of attention + MLP + residual + normalization. Modern LLMs stack 30-80 of these. → <a href="block.html">block.html</a></dd>
+
+  <dt><strong>MLP (feed-forward block)</strong></dt>
+  <dd>A small per-token neural network inside each transformer block, applied independently to every position. Where a lot of factual knowledge lives. → <a href="block.html">block.html</a></dd>
+
+  <dt><strong>Residual stream</strong></dt>
+  <dd>The vector flowing up through all transformer blocks; each block adds its contribution rather than replacing. → <a href="block.html">block.html</a></dd>
+
+  <dt><strong>LayerNorm / RMSNorm / Layer norm</strong></dt>
+  <dd>Normalization steps applied before attention and MLP. Keeps activation scales stable across layers. RMSNorm is a slightly cheaper variant favored by modern models.</dd>
+
+  <dt><strong>Context mixing</strong></dt>
+  <dd>What self-attention <em>does</em>: each token's representation absorbs information from other tokens. Every layer is another opportunity to mix more context into each position.</dd>
+
+  <dt><strong>Knowledge recall</strong></dt>
+  <dd>What the feed-forward network (MLP) <em>does</em>: each token, independently, uses its current representation to recall factual associations stored in the FFN weights. Most of a model's stored factual knowledge lives here.</dd>
+
+  <dt><strong>Hidden state</strong></dt>
+  <dd>The vector at any given layer/position in the residual stream. The "hidden state at the last position" is what gets projected to logits.</dd>
+
+  <dt><strong>Logits</strong></dt>
+  <dd>Raw "enthusiasm scores" the model outputs for every possible next token, before softmax converts them to probabilities. → <a href="inference.html">inference.html</a></dd>
+
+  <dt><strong>Softmax</strong></dt>
+  <dd>The function that converts logits into a probability distribution that sums to 1.</dd>
+</dl>
+
+<!-- ========================================================== -->
+<h2>Inference</h2>
+
+<dl class="prose">
+  <dt><strong>Inference</strong></dt>
+  <dd>Running the model to produce output. Distinguished from training (which updates weights).</dd>
+
+  <dt><strong>Forward pass</strong></dt>
+  <dd>One run of the model from input through all layers to logits.</dd>
+
+  <dt><strong>Autoregressive generation</strong></dt>
+  <dd>Producing text one token at a time, with each token conditioned on all previous tokens. → <a href="inference.html">inference.html</a></dd>
+
+  <dt><strong>KV cache</strong></dt>
+  <dd>Cached K and V vectors for past tokens, so decode doesn't recompute them on every step. <em>Runtime state, not weights or context.</em> → <a href="inference.html">inference.html</a></dd>
+
+  <dt><strong>Prefill</strong></dt>
+  <dd>The first forward pass over the entire prompt, processed in parallel. Sets up the KV cache. → <a href="inference.html">inference.html</a></dd>
+
+  <dt><strong>Decode</strong></dt>
+  <dd>Generating tokens one at a time after prefill, each requiring its own forward pass. → <a href="inference.html">inference.html</a></dd>
+
+  <dt><strong>Time to first token (TTFT)</strong></dt>
+  <dd>Latency from request start to first generated token. Dominated by prefill cost.</dd>
+
+  <dt><strong>Inter-token latency / time per output token (TPOT)</strong></dt>
+  <dd>Time between successive generated tokens during decode.</dd>
+
+  <dt><strong>Batching</strong></dt>
+  <dd>Combining multiple users' requests into one forward pass to improve GPU utilization. <em>Continuous batching</em> dynamically adds/removes requests mid-flight.</dd>
+
+  <dt><strong>Speculative decoding</strong></dt>
+  <dd>A small "draft" model proposes several tokens; the big model verifies them in one pass. Faster, identical output. → <a href="inference.html">inference.html</a></dd>
+</dl>
+
+<!-- ========================================================== -->
+<h2>Training</h2>
+
+<dl class="prose">
+  <dt><strong>Pretraining</strong></dt>
+  <dd>The first stage: predict-the-next-token training on trillions of tokens of text. Where capability comes from. → <a href="training.html">training.html</a></dd>
+
+  <dt><strong>SFT (Supervised Fine-Tuning)</strong></dt>
+  <dd>The second stage: training on curated (prompt, ideal-response) pairs to give the model assistant-shaped behavior. → <a href="training.html">training.html</a></dd>
+
+  <dt><strong>RLHF (Reinforcement Learning from Human Feedback)</strong></dt>
+  <dd>Post-SFT stage: train a reward model on human preferences, then use RL to nudge the LLM toward higher-reward outputs. → <a href="training.html">training.html</a></dd>
+
+  <dt><strong>DPO (Direct Preference Optimization)</strong></dt>
+  <dd>Simpler alternative to RLHF: tweak the model directly using preference pairs, no separate reward model. → <a href="training.html">training.html</a></dd>
+
+  <dt><strong>RLAIF</strong></dt>
+  <dd>Reinforcement Learning from AI Feedback. Same as RLHF but with another LLM doing the judging. Cheaper, biased toward judge.</dd>
+
+  <dt><strong>Constitutional AI</strong></dt>
+  <dd>Anthropic's approach: use a written constitution of principles to have the model critique and revise its own outputs.</dd>
+
+  <dt><strong>Catastrophic forgetting</strong></dt>
+  <dd>When fine-tuning on new data damages capability the model previously had. Common LoRA failure mode.</dd>
+
+  <dt><strong>Alignment tax</strong></dt>
+  <dd>Capability loss that often comes alongside RLHF/DPO; the model becomes more obedient but slightly blander.</dd>
+</dl>
+
+<!-- ========================================================== -->
+<h2>Levers</h2>
+
+<dl class="prose">
+  <dt><strong>Fine-tuning</strong></dt>
+  <dd>Updating model weights on a specific dataset to teach new behavior. <em>Full</em>, <em>LoRA</em>, or <em>QLoRA</em> variants. → <a href="levers.html">levers.html §1</a></dd>
+
+  <dt><strong>LoRA</strong> (Low-Rank Adaptation)</dt>
+  <dd>Fine-tuning by learning a small low-rank delta (A·B) attached to selected weight matrices. Base weights stay frozen. → <a href="levers.html">levers.html §1</a></dd>
+
+  <dt><strong>QLoRA</strong></dt>
+  <dd>LoRA with the base model quantized to 4 bits during training. Lets you fine-tune very large models on consumer GPUs.</dd>
+
+  <dt><strong>Quantization</strong></dt>
+  <dd>Storing weights in fewer bits (e.g., 16 → 4) to save memory. Same number of weights, coarser numerical resolution. → <a href="levers.html">levers.html §2</a></dd>
+
+  <dt><strong>RTN, GPTQ, AWQ, GGUF</strong></dt>
+  <dd>Quantization methods. RTN is naive round-to-nearest. GPTQ adjusts for quantization errors per column. AWQ protects activation-important weights. GGUF is the file format for llama.cpp.</dd>
+
+  <dt><strong>Context extension</strong></dt>
+  <dd>Making a model handle longer inputs than it was trained for. Done by stretching positional encoding (RoPE scaling) and/or restructuring attention. → <a href="levers.html">levers.html §3</a></dd>
+
+  <dt><strong>RoPE scaling</strong></dt>
+  <dd>Rescaling RoPE rotation frequencies so a model trained on shorter contexts can handle longer ones. Variants: linear (Position Interpolation), NTK-aware, YaRN.</dd>
+
+  <dt><strong>Sliding window attention</strong></dt>
+  <dd>Each token only attends to the last <em>k</em> tokens instead of all previous tokens. Reduces memory and compute; costs some long-range coherence.</dd>
+
+  <dt><strong>Pruning</strong></dt>
+  <dd>Removing weights, heads, or layers from a trained model. <em>Unstructured</em> zeroes individual weights; <em>structured</em> removes whole units. Usually paired with a healing fine-tune. → <a href="levers.html">levers.html §4</a></dd>
+
+  <dt><strong>Decoding</strong></dt>
+  <dd>The process of converting model output (probability distribution) into chosen tokens. Controlled by temperature, top-k, top-p, repetition penalty. → <a href="levers.html">levers.html §5</a></dd>
+
+  <dt><strong>Temperature</strong></dt>
+  <dd>Divides logits before softmax. T &lt; 1 sharpens (more deterministic); T &gt; 1 flattens (more random); T = 0 picks the top token always (greedy).</dd>
+
+  <dt><strong>Top-k</strong></dt>
+  <dd>Keep only the top K most-likely tokens before sampling.</dd>
+
+  <dt><strong>Top-p (nucleus)</strong></dt>
+  <dd>Keep the smallest set of tokens whose cumulative probability is at least p.</dd>
+
+  <dt><strong>Repetition penalty</strong></dt>
+  <dd>Multiplicative penalty applied to logits of recently-generated tokens. Prevents loops.</dd>
+</dl>
+
+<!-- ========================================================== -->
+<h2>Evaluation</h2>
+
+<dl class="prose">
+  <dt><strong>Perplexity</strong></dt>
+  <dd>Intrinsic eval: how well the model predicts held-out text. Measures raw modeling quality; misses helpfulness/safety. → <a href="eval.html">eval.html</a></dd>
+
+  <dt><strong>MMLU, ARC, GSM8K, HumanEval, etc.</strong></dt>
+  <dd>Multiple-choice and code-generation benchmarks. Easy to score, prone to contamination. → <a href="eval.html">eval.html</a></dd>
+
+  <dt><strong>Contamination</strong></dt>
+  <dd>When benchmark questions leak into training data, inflating scores without reflecting true capability.</dd>
+
+  <dt><strong>MT-Bench</strong></dt>
+  <dd>LLM-as-judge benchmark: a strong model (typically GPT-4) grades pairs of model outputs against criteria.</dd>
+
+  <dt><strong>LMSYS Chatbot Arena</strong></dt>
+  <dd>Human preference benchmark: users compare two anonymous models side-by-side and vote. Aggregated into Elo-style scores.</dd>
+
+  <dt><strong>Needle-in-a-Haystack</strong></dt>
+  <dd>Long-context probe: insert a unique fact at varying positions in a long context, ask about it. Tests retrieval accuracy by depth.</dd>
+</dl>
+
+<!-- ========================================================== -->
+<h2>Architecture variants</h2>
+
+<dl class="prose">
+  <dt><strong>Decoder-only</strong></dt>
+  <dd>The standard modern LLM architecture (GPT family). One stack, causal attention, autoregressive generation. The baseline this artifact teaches.</dd>
+
+  <dt><strong>Encoder-decoder</strong></dt>
+  <dd>Two-stack architecture (T5, BART). Encoder reads bidirectionally; decoder generates autoregressively while attending to encoder output. → <a href="block.html">block.html variant note</a></dd>
+
+  <dt><strong>Mixture-of-Experts (MoE)</strong></dt>
+  <dd>Replaces single MLP per block with many "expert" MLPs and a router that picks 1-2 per token. More capacity at similar inference cost. → <a href="block.html">block.html variant note</a></dd>
+
+  <dt><strong>Multi-Query Attention (MQA)</strong></dt>
+  <dd>One K/V shared across all attention heads. Smaller KV cache; small quality cost. → <a href="attention.html">attention.html variant note</a></dd>
+
+  <dt><strong>Grouped-Query Attention (GQA)</strong></dt>
+  <dd>Heads grouped to share K/V — middle ground between standard MHA and MQA. Used by most modern open models (Llama 3, Mistral). → <a href="attention.html">attention.html variant note</a></dd>
+
+  <dt><strong>Multimodal</strong></dt>
+  <dd>Models that accept images, audio, etc. as input. Typically add a small encoder that converts non-text inputs into vectors, then pass them through the same transformer downstream. → <a href="tokens.html">tokens.html variant note</a></dd>
+</dl>
+
+<!-- ========================================================== -->
+<h2>Scaffolding</h2>
+
+<dl class="prose">
+  <dt><strong>System prompt</strong></dt>
+  <dd>A special prompt prefix instructing the model how to behave for the rest of the conversation. Pure scaffolding — doesn't change the model.</dd>
+
+  <dt><strong>RAG (Retrieval-Augmented Generation)</strong></dt>
+  <dd>Retrieve relevant documents from an external store and inject them into the model's context before generation.</dd>
+
+  <dt><strong>Tool use / function calling</strong></dt>
+  <dd>The model emits structured output indicating an external function should be called; the system runs the function and feeds the result back into the conversation.</dd>
+
+  <dt><strong>Agent / ReAct loop</strong></dt>
+  <dd>Multi-step scaffolding: model thinks → acts (calls tool) → observes result → thinks again, until a final answer.</dd>
+
+  <dt><strong>Chain-of-thought</strong></dt>
+  <dd>Prompting the model to explain its reasoning step-by-step before giving a final answer. A scaffolding technique that often improves accuracy on reasoning tasks.</dd>
+</dl>
+
+<!-- ========================================================== -->
+<nav class="page-footer">
+  <a href="diagnosis.html">← Diagnosis</a>
+  <a href="../index.html">Back to hub →</a>
+</nav>
+
+</main>
+<script src="../assets/shared.js"></script>
+<script src="../assets/widgets.js"></script>
+<script src="../assets/progress.js"></script>
+<script src="../assets/shortcuts.js"></script>
+<script src="../assets/theme.js"></script>
+<script src="../assets/nav.js"></script>
+<script src="../assets/search-index.js"></script>
+<script src="../assets/search.js"></script>
+<script src="../assets/toc.js"></script>
+</body>
+</html>

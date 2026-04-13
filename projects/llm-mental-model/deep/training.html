@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Training — Deep Dive</title>
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="page">
+
+<nav class="breadcrumb"><a href="../index.html">← Back to hub</a></nav>
+
+<h1>Training</h1>
+<p class="prose" style="text-align:center; color:var(--text-soft); font-style:italic; margin-top:-0.5em;">
+Pretraining → SFT → RLHF / DPO. What each stage actually changes inside the weights.
+</p>
+
+<div class="lens-block">
+  <span class="lens-tag weights">weights</span> Training is the only thing that <em>changes weight values</em>. Other "weights"-lens levers (quantization, pruning) change representation or structure without teaching new behavior.
+</div>
+
+<!-- ========================================================== -->
+<h2>The big picture: three stages</h2>
+
+<p class="prose">A modern instruction-following LLM goes through (at minimum) three distinct training stages. Each one uses gradient descent and roughly the same loss function — but the data and the goal differ.</p>
+
+<table>
+  <thead><tr><th>Stage</th><th>What you give it</th><th>What it learns</th><th>Compute scale</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><strong>Pretraining</strong></td>
+      <td>Trillions of tokens from the web, books, code</td>
+      <td>How language works; vast factual knowledge; many implicit skills</td>
+      <td>~1× (the baseline)</td>
+    </tr>
+    <tr>
+      <td><strong>SFT</strong></td>
+      <td>~10k–1M curated (prompt, ideal-response) pairs</td>
+      <td>Format and style of helpful responses</td>
+      <td>~0.1%–1% of pretraining</td>
+    </tr>
+    <tr>
+      <td><strong>RLHF / DPO</strong></td>
+      <td>~10k–1M (prompt, preferred-response, rejected-response) triples</td>
+      <td>Human preferences for tone, helpfulness, refusal patterns</td>
+      <td>~0.1%–1% of pretraining</td>
+    </tr>
+  </tbody>
+</table>
+
+<p class="prose">Notice the lopsidedness: pretraining costs roughly two orders of magnitude more compute than the post-training stages combined. Nearly all of the model's <em>capability</em> comes from pretraining; the post-training stages mostly shape <em>behavior</em>.</p>
+
+<!-- ========================================================== -->
+<h2>Stage 1: Pretraining</h2>
+
+<p class="prose">Take a colossal pile of text — Common Crawl scrapes, Wikipedia, GitHub code, books, papers, Reddit, StackOverflow, scientific repositories. After heavy filtering, deduplication, and quality scoring, you might end up with a few trillion tokens. The training objective is the same one you've seen all along: <em>predict the next token</em>.</p>
+
+<p class="prose">For every position in every document, the model is asked: given everything before, what's the next token? It guesses (a probability distribution); you compare to ground truth (the actual next token); compute loss; backpropagate; update weights; move on. Repeat for every token in every document for many epochs.</p>
+
+<div class="callout-analogy">
+  <p>Pretraining is reading the entire library while playing a fill-in-the-blank game on every sentence. You don't know what any one book is for. Nobody tested you on comprehension. But by the time you've finished, you've absorbed how language works, what facts are true, what arguments tend to follow what claims, what code does what. You're an oracle who has read everything but has no idea what anyone wants.</p>
+</div>
+
+<h3>What "emerges" — and why scale matters</h3>
+
+<p class="prose">A smaller pretrained model can complete sentences plausibly. A larger pretrained model can also do arithmetic, code, reason about hypotheticals, translate languages — capabilities that nobody trained directly. These didn't appear because someone wrote a "now learn arithmetic" stage. They appeared because predicting the next token <em>well</em> on a large enough corpus requires a lot of implicit competence, and the model finds it.</p>
+
+<p class="prose">This is the empirical observation behind the "scale" thesis: capabilities emerge as a function of model size, training data, and compute together. Roughly: 10× more of all three buys you a step-function in capability. Whether this continues indefinitely is an open question; whether it's gotten us this far is not.</p>
+
+<h3>Compute scale, in pictures</h3>
+
+<p class="prose">Training a frontier model takes thousands of GPUs running for weeks or months, costing tens to hundreds of millions of dollars. The numbers are eye-watering enough to be useless intuition pumps, so here's a more useful one: <em>pretraining is the most expensive thing humans regularly do with computers.</em> Genuinely. There is nothing else civilians spend as much compute on as one frontier-model pretraining run.</p>
+
+<!-- ========================================================== -->
+<h2>Stage 2: Supervised fine-tuning (SFT)</h2>
+
+<p class="prose">A pretrained model is a strange creature. Ask <em>"What is the capital of France?"</em> and it might continue with <em>"is a question often asked in geography classes…"</em> — because that's a plausible continuation of an internet article that <em>contains</em> that question. It's not refusing to answer; it just sees a string of text and predicts what comes next, having no concept of "you're asking me a question."</p>
+
+<p class="prose">SFT teaches it to behave like an assistant. The data: thousands of (prompt, ideal-response) pairs hand-curated by humans (or, increasingly, by other models). For each pair, train the model to maximize the probability of the ideal response given the prompt. Same loss, same gradient descent — just very different data.</p>
+
+<div class="callout-analogy">
+  <p>SFT is an apprentice mimicking a master. The master shows them ten thousand worked examples — "here's a question, here's how a helpful answer looks; here's a request, here's how a graceful refusal looks." The apprentice was already a competent writer; now they know what shape a helpful response takes.</p>
+</div>
+
+<h3>What changes inside the weights</h3>
+<p class="prose">SFT rarely teaches new <em>knowledge</em> — there isn't enough of it to compete with the trillions of pretraining tokens. What it changes is response <em>shape</em>: how the model formats answers, when it asks for clarification, whether it adds caveats. Concretely, the weight changes are usually small but cluster in particular subspaces — the parts of the model that produce final-token-level behavior.</p>
+
+<div class="callout-break">
+  <p>SFT has a known failure mode: <em>over-generalization from style</em>. If your SFT data is stylistically uniform (always starts with "Sure! I'd be happy to help…" for instance), the model learns that style as a brand and applies it everywhere — including places it shouldn't. The Mickey Mouse "I'm just a friendly AI" voice in many models is partially an SFT artifact.</p>
+</div>
+
+<!-- ========================================================== -->
+<h2>Stage 3: RLHF or DPO</h2>
+
+<p class="prose">SFT teaches the model what good responses <em>look like</em>, but it can't directly teach <em>preferences</em>. Concise vs verbose, careful vs confident, this style vs that style — these are subtler than "right answer" and need a different signal.</p>
+
+<h3>RLHF (Reinforcement Learning from Human Feedback)</h3>
+<p class="prose">The classic recipe:</p>
+<ol class="prose">
+  <li>Have the SFT model generate two completions for the same prompt.</li>
+  <li>Show both to a human; they pick the one they prefer.</li>
+  <li>Collect tens of thousands of these preference pairs.</li>
+  <li>Train a separate <strong>reward model</strong> to predict which response a human would prefer.</li>
+  <li>Use reinforcement learning (PPO) to nudge the LLM toward producing higher-reward responses, while not drifting too far from the SFT model.</li>
+</ol>
+
+<h3>DPO (Direct Preference Optimization)</h3>
+<p class="prose">A more recent, simpler alternative. DPO skips the separate reward model entirely. Instead, given preference pairs, it tweaks the LLM directly to make the preferred response more likely <em>and</em> the rejected response less likely, in one combined loss. Less moving parts, often comparable results, easier to implement and stabilize. Many open models since 2023 have moved from RLHF to DPO.</p>
+
+<div class="callout-analogy">
+  <p>RLHF is the apprentice cooking many dishes, having a panel of judges taste each one and score it, training a robotic stand-in for the judges' taste, and then cooking against the robotic stand-in. DPO is cutting out the robot entirely: just hand the apprentice pairs of dishes, say which one tasted better, and tell them to cook more like the winner and less like the loser. Same end goal; fewer steps.</p>
+</div>
+
+<h3>What changes inside the weights</h3>
+<p class="prose">RLHF/DPO updates touch roughly the same parts of the model as SFT — final-layer behavioral subspaces — but they're sensitive in a way SFT isn't. Push too hard and you get "alignment tax": the model becomes obedient and bland, losing some of the sharpness it had before. This is one reason post-training is more art than science: the goal is to nudge behavior without flattening capability.</p>
+
+<!-- ========================================================== -->
+<h2>See it on a single prompt</h2>
+
+<div data-widget="training-stages" data-prompt="Convince me pineapple belongs on pizza."></div>
+
+<!-- ========================================================== -->
+<h2>What about RLAIF, constitutional AI, and the rest?</h2>
+
+<p class="prose">The post-training landscape moves fast. A few names you'll see:</p>
+<ul class="prose">
+  <li><strong>RLAIF</strong> — Reinforcement Learning from <em>AI</em> Feedback. Replaces the human judges with another LLM acting as a judge. Cheaper, scales, but inherits the judge's biases.</li>
+  <li><strong>Constitutional AI</strong> (Anthropic) — uses a written "constitution" of principles to have the model critique and revise its own outputs, generating training data without human raters in the inner loop.</li>
+  <li><strong>RLHF + safety fine-tuning</strong> — additional rounds focused specifically on refusing harmful requests, handling sensitive topics, etc. Usually mixed in with general preference tuning.</li>
+</ul>
+
+<p class="prose">All of these share the same <em>shape</em>: gather some signal about preferred vs unpreferred outputs, use that signal to nudge the weights. The mental model is the same; the data pipeline differs.</p>
+
+<!-- ========================================================== -->
+<nav class="page-footer">
+  <a href="inference.html">← Inference loop</a>
+  <a href="eval.html">Next: evaluation →</a>
+</nav>
+
+</main>
+<script src="../assets/shared.js"></script>
+<script src="../assets/widgets.js"></script>
+<script src="../assets/glossary.js"></script>
+<script src="../assets/progress.js"></script>
+<script src="../assets/shortcuts.js"></script>
+<script src="../assets/theme.js"></script>
+<script src="../assets/nav.js"></script>
+<script src="../assets/search-index.js"></script>
+<script src="../assets/search.js"></script>
+<script src="../assets/toc.js"></script>
+</body>
+</html>

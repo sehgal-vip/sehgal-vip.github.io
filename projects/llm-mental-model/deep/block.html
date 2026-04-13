@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Transformer Block — Deep Dive</title>
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="page">
+
+<nav class="breadcrumb"><a href="../index.html">← Back to hub</a></nav>
+
+<h1>The transformer block</h1>
+<p class="prose" style="text-align:center; color:var(--text-soft); font-style:italic; margin-top:-0.5em;">
+Attention + MLP + residual + norm, repeated N times. What depth actually buys you.
+</p>
+
+<div class="lens-block">
+  <span class="lens-tag weights">weights</span> Attention projections, MLP weights, and norm parameters all live here.
+  <span class="lens-tag context">context</span> Information flows up through the residual stream as the block transforms it.
+</div>
+
+<!-- ========================================================== -->
+<h2>Anatomy of a single block</h2>
+
+<p class="prose">A transformer block is a small, repeated unit. Modern decoder-only LLMs stack 30–80 of them. The block itself is short:</p>
+
+<svg class="diagram" viewBox="0 0 700 380" aria-label="One transformer block">
+  <!-- Input -->
+  <rect x="280" y="20" width="140" height="38" rx="6" class="stroke fill-muted"/>
+  <text x="350" y="44" text-anchor="middle" class="label">Input vector</text>
+
+  <!-- Down arrow -->
+  <path d="M 350 60 L 350 80" class="stroke"/>
+  <polygon points="346,78 350,88 354,78" fill="currentColor"/>
+
+  <!-- Norm -->
+  <rect x="290" y="90" width="120" height="30" rx="4" class="stroke fill-muted"/>
+  <text x="350" y="110" text-anchor="middle" class="label-small">LayerNorm / RMSNorm</text>
+
+  <path d="M 350 122 L 350 140" class="stroke"/>
+  <polygon points="346,138 350,148 354,138" fill="currentColor"/>
+
+  <!-- Attention -->
+  <rect x="240" y="148" width="220" height="40" rx="6" class="stroke fill-accent"/>
+  <text x="350" y="173" text-anchor="middle" class="label">Multi-head Attention</text>
+
+  <!-- Residual: input bypass to add -->
+  <path d="M 280 39 L 100 39 L 100 200 L 290 200" class="stroke-soft" stroke-dasharray="4,4" fill="none"/>
+  <text x="100" y="125" text-anchor="middle" class="label-small" transform="rotate(-90 100 125)">residual</text>
+
+  <!-- Plus -->
+  <circle cx="350" cy="200" r="14" class="stroke fill-muted"/>
+  <text x="350" y="205" text-anchor="middle" class="label">+</text>
+
+  <path d="M 410 200 L 350 200" class="stroke"/>
+  <path d="M 350 215 L 350 235" class="stroke"/>
+  <polygon points="346,233 350,243 354,233" fill="currentColor"/>
+
+  <!-- Norm 2 -->
+  <rect x="290" y="245" width="120" height="30" rx="4" class="stroke fill-muted"/>
+  <text x="350" y="265" text-anchor="middle" class="label-small">LayerNorm / RMSNorm</text>
+
+  <path d="M 350 277 L 350 295" class="stroke"/>
+  <polygon points="346,293 350,303 354,293" fill="currentColor"/>
+
+  <!-- MLP -->
+  <rect x="240" y="303" width="220" height="40" rx="6" class="stroke fill-accent"/>
+  <text x="350" y="328" text-anchor="middle" class="label">MLP (per-token feed-forward)</text>
+
+  <!-- Residual 2 -->
+  <path d="M 460 200 L 600 200 L 600 360 L 410 360" class="stroke-soft" stroke-dasharray="4,4" fill="none"/>
+
+  <!-- Plus 2 -->
+  <circle cx="350" cy="360" r="14" class="stroke fill-muted"/>
+  <text x="350" y="365" text-anchor="middle" class="label">+</text>
+
+  <path d="M 410 360 L 350 360" class="stroke"/>
+</svg>
+<p class="diagram-caption">Two sub-blocks: attention then MLP. Each is wrapped in a residual connection (the dotted bypass) and a normalization step.</p>
+
+<p class="prose">Read top to bottom:</p>
+<ol class="prose">
+  <li><strong>Normalize</strong> the input (LayerNorm or RMSNorm — modern models prefer RMSNorm for being slightly cheaper).</li>
+  <li>Run <strong>multi-head attention</strong> — tokens look at each other (see <a href="attention.html">attention.html</a>).</li>
+  <li><strong>Add</strong> the attention output back to the original input. This is the <em>residual connection</em>.</li>
+  <li><strong>Normalize</strong> again.</li>
+  <li>Run a small per-token <strong>feed-forward neural network</strong> (the MLP).</li>
+  <li><strong>Add</strong> again.</li>
+</ol>
+
+<p class="prose">That's one block. Output goes into the next block. Sixty times.</p>
+
+<!-- ========================================================== -->
+<h2>What the MLP actually does</h2>
+
+<p class="prose">After attention has let tokens swap information, the MLP runs on each token <em>independently</em> — no token-to-token communication, just a small neural network applied identically at every position. Typical structure: project up to ~4× the embedding dimension, apply a non-linearity (GELU or SwiGLU), project back down.</p>
+
+<div class="callout-analogy">
+  <p>Attention is the conversation phase: tokens compare notes, see what others know, pull in relevant context. The MLP is the <em>thinking</em> phase: each token, having heard from the others, retreats to its own corner and processes what it just learned. Then the next attention round happens, and the next thinking round, and so on for all N layers.</p>
+</div>
+
+<p class="prose">A common research finding: a lot of factual knowledge in LLMs lives in the MLP weights. Fine-tuning that targets specific factual updates often touches MLP layers more than attention. This isn't a hard rule — it's more like "the MLP has more raw parameter capacity than attention, so that's where most knowledge ends up packed."</p>
+
+<!-- ========================================================== -->
+<h2>The residual stream — the highway through the model</h2>
+
+<p class="prose">Notice the dotted lines bypassing both attention and MLP in the diagram. Those are <strong>residual connections</strong>. Their job is simple but profound: instead of replacing the token's vector at each block, attention and MLP <em>add</em> their contribution to it. The original information is always preserved.</p>
+
+<p class="prose">The vector that flows up through every layer — gathering additions but never replacements — is the <strong>residual stream</strong>.</p>
+
+<div class="callout-analogy">
+  <p>The residual stream is a shared whiteboard running floor-to-ceiling through every layer. Each layer reads what's already on the whiteboard, computes its own contribution, and writes it on top. Nothing is erased. By the top floor, the whiteboard is dense with annotations from every layer — each one's contribution still legible if you knew where to look.</p>
+</div>
+
+<p class="prose">Two important consequences:</p>
+<ul class="prose">
+  <li><strong>Gradients can flow backwards across many layers.</strong> Without residuals, training a 60-layer model would be a numerical nightmare; with them, gradients have a clear "shortcut" path through the residual highway.</li>
+  <li><strong>Each layer adds, doesn't overwrite.</strong> If a later layer's attention or MLP learns nothing useful, it can output near-zero and the residual stream just passes through unchanged. The model degrades gracefully when capacity is wasted.</li>
+</ul>
+
+<!-- ========================================================== -->
+<h2>What depth buys you — the layer slider</h2>
+
+<p class="prose">As a token's vector travels up through the layers, what gets added to it changes character. Empirically:</p>
+
+<ul class="prose">
+  <li><strong>Early layers</strong> tend to capture surface features — what part of speech this token is, what tokens are nearby, basic syntactic role.</li>
+  <li><strong>Middle layers</strong> tend to capture relational structure — who's the subject of which verb, what entity is this pronoun referring to.</li>
+  <li><strong>Late layers</strong> tend to capture task-relevant semantics — features useful for predicting the next token specifically.</li>
+</ul>
+
+<p class="prose">The slider below illustrates this qualitative shift on a tiny example:</p>
+
+<div data-widget="layer-stack"></div>
+
+<!-- ========================================================== -->
+<h2>Why deeper isn't always better</h2>
+
+<p class="prose">More layers means more capacity — but capacity costs both compute (each forward pass scales linearly with depth) and parameters (each layer is millions to hundreds of millions of weights). Diminishing returns kick in: a 200-layer model is rarely twice as good as a 100-layer model, but it's twice as expensive and twice as slow.</p>
+
+<p class="prose">Modern open-weight models tend to land in the 30-80 layer range for this reason. <em>Width</em> (embedding dimension and MLP expansion) and <em>depth</em> (number of blocks) are tuned together — there's no universal right answer, but for a given parameter budget, very deep + very narrow rarely wins.</p>
+
+<!-- ========================================================== -->
+<div class="callout-variant">
+  <p><strong>Mixture-of-Experts (MoE).</strong> In standard transformers, every token goes through the same MLP at every layer. MoE replaces the single MLP with <em>many</em> MLPs ("experts") and a small "router" that picks one or two experts per token per layer. The total parameter count balloons (Mixtral 8×7B has ~47B parameters total) but per-token compute stays small (only ~2 experts active per token). The headline trade: more capacity at similar inference cost, but harder to train (load-balancing experts is fiddly) and harder to serve (memory still has to hold every expert).</p>
+</div>
+
+<div class="callout-variant">
+  <p><strong>Encoder-decoder (T5, BART, original transformer).</strong> Two stacks. The <em>encoder</em> reads the input bidirectionally — no causal mask, every token sees every other token — and produces a representation. The <em>decoder</em> generates the output one token at a time, attending to both itself (causally) and the encoder's output. Useful for translation/summarization where input and output are clearly separate. Most modern chat LLMs are decoder-only because it scales better and is simpler — but the encoder-decoder lineage isn't dead, especially for narrow tasks.</p>
+</div>
+
+<!-- ========================================================== -->
+<nav class="page-footer">
+  <a href="attention.html">← Attention</a>
+  <a href="inference.html">Next: inference loop →</a>
+</nav>
+
+</main>
+<script src="../assets/shared.js"></script>
+<script src="../assets/widgets.js"></script>
+<script src="../assets/glossary.js"></script>
+<script src="../assets/progress.js"></script>
+<script src="../assets/shortcuts.js"></script>
+<script src="../assets/theme.js"></script>
+<script src="../assets/nav.js"></script>
+<script src="../assets/search-index.js"></script>
+<script src="../assets/search.js"></script>
+<script src="../assets/toc.js"></script>
+</body>
+</html>

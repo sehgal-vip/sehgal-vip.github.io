@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Inference Loop — Deep Dive</title>
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="page">
+
+<nav class="breadcrumb"><a href="../index.html">← Back to hub</a></nav>
+
+<h1>The inference loop</h1>
+<p class="prose" style="text-align:center; color:var(--text-soft); font-style:italic; margin-top:-0.5em;">
+Forward pass, KV cache, prefill vs decode, batching, speculative decoding.
+</p>
+
+<div class="lens-block">
+  This page is the <strong>forward pass machinery</strong> itself — driven by <span class="lens-tag weights">weights</span>, fed by <span class="lens-tag context">context</span>, ending in <span class="lens-tag decoding">decoding</span>. The KV cache is <em>runtime state</em> (see callout below).
+</div>
+
+<!-- ========================================================== -->
+<h2>One token, end to end</h2>
+
+<p class="prose">The hub showed the loop at a glance. Let's walk it more slowly.</p>
+
+<ol class="prose">
+  <li><strong>Tokenize</strong> the input text into integer IDs.</li>
+  <li><strong>Look up</strong> each ID's embedding from the embedding table.</li>
+  <li><strong>Inject position</strong> via RoPE (or whatever positional scheme this model uses).</li>
+  <li><strong>Pass through N transformer blocks.</strong> Each block: norm → attention → add → norm → MLP → add. Information flows through the residual stream.</li>
+  <li><strong>Take the hidden state at the last position</strong> — that's a single vector representing "what the model is thinking right now about what to say next."</li>
+  <li><strong>Project</strong> that vector through the output matrix <code>W_out</code> (often the transpose of the embedding matrix, "tied weights"). The result is a vector of <em>logits</em> — one number for every token in the vocabulary, often 50,000–200,000 numbers long.</li>
+  <li><strong>Softmax</strong> the logits into a probability distribution that sums to 1.</li>
+  <li><strong>Sample</strong> one token from that distribution according to your decoding settings (temperature, top-k, top-p).</li>
+  <li><strong>Append</strong> the sampled token to the sequence.</li>
+  <li><strong>Repeat</strong> from step 4 — but with the cache trick we'll discuss next.</li>
+</ol>
+
+<div class="callout-analogy">
+  <p>The whole thing is like a writer dictating to themselves one word at a time, where the next word always depends on every word said so far. The model is a function from "everything written" to "probability of every possible next word." The loop is just calling that function over and over, growing the answer one word at a time.</p>
+</div>
+
+<!-- ========================================================== -->
+<h2>Prefill vs decode — two very different cost shapes</h2>
+
+<p class="prose">If you've ever wondered why ChatGPT pauses for a second before starting to stream a response, then streams quickly word-by-word, you've experienced the <strong>prefill / decode</strong> split.</p>
+
+<h3>Prefill</h3>
+<p class="prose">When you submit a prompt of <em>n</em> tokens, the first forward pass runs over <em>all n tokens at once</em>, in parallel. Every token at every layer is computed in the same forward pass. This is great for GPUs (highly parallel, dense matrix multiplies all the way) but the cost scales with the prompt length. <strong>Prefill latency</strong> = "time to first token."</p>
+
+<h3>Decode</h3>
+<p class="prose">After the first token is produced, every subsequent token requires its own forward pass — but only for <em>one new token at a time</em>. Decode is sequential by necessity (you can't compute token 12 before token 11 exists). <strong>Decode latency per token</strong> stays roughly constant; the total decode time scales with how many tokens you generate.</p>
+
+<div class="callout-analogy">
+  <p>Prefill is silently reading the entire question. Your eyes can scan the whole page in parallel; it's fast. Decode is then speaking the answer aloud, one word at a time. You can't say word seven before word six is out of your mouth; it's slow and serial.</p>
+</div>
+
+<div data-widget="prefill-decode"></div>
+
+<p class="prose">Two practical consequences:</p>
+<ul class="prose">
+  <li><strong>Pricing.</strong> Most LLM APIs charge differently for input tokens (cheap, prefill) and output tokens (expensive, decode). Now you know why.</li>
+  <li><strong>Long prompts hurt time-to-first-token; long outputs hurt total response time.</strong> Two different optimizations. Short outputs from long prompts feel laggy at the start then fast. Short prompts with long outputs feel snappy at the start then slow.</li>
+</ul>
+
+<!-- ========================================================== -->
+<h2>The KV cache — what it is, what it does, how big it gets</h2>
+
+<p class="prose">If decode just kept re-running the entire forward pass over the entire growing sequence for every new token, generating 1,000 tokens would be horrendous — each token costs more than the last because the sequence is longer. The trick that makes decode feasible: cache the K and V vectors of past tokens.</p>
+
+<h3>What's stored</h3>
+<p class="prose">For every past token, in every layer, in every attention head, the model stores two vectors: K (key) and V (value). On the next decode step, the new token's Q (query) is computed fresh, but it attends over the <em>cached</em> K's and V's of all the past tokens. No recomputation of past K's and V's needed.</p>
+
+<h3>What this <em>doesn't</em> mean</h3>
+<p class="prose">The new token still attends over <em>every</em> previous position. That's the whole point of attention. The cache doesn't reduce the amount of attention computation — it eliminates the redundant work of recomputing K and V projections that haven't changed.</p>
+
+<h3>Memory footprint</h3>
+
+<pre>cache_bytes ≈ 2 × n_layers × n_heads × head_dim × n_tokens × bytes_per_value</pre>
+
+<p class="prose">For a Llama 3 70B-style model (80 layers, 64 heads, head_dim 128, FP16): one token of cache is about 2 MB. A 100k-token context is ~200 GB just for the cache, way more than the weights themselves. This is why long context is the most memory-intensive lever you can pull.</p>
+
+<div class="callout-analogy">
+  <p>The KV cache is your conversation notes. When the conversation has gone on for an hour, you don't re-read the entire transcript before saying each next sentence — you glance at your accumulated notes and respond. The notes grow as the conversation grows; eventually they fill the table.</p>
+</div>
+
+<!-- ========================================================== -->
+<div class="callout-invariant" data-label="📐 Sidebar: runtime state isn't a fifth lens">
+  <p>The KV cache and intermediate activations are <em>transient computation state</em>. They live during one request and disappear. They are <strong>not weights</strong> (which are learned and persistent), and <strong>not context</strong> (which is the input you sent). When someone says "the model forgot what I said," the issue is almost always that older context rolled out of the input window or was never passed in by the surrounding system — not that the cache lost it. Don't confuse runtime state with the four lenses.</p>
+</div>
+
+<!-- ========================================================== -->
+<h2>Try the loop yourself</h2>
+
+<div data-widget="inference-stepper"></div>
+
+<!-- ========================================================== -->
+<h2>Batching — sharing the GPU across users</h2>
+
+<p class="prose">A single user's decode underutilizes a modern GPU dramatically — the matrix multiply for one token is too small to fill a chip designed to multiply enormous matrices. So inference servers <strong>batch</strong>: combine many users' decode steps into one forward pass that's wide instead of deep.</p>
+
+<p class="prose">The naive version is "static batching" — wait until you have <em>n</em> requests, run them together, return all results. But this couples slow requests with fast ones. <strong>Continuous batching</strong> lets requests join and leave the batch dynamically: as one request finishes, a new one slots in to take its place mid-flight. This is how production LLM serving (vLLM, TGI, TensorRT-LLM) gets high utilization without crushing per-user latency.</p>
+
+<div class="callout-break">
+  <p>Batching does change one thing for the end user: <em>latency variance</em>. If you're alone on the server, your decode is fast. If a hundred other requests arrive, you slow down even though the model didn't change. This is why benchmark numbers from a quiet test rig rarely match production performance.</p>
+</div>
+
+<!-- ========================================================== -->
+<h2>Speculative decoding — letting a small model do the typing</h2>
+
+<p class="prose">Decode is serial — you can't generate token N+1 until token N exists. Or can you? <strong>Speculative decoding</strong> says: while the big slow model is busy with token N, let a small fast "draft" model guess tokens N+1, N+2, N+3 ahead. Then have the big model verify all four guesses in <em>one</em> forward pass (which it can do because verifying multiple positions in parallel is just like prefill). Accepted tokens get appended; the first wrong guess and everything after it gets thrown out.</p>
+
+<div class="callout-analogy">
+  <p>A junior writer speed-types a draft. The senior reads it and only corrects the parts that are wrong. As long as the junior is right most of the time, the senior gets through the work much faster than typing every word themselves.</p>
+</div>
+
+<p class="prose">In practice this gives 1.5×–3× decode speedup with no quality loss (the big model is still the only one whose output is final). The tricky part is choosing a good draft model that agrees with the big model often enough to make verification worthwhile.</p>
+
+<!-- ========================================================== -->
+<div class="callout-variant">
+  <p><strong>Scaffolding (RAG, tool use, agents, reasoning chains).</strong> None of these change the model. They change <em>what the model sees</em> in its context window, and <em>what happens with the model's output</em> before the next call. RAG injects retrieved documents into the prompt. Tool use parses the model's output, runs an external function (search, calculator, code execution), and injects the result back into the conversation. Reasoning scaffolds (chain-of-thought, ReAct, multi-step agent loops) just structure prompting and feedback. From the model's point of view, every call looks like another forward pass on whatever's currently in its context. The intelligence in scaffolding lives entirely <em>outside</em> the weights.</p>
+</div>
+
+<!-- ========================================================== -->
+<nav class="page-footer">
+  <a href="block.html">← Transformer block</a>
+  <a href="training.html">Next: training →</a>
+</nav>
+
+</main>
+<script src="../assets/shared.js"></script>
+<script src="../assets/widgets.js"></script>
+<script src="../assets/glossary.js"></script>
+<script src="../assets/progress.js"></script>
+<script src="../assets/shortcuts.js"></script>
+<script src="../assets/theme.js"></script>
+<script src="../assets/nav.js"></script>
+<script src="../assets/search-index.js"></script>
+<script src="../assets/search.js"></script>
+<script src="../assets/toc.js"></script>
+</body>
+</html>

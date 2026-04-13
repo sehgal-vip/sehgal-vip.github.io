@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>How LLMs Work — A Mental Model</title>
+<link rel="stylesheet" href="assets/styles.css">
+</head>
+<body>
+<main class="page">
+
+<h1>How LLMs Work</h1>
+<p class="prose" style="text-align:center; color:var(--text-soft); font-style:italic; margin-top:-0.5em;">
+A first-principles mental model — architecture first, then the levers you can pull.
+</p>
+
+<div class="callout-invariant" data-label="📖 How to read this">
+  <p>This page is the whole mental model in one sitting (~30 minutes). Every section ends with a <em>→ go deeper</em> link to a dedicated page if you want more. The artifact treats the <strong>vanilla decoder-only transformer</strong> (the GPT family) as the baseline; deviations like Mixture-of-Experts, multimodal, or encoder-decoder appear as <em>variant notes</em> on the deep pages where they most naturally attach.</p>
+</div>
+
+<!-- ===================================================================== -->
+<!-- SKELETAL ARCHITECTURE: vertical flow with example data at each stage. -->
+<!-- Boxes (stages) hover→definition, click→jumps to matching § .         -->
+<section class="sk-section" aria-label="End-to-end shape of an LLM">
+  <h3 class="sk-title">The shape of an LLM — <span class="sk-hint">hover a box for a definition, click it to jump to that section</span></h3>
+  <div class="sk-flow">
+
+    <!-- Raw text -->
+    <div class="sk-row">
+      <div class="sk-data"><span class="sk-quote">"The cat sat"</span></div>
+      <div class="sk-note">Raw text input</div>
+    </div>
+    <div class="sk-arrow">↓</div>
+
+    <!-- Tokenizer -->
+    <div class="sk-row">
+      <a href="#s1" class="sk-box sk-box-neutral" data-def="A deterministic BPE vocabulary. Splits text into sub-word pieces mapped to integer IDs. Not a neural network — just a lookup.">
+        <div class="sk-box-title">Tokenizer (BPE)</div>
+        <div class="sk-box-sub">Deterministic, not learned</div>
+      </a>
+      <div class="sk-note">Not neural</div>
+    </div>
+    <div class="sk-arrow">↓</div>
+
+    <!-- Token chips -->
+    <div class="sk-row">
+      <div class="sk-data sk-tokens">
+        <div class="sk-tok"><div class="sk-tok-text">"The"</div><div class="sk-tok-id">ID: 464</div></div>
+        <div class="sk-tok"><div class="sk-tok-text">" cat"</div><div class="sk-tok-id">ID: 2368</div></div>
+        <div class="sk-tok"><div class="sk-tok-text">" sat"</div><div class="sk-tok-id">ID: 3290</div></div>
+      </div>
+      <div class="sk-note">Three integer IDs from a ~100K vocab</div>
+    </div>
+    <div class="sk-arrow">↓</div>
+
+    <!-- Embedding lookup -->
+    <div class="sk-row">
+      <a href="#s1" class="sk-box sk-box-embed" data-def="Each token ID indexes into a giant learned table (the embedding matrix). The row at that index is the token's 'meaning coordinates' — typically 1024–8192 numbers.">
+        <div class="sk-box-title">Embedding table lookup</div>
+        <div class="sk-box-sub">Each ID → vector of ~4096 numbers</div>
+      </a>
+      <div class="sk-note">Table lookup (first learned weights)</div>
+    </div>
+    <div class="sk-arrow">↓</div>
+
+    <!-- Vector viz -->
+    <div class="sk-row">
+      <div class="sk-data sk-vectors">
+        <div class="sk-vec"><svg viewBox="0 0 20 80" width="20" height="80">
+          <rect x="2" y="4" width="16" height="6" fill="var(--analogy)" opacity="0.9"/><rect x="2" y="12" width="16" height="4" fill="var(--accent)" opacity="0.6"/>
+          <rect x="2" y="18" width="16" height="8" fill="var(--analogy)" opacity="0.4"/><rect x="2" y="28" width="16" height="5" fill="var(--accent)" opacity="0.8"/>
+          <rect x="2" y="35" width="16" height="6" fill="var(--analogy)" opacity="0.5"/><rect x="2" y="43" width="16" height="7" fill="var(--accent)" opacity="0.4"/>
+          <rect x="2" y="52" width="16" height="4" fill="var(--analogy)" opacity="0.9"/><rect x="2" y="58" width="16" height="8" fill="var(--accent)" opacity="0.5"/>
+          <rect x="2" y="68" width="16" height="6" fill="var(--analogy)" opacity="0.7"/>
+        </svg><div class="sk-vec-label">"The"</div></div>
+        <div class="sk-vec"><svg viewBox="0 0 20 80" width="20" height="80">
+          <rect x="2" y="2" width="16" height="8" fill="var(--accent)" opacity="0.5"/><rect x="2" y="12" width="16" height="5" fill="var(--analogy)" opacity="0.7"/>
+          <rect x="2" y="19" width="16" height="6" fill="var(--accent)" opacity="0.9"/><rect x="2" y="27" width="16" height="4" fill="var(--analogy)" opacity="0.4"/>
+          <rect x="2" y="33" width="16" height="7" fill="var(--accent)" opacity="0.6"/><rect x="2" y="42" width="16" height="5" fill="var(--analogy)" opacity="0.8"/>
+          <rect x="2" y="49" width="16" height="8" fill="var(--accent)" opacity="0.4"/><rect x="2" y="59" width="16" height="6" fill="var(--analogy)" opacity="0.9"/>
+          <rect x="2" y="67" width="16" height="7" fill="var(--accent)" opacity="0.5"/>
+        </svg><div class="sk-vec-label">" cat"</div></div>
+        <div class="sk-vec"><svg viewBox="0 0 20 80" width="20" height="80">
+          <rect x="2" y="3" width="16" height="6" fill="var(--analogy)" opacity="0.6"/><rect x="2" y="11" width="16" height="7" fill="var(--accent)" opacity="0.8"/>
+          <rect x="2" y="20" width="16" height="5" fill="var(--analogy)" opacity="0.9"/><rect x="2" y="27" width="16" height="6" fill="var(--accent)" opacity="0.5"/>
+          <rect x="2" y="35" width="16" height="8" fill="var(--analogy)" opacity="0.4"/><rect x="2" y="45" width="16" height="4" fill="var(--accent)" opacity="0.7"/>
+          <rect x="2" y="51" width="16" height="7" fill="var(--analogy)" opacity="0.5"/><rect x="2" y="60" width="16" height="6" fill="var(--accent)" opacity="0.9"/>
+          <rect x="2" y="68" width="16" height="7" fill="var(--analogy)" opacity="0.6"/>
+        </svg><div class="sk-vec-label">" sat"</div></div>
+        <div class="sk-dim-label">~4096 dims each</div>
+      </div>
+      <div class="sk-note">&nbsp;</div>
+    </div>
+    <div class="sk-arrow">↓</div>
+
+    <!-- Positional encoding -->
+    <div class="sk-row">
+      <div class="sk-inline-note">+ positional encoding (RoPE)</div>
+      <div class="sk-note">Each vector now knows its position in the sequence</div>
+    </div>
+    <div class="sk-arrow">↓</div>
+
+    <!-- Transformer block -->
+    <div class="sk-block">
+      <div class="sk-block-title">Transformer block</div>
+
+      <a href="#s2" class="sk-box sk-box-attn" data-def="Every token looks at every other token and pulls in relevant information via Q/K/V projections. Context becomes part of each token's representation.">
+        <div class="sk-box-title">Self-attention (multi-head)</div>
+        <div class="sk-box-sub">Tokens look at each other</div>
+      </a>
+      <div class="sk-sub-note">Context mixing — e.g., attention weights from "sat"</div>
+      <div class="sk-inline-note-small">↓ + residual connection + layer norm ↓</div>
+
+      <a href="#s3" class="sk-box sk-box-ffn" data-def="A per-token feed-forward network. The 'thinking' phase between attention rounds. Where most factual knowledge in the model is stored.">
+        <div class="sk-box-title">Feed-forward network (FFN / MLP)</div>
+        <div class="sk-box-sub">Where factual knowledge is stored</div>
+      </a>
+      <div class="sk-sub-note">Knowledge recall</div>
+      <div class="sk-inline-note-small">↓ + residual connection + layer norm ↓</div>
+
+      <div class="sk-repeat">Repeat × ~80 layers</div>
+    </div>
+    <div class="sk-arrow">↓</div>
+
+    <!-- Output head -->
+    <div class="sk-row">
+      <a href="#s4" class="sk-box sk-box-output" data-def="The final hidden state at the last position is projected through the output matrix to produce a score (logit) for every possible next token in the vocabulary.">
+        <div class="sk-box-title">Output head → logits</div>
+        <div class="sk-box-sub">Score for every token in vocab</div>
+      </a>
+      <div class="sk-note">~128K scores</div>
+    </div>
+    <div class="sk-arrow">↓</div>
+
+    <!-- Softmax distribution -->
+    <div class="sk-row">
+      <div class="sk-data sk-dist">
+        <div class="sk-dist-bars">
+          <div class="sk-bar sk-bar-sampled" style="height: 90%"></div>
+          <div class="sk-bar" style="height: 52%"></div>
+          <div class="sk-bar" style="height: 30%"></div>
+          <div class="sk-bar" style="height: 18%"></div>
+          <div class="sk-bar" style="height: 9%"></div>
+          <div class="sk-bar" style="height: 4%"></div>
+          <div class="sk-bar" style="height: 2%"></div>
+          <div class="sk-bar" style="height: 1%"></div>
+        </div>
+        <div class="sk-dist-labels">
+          <span class="sk-dist-label sampled">on</span>
+          <span class="sk-dist-label">down</span>
+          <span class="sk-dist-label">up</span>
+          <span class="sk-dist-label sk-dist-label-fade">still</span>
+          <span class="sk-dist-label sk-dist-label-fade">there</span>
+          <span class="sk-dist-label sk-dist-label-fade">…</span>
+        </div>
+      </div>
+      <div class="sk-note">Softmax → probability distribution</div>
+    </div>
+    <div class="sk-arrow">↓</div>
+
+    <!-- Sampled -->
+    <div class="sk-row">
+      <a href="#s8" class="sk-box sk-box-sample" data-def="Pick one token according to the probability distribution. Temperature, top-k, and top-p reshape what gets picked. The model itself is unchanged.">
+        <div class="sk-box-title">Sampled: <span class="sk-picked">" on"</span></div>
+      </a>
+      <div class="sk-note">Temperature, top-k, top-p applied here</div>
+    </div>
+    <div class="sk-arrow">↓</div>
+
+    <!-- Loop -->
+    <div class="sk-loop-block">
+      <a href="#s4" class="sk-loop-link" data-def="The chosen token is appended to the input and the whole loop runs again. This is what 'autoregressive' means.">
+        Append <code>" on"</code> to input → run again → predict next token
+      </a>
+      <div class="sk-loop-sub">↻ Repeat until a stop token or the length limit</div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ===================================================================== -->
+<section class="hub-section" id="s0">
+<h2><span class="num">0.</span> So what <em>is</em> an LLM, really?</h2>
+
+<p class="prose">An LLM is a function. You hand it a sequence of text. It hands you back, for every possible next token, a number — how strongly it predicts that token comes next. Pick one of those tokens, append it to the sequence, and ask again. Keep going until you've grown the answer you wanted.</p>
+
+<div class="callout-analogy">
+  <p>An LLM is a writer who can only do one thing: stare at everything written so far, then mumble the most plausible next word. They do that over and over, building the answer one word at a time. The whole rest of this page unpacks that one phrase: <em>called in a loop.</em></p>
+</div>
+
+<svg class="diagram" viewBox="0 0 700 180" aria-label="The inference loop">
+  <rect x="20" y="60" width="140" height="60" rx="6" class="stroke fill-muted"/>
+  <text x="90" y="95" text-anchor="middle" class="label">Text so far</text>
+  <path d="M 165 90 L 220 90" class="stroke"/>
+  <polygon points="218,86 228,90 218,94" fill="currentColor"/>
+  <rect x="230" y="55" width="170" height="70" rx="6" class="stroke fill-accent"/>
+  <text x="315" y="85" text-anchor="middle" class="label">The Model</text>
+  <text x="315" y="105" text-anchor="middle" class="label-small">(billions of weights)</text>
+  <path d="M 405 90 L 460 90" class="stroke"/>
+  <polygon points="458,86 468,90 458,94" fill="currentColor"/>
+  <rect x="470" y="60" width="200" height="60" rx="6" class="stroke fill-muted"/>
+  <text x="570" y="85" text-anchor="middle" class="label">Probability over</text>
+  <text x="570" y="103" text-anchor="middle" class="label">every possible next token</text>
+  <path d="M 570 125 Q 570 160, 90 160 Q 90 140, 90 130" class="stroke-soft" stroke-dasharray="4,4" fill="none"/>
+  <text x="335" y="175" text-anchor="middle" class="label-small">…sample one, append, repeat…</text>
+</svg>
+
+<p class="prose">That's it. Everything else — attention, training, fine-tuning, quantization — is in service of making that one function and that one loop produce text you actually want.</p>
+
+<a class="go-deeper" href="deep/inference.html">go deeper into the inference loop</a>
+</section>
+
+<!-- ===================================================================== -->
+<section class="hub-section" id="s1">
+<h2><span class="num">1.</span> Words don't fit in math — so we cheat: tokens, embeddings, and position</h2>
+
+<p class="prose">A model can't multiply <em>"hello"</em>. It can multiply numbers. So before anything else, every piece of text gets converted into numbers in three layers.</p>
+
+<h3>Tokens</h3>
+<p class="prose">Text is chopped into small pieces called <strong>tokens</strong>, and each piece is mapped to an integer ID from a fixed vocabulary (typically 50,000–200,000 entries). Tokens are usually <em>sub-word</em>: <code>"unhappiness"</code> might become <code>["un", "happiness"]</code> or even <code>["un", "happi", "ness"]</code>. Common words are single tokens; rare words split into pieces.</p>
+
+<div class="callout-analogy">
+  <p>Tokens are like a giant phrasebook. Each entry has a number. <em>"the"</em> is entry 1820. The smiley face <em>🙂</em> is entry 47812. Most entries aren't whole words — they're fragments that compose into words, like Lego bricks for language.</p>
+</div>
+
+<h3>Embeddings</h3>
+<p class="prose">Each token ID is then mapped to a vector — a list of (typically) a few thousand numbers. This vector is the token's <strong>embedding</strong>: its location in a high-dimensional "meaning space." The crucial property: tokens with related meanings end up near each other in this space.</p>
+
+<div class="callout-analogy">
+  <p>Embeddings are coordinates on a meaning map. <em>"king"</em> and <em>"queen"</em> sit near each other; both are far from <em>"banana"</em>. Famously, the direction from <em>"king"</em> to <em>"queen"</em> is similar to the direction from <em>"man"</em> to <em>"woman"</em> — meaning becomes geometry.</p>
+</div>
+
+<h3>Position</h3>
+<p class="prose">Here's a wrinkle most explanations skip too long: by themselves, embeddings don't tell the model which token came <em>first</em>. <em>"Dog bites man"</em> and <em>"man bites dog"</em> would look identical to the model. So position information has to be injected separately — either added to the embedding, or (in modern models) baked into the attention mechanism via a trick called <strong>RoPE</strong> (rotary positional embedding).</p>
+
+<div class="callout-analogy">
+  <p>Position encoding is like timestamping each word as you write it. RoPE in particular: imagine each embedding as a tiny arrow. The model rotates each arrow by an amount that depends on its position. Two arrows that started identical now point differently if they were at different positions — and the model can read the angle difference to know "how far apart were these two tokens?"</p>
+</div>
+
+<div data-widget="tokenizer"></div>
+
+<a class="go-deeper" href="deep/tokens.html">go deeper into tokens, embeddings, and positional encoding</a>
+</section>
+
+<!-- ===================================================================== -->
+<section class="hub-section" id="s2">
+<h2><span class="num">2.</span> Tokens have a group chat: attention</h2>
+
+<p class="prose">Now we have a sequence of position-aware vectors. The next problem: how does <em>each</em> token know what <em>other</em> tokens in the sequence say? In <em>"The cat sat on the mat because <strong>it</strong> was warm"</em>, what does <em>"it"</em> refer to — cat or mat? The model needs a way for tokens to <em>look at each other</em>.</p>
+
+<p class="prose">That mechanism is <strong>attention</strong>. For every pair of tokens (A, B), attention computes a score: how much should A pay attention to B when refining its own meaning? Then A updates itself by taking a weighted average of all the other tokens, weighted by those scores.</p>
+
+<div class="callout-analogy">
+  <p>Imagine a roomful of people standing in a circle. Each person silently asks <em>"who here is talking about something I care about?"</em>. Each person also wears a name-tag describing what they're talking about. Each person decides who to listen to based on how well the others' name-tags match their own question — then they take a weighted average of what those people are saying.</p>
+  <p>That's attention. Three ingredients per token:</p>
+  <ul>
+    <li><strong>Query (Q)</strong> — the question I'm asking</li>
+    <li><strong>Key (K)</strong> — the name-tag I'm advertising</li>
+    <li><strong>Value (V)</strong> — what I'll actually contribute if you decide to listen</li>
+  </ul>
+  <p>For each token, the model computes its Q, K, and V from its current vector. Then the score from token A to token B is "how well does A's Q match B's K?". Run that for every pair, normalize, and use those scores to mix everyone's V into A's new vector.</p>
+</div>
+
+<div class="callout-break">
+  <p>The "meeting room" picture suggests attention happens once. In a real model, this whole process happens for every token, in every layer (often dozens of layers stacked), and each layer has multiple parallel "rooms" called <strong>heads</strong> — each looking for different patterns. So instead of one meeting, picture thousands of simultaneous meetings, all running in parallel.</p>
+</div>
+
+<h3>Multi-head attention</h3>
+<p class="prose">A single attention computation captures one kind of relationship at a time. So real models run attention several times in parallel, with different learned Q/K/V projections. Each parallel run is a <strong>head</strong>. One head might learn to track grammatical subject-object relationships. Another might track "what entity is this pronoun referring to?". Another might track distance ("which word came right before me?"). The heads' outputs are concatenated and mixed.</p>
+
+<div data-widget="attention-hover" data-sentence="The lawyer told the witness she lied ."></div>
+
+<a class="go-deeper" href="deep/attention.html">go deeper into attention, heads, and the causal property</a>
+</section>
+
+<!-- ===================================================================== -->
+<section class="hub-section" id="s3">
+<h2><span class="num">3.</span> Same conversation, sixty times in a row: the transformer block</h2>
+
+<p class="prose">One round of attention isn't enough. Modern LLMs stack the same operation dozens of times — Llama 3 70B has 80 layers; GPT-4 is reportedly more. Each layer is called a <strong>transformer block</strong>, and each block does roughly the same thing:</p>
+
+<ol class="prose">
+  <li><strong>Attention</strong> — tokens look at other tokens (as in §2)</li>
+  <li><strong>Add &amp; norm</strong> — the result is added back into the running representation, then normalized</li>
+  <li><strong>MLP</strong> — each token, on its own, runs through a small feed-forward neural network: think of it as the token "thinking privately" about what it just heard</li>
+  <li><strong>Add &amp; norm</strong> — again</li>
+</ol>
+
+<p class="prose">The output of one block becomes the input of the next. Repeat <em>N</em> times.</p>
+
+<div class="callout-analogy">
+  <p>Imagine editing a document in many passes. Pass one: spot grammar issues. Pass two: tighten flow. Pass three: check facts. Pass four: notice the tone is off. Each pass sees the previous pass's edits and adds its own. Layer count is roughly <em>"how many editing passes does this model get?"</em></p>
+  <p>The tokens themselves don't move — what changes is the <em>vectors</em> attached to them. Early layers tend to capture syntactic features (what part of speech is this? what comes before/after?). Late layers tend to capture semantic, task-relevant features (does this token complete the answer the user wants?).</p>
+</div>
+
+<h3>The residual stream</h3>
+<p class="prose">Each block doesn't <em>replace</em> the token's vector — it <em>adds</em> to it. The vector flowing up through all the layers is called the <strong>residual stream</strong>. Every layer reads from it, computes a contribution, adds the contribution back in, and passes it on. Nothing is erased; everything is elaborated.</p>
+
+<div class="callout-analogy">
+  <p>The residual stream is a shared whiteboard running through the whole model. Each layer reads what's already on the whiteboard, adds its own notes in the margin, and passes it up. By the top, the whiteboard is dense with annotations — each layer's contribution still legible if you knew where to look.</p>
+</div>
+
+<div data-widget="layer-stack"></div>
+
+<a class="go-deeper" href="deep/block.html">go deeper into the block, the residual stream, and depth</a>
+</section>
+
+<!-- ===================================================================== -->
+<section class="hub-section" id="s4">
+<h2><span class="num">4.</span> From hidden state to next token: the full inference loop</h2>
+
+<p class="prose">We've walked through the inside of the model. Now let's walk the full loop end-to-end — input text to next token to next next token. This is the part most explanations leave fuzzy.</p>
+
+<svg class="diagram" viewBox="0 0 940 320" aria-label="The full inference loop">
+  <!-- Input text -->
+  <rect x="20" y="20" width="180" height="50" rx="6" class="stroke fill-muted"/>
+  <text x="110" y="50" text-anchor="middle" class="label">Input text</text>
+
+  <path d="M 205 45 L 230 45" class="stroke"/>
+
+  <!-- Tokens -->
+  <rect x="235" y="20" width="120" height="50" rx="6" class="stroke fill-muted"/>
+  <text x="295" y="42" text-anchor="middle" class="label">Tokens + IDs</text>
+  <text x="295" y="58" text-anchor="middle" class="label-small">(integer sequence)</text>
+
+  <path d="M 360 45 L 385 45" class="stroke"/>
+
+  <!-- Embeddings + position -->
+  <rect x="390" y="20" width="170" height="50" rx="6" class="stroke fill-muted"/>
+  <text x="475" y="42" text-anchor="middle" class="label">Embeddings + position</text>
+  <text x="475" y="58" text-anchor="middle" class="label-small">(vectors per token)</text>
+
+  <path d="M 565 45 L 590 45" class="stroke"/>
+
+  <!-- N blocks -->
+  <rect x="595" y="15" width="160" height="60" rx="6" class="stroke fill-accent"/>
+  <text x="675" y="40" text-anchor="middle" class="label">N transformer blocks</text>
+  <text x="675" y="58" text-anchor="middle" class="label-small">(stacked attention + MLP)</text>
+
+  <path d="M 760 45 L 800 45" class="stroke"/>
+
+  <!-- Final hidden state at last position -->
+  <rect x="805" y="15" width="115" height="60" rx="6" class="stroke fill-muted"/>
+  <text x="862" y="40" text-anchor="middle" class="label">Hidden state</text>
+  <text x="862" y="58" text-anchor="middle" class="label-small">(at last position)</text>
+
+  <!-- Down arrow -->
+  <path d="M 862 80 L 862 110" class="stroke"/>
+  <polygon points="858,108 862,118 866,108" fill="currentColor"/>
+
+  <!-- Output projection -->
+  <rect x="755" y="120" width="215" height="50" rx="6" class="stroke fill-muted"/>
+  <text x="862" y="142" text-anchor="middle" class="label">Output projection (W_out · h)</text>
+  <text x="862" y="158" text-anchor="middle" class="label-small">→ logits over the whole vocab</text>
+
+  <path d="M 755 145 L 720 145" class="stroke"/>
+  <polygon points="722,141 712,145 722,149" fill="currentColor"/>
+
+  <!-- Softmax -->
+  <rect x="595" y="120" width="120" height="50" rx="6" class="stroke fill-muted"/>
+  <text x="655" y="148" text-anchor="middle" class="label">Softmax</text>
+
+  <path d="M 590 145 L 555 145" class="stroke"/>
+  <polygon points="557,141 547,145 557,149" fill="currentColor"/>
+
+  <!-- Distribution -->
+  <rect x="395" y="120" width="160" height="50" rx="6" class="stroke fill-muted"/>
+  <text x="475" y="142" text-anchor="middle" class="label">Probability distribution</text>
+  <text x="475" y="158" text-anchor="middle" class="label-small">(over every token)</text>
+
+  <path d="M 390 145 L 355 145" class="stroke"/>
+  <polygon points="357,141 347,145 357,149" fill="currentColor"/>
+
+  <!-- Sampler -->
+  <rect x="235" y="120" width="120" height="50" rx="6" class="stroke fill-accent"/>
+  <text x="295" y="142" text-anchor="middle" class="label">Sampler picks one</text>
+  <text x="295" y="158" text-anchor="middle" class="label-small">(temp / top-k / top-p)</text>
+
+  <!-- Down arrow -->
+  <path d="M 295 175 L 295 205" class="stroke"/>
+  <polygon points="291,203 295,213 299,203" fill="currentColor"/>
+
+  <!-- Append token -->
+  <rect x="200" y="215" width="190" height="50" rx="6" class="stroke fill-muted"/>
+  <text x="295" y="237" text-anchor="middle" class="label">Append the chosen token</text>
+  <text x="295" y="254" text-anchor="middle" class="label-small">to the sequence</text>
+
+  <!-- Loop back -->
+  <path d="M 200 240 Q 60 240, 60 145 Q 60 45, 110 45" class="stroke-soft" stroke-dasharray="5,4" fill="none"/>
+  <polygon points="106,41 116,45 106,49" fill="var(--text-soft)"/>
+  <text x="60" y="170" text-anchor="middle" class="label-small" transform="rotate(-90 60 170)">repeat</text>
+</svg>
+<p class="diagram-caption">One full pass produces one token. To produce a paragraph, the loop runs hundreds of times.</p>
+
+<h3>Prefill vs decode</h3>
+<p class="prose">The very first time you call the model, it processes your <em>entire</em> prompt in one parallel forward pass — every token at every layer at the same time. This is the <strong>prefill</strong> phase. It's expensive but parallel-friendly.</p>
+
+<p class="prose">After that, every new token requires its <em>own</em> forward pass: feed in just the new token, get one new token out. This is <strong>decode</strong>, and it's serial — token N+1 depends on token N existing first. This is why streaming responses appear word-by-word, and why you pay different prices for input and output tokens.</p>
+
+<div class="callout-analogy">
+  <p>Prefill is like silently reading the entire question before answering. Fast and parallel — your eyes can scan the whole page at once. Decode is like then speaking the answer aloud, one word at a time. Slow and serial — you can't say word seven before word six is out of your mouth.</p>
+</div>
+
+<h3>The KV cache</h3>
+<p class="prose">If decode just kept re-running the whole forward pass over the entire sequence for every new token, it would scale terribly — generating 1,000 tokens would mean a thousand passes over a sequence that grows each time. The trick: most of the work for past tokens doesn't change. Their K and V vectors (from §2) can be <em>cached</em> and reused.</p>
+
+<p class="prose">So during decode, the model only computes Q, K, V for the <em>new</em> token. The new token's Q attends over all the cached past K's and V's. Past tokens are never recomputed — but they're still attended over. That's the <strong>KV cache</strong>.</p>
+
+<div class="callout-analogy">
+  <p>The KV cache is your conversation notes. To say each next sentence, you don't re-read the whole prior transcript — you glance at your notes (the cache), think about the new thing you want to say, and speak. The notes grow as the conversation grows.</p>
+</div>
+
+<div data-widget="inference-stepper"></div>
+
+<a class="go-deeper" href="deep/inference.html">go deeper into the loop, KV cache mechanics, and serving</a>
+</section>
+
+<!-- ===================================================================== -->
+<section class="hub-section" id="s5">
+<h2><span class="num">5.</span> Four lenses for thinking about LLMs</h2>
+
+<p class="prose">Before we look at training and the levers, here's a sorting framework. When something interesting (or broken) happens with an LLM, it's almost always one of <em>four</em> categories. Confusing them is the single most common source of wrong diagnoses.</p>
+
+<div class="lens-grid">
+  <div class="lens-box weights">
+    <h4>🧠 Weights</h4>
+    <p>What the model <em>knows</em> because of training. Frozen at training time; loaded into memory at inference. Changing weights = teaching new behavior or knowledge.</p>
+  </div>
+  <div class="lens-box context">
+    <h4>📜 Context</h4>
+    <p>What the model <em>sees</em> in this turn — the input window, the chat history, any retrieved documents you stuffed in. Changes per request. Forgotten between requests.</p>
+  </div>
+  <div class="lens-box scaffolding">
+    <h4>🛠 Scaffolding</h4>
+    <p>What the <em>system around the model</em> does — system prompts, retrieval, tool calls, multi-step agent loops. Doesn't change the model; changes what reaches the model and what happens with its output.</p>
+  </div>
+  <div class="lens-box decoding">
+    <h4>🎲 Decoding</h4>
+    <p>What the <em>sampler</em> chooses from the model's output distribution — temperature, top-k, top-p. Doesn't change the model; changes how its raw probability output becomes a single token.</p>
+  </div>
+</div>
+
+<h3>Why this matters</h3>
+<p class="prose">Same complaint, very different fixes:</p>
+<ul class="prose">
+  <li>"The model gave a different answer this time." → <span class="lens-tag decoding">decoding</span> (temperature). Set temp=0.</li>
+  <li>"The model forgot what I said earlier." → almost always <span class="lens-tag context">context</span> (rolled out of window) or <span class="lens-tag scaffolding">scaffolding</span> (history not passed in). Almost never the model itself.</li>
+  <li>"The model is confidently wrong about a fact." → likely <span class="lens-tag weights">weights</span> (it never knew). Fix with retrieval (<span class="lens-tag scaffolding">scaffolding</span>) or fine-tuning (<span class="lens-tag weights">weights</span>).</li>
+  <li>"The model ignored my tool definition." → <span class="lens-tag scaffolding">scaffolding</span> (your tool description) or <span class="lens-tag weights">weights</span> (model wasn't trained well for tool use). Almost never decoding.</li>
+</ul>
+
+<div class="callout-analogy">
+  <p>Diagnosing a model is like diagnosing a restaurant complaint. Was it the chef's training (<strong>weights</strong>)? The ingredients you brought in (<strong>context</strong>)? The maître d's instructions to the kitchen (<strong>scaffolding</strong>)? Or the dice the chef rolled when picking the last spice (<strong>decoding</strong>)? Same dish, four very different fixes.</p>
+</div>
+
+<div class="callout-invariant" data-label="📐 Sidebar: runtime state isn't a fifth lens">
+  <p>The KV cache and intermediate activations live during one forward pass and disappear. They're <em>transient computation state</em>, not knowledge (weights) and not your input (context). When someone says "the model forgot," they almost never mean the cache — they mean the context window or scaffolding. Don't confuse them.</p>
+</div>
+
+<div data-widget="lens-sorter"></div>
+</section>
+
+<!-- ===================================================================== -->
+<section class="hub-section" id="s6">
+<h2><span class="num">6.</span> How a model goes from "predicts the internet" to "answers your email"</h2>
+
+<p class="prose">Everything above describes how the model <em>runs</em>. Now: how does a model become any good in the first place? Modern LLMs go through three roughly distinct training stages — and each stage shapes the model in a different way. <span class="lens-tag weights">weights</span></p>
+
+<h3>Pretraining</h3>
+<p class="prose">Take an enormous pile of text — hundreds of billions to trillions of tokens scraped from the internet, books, code, papers. Train the model to do one thing: predict the next token. For every token in the corpus, ask "given everything before, what's the next one?" and nudge the weights to be a little less wrong each time. Repeat for weeks on thousands of GPUs.</p>
+
+<p class="prose">What emerges, surprisingly, is not just next-token prediction — it's <em>understanding</em>. To predict the next word in a math problem, the model has to learn arithmetic. To predict the next line in a code file, it has to learn programming. To predict the next sentence in a story, it has to learn narrative structure. <strong>Capability is a side effect of really good prediction.</strong></p>
+
+<div class="callout-analogy">
+  <p>Pretraining is reading the entire library. You don't know what any one book is <em>for</em>, and nobody tested you. But by the time you finish, you've absorbed how language works, what facts are true, what arguments tend to follow what claims. You're an oracle who has read everything but has no idea what anyone wants.</p>
+</div>
+
+<h3>Supervised fine-tuning (SFT)</h3>
+<p class="prose">A pretrained model is a strange creature: ask it "What is the capital of France?" and it might continue "is a question often asked in geography classes…" — because that's a plausible internet continuation. To make it answer questions instead of continuing them, train it on a curated dataset of (prompt, ideal-response) pairs. Same loss function as pretraining; just very different data.</p>
+
+<div class="callout-analogy">
+  <p>SFT is an apprentice mimicking a master. You show them ten thousand worked examples — "here's a question, here's how a helpful answer looks." The apprentice learns the <em>shape</em> of helpful response. They were already a good writer; now they know to format like an assistant.</p>
+</div>
+
+<h3>RLHF / DPO</h3>
+<p class="prose">SFT teaches the model what helpful answers look like, but it can't teach <em>preferences</em> — concise vs verbose, careful vs confident, this style vs that style. So a final stage shows the model pairs of its own outputs and tells it which one humans preferred, then nudges it toward producing more of the preferred style. Reinforcement Learning from Human Feedback (RLHF) does this via a reward model; Direct Preference Optimization (DPO) does it more directly without a separate reward model. Either way, the model learns the judges' taste.</p>
+
+<div class="callout-analogy">
+  <p>RLHF is the apprentice tasting their own dishes and being told which one tastes better. Over many tastings, they internalize the judges' palate. They start cooking food the judges would like, even on dishes nobody has tasted yet.</p>
+</div>
+
+<div data-widget="training-stages" data-prompt="Convince me pineapple belongs on pizza."></div>
+
+<a class="go-deeper" href="deep/training.html">go deeper into pretraining, SFT, RLHF, and what each stage actually changes</a>
+</section>
+
+<!-- ===================================================================== -->
+<section class="hub-section" id="s7">
+<h2><span class="num">7.</span> How do we know a change helped?</h2>
+
+<p class="prose">Every lever we're about to discuss is a <em>change</em> to the model or the system. Fine-tuning, quantizing, extending context, swapping decoding settings — each one is supposed to make things better. <strong>How do we tell?</strong> That's evaluation.</p>
+
+<p class="prose">There's no single right answer. Different evals measure different things, and all of them have known holes:</p>
+
+<ul class="prose">
+  <li><strong>Perplexity</strong> — how well the model predicts held-out text. Cheap to compute. Measures raw prediction quality but <em>not</em> instruction-following, helpfulness, or safety.</li>
+  <li><strong>Multiple-choice benchmarks</strong> (MMLU, ARC, GSM8K) — a battery of test questions. Easy to score, easy to game. Often <em>contaminated</em>: the test questions leak into training data, so high scores don't always mean real capability.</li>
+  <li><strong>LLM-as-judge</strong> (MT-Bench) — one model grades another's outputs against criteria. Cheap and fast. Biased toward the judge's preferences.</li>
+  <li><strong>Preference / arena</strong> (LMSYS Chatbot Arena) — humans pairwise-rank outputs from two anonymous models. Captures real-world taste. Slow, expensive, hard to attribute scores to specific capabilities.</li>
+</ul>
+
+<p class="prose">The crucial pairing: <strong>each lever needs a matching eval</strong>. Quantize? Run perplexity + your task eval before/after. Fine-tune? Preference plus a held-out general eval (so you catch forgetting). Extend context? Long-context retrieval probes like Needle-in-a-Haystack. Without a matched eval, you're shipping a change blind.</p>
+
+<p class="prose">Picking a model is rarely "look at one number." It's a basket of evals plus your own task-specific testing plus, honestly, vibes. <em>Eval doesn't change the model — it's how you measure changes from any of the other lenses.</em></p>
+
+<a class="go-deeper" href="deep/eval.html">go deeper into eval methods, contamination, and matching evals to levers</a>
+</section>
+
+<!-- ===================================================================== -->
+<section class="hub-section" id="s8">
+<h2><span class="num">8.</span> Knobs you can turn after the model is trained</h2>
+
+<p class="prose">Once a model exists, you have several distinct ways to change what it does. Each one touches a different lens.</p>
+
+<div class="tile-grid">
+
+  <div class="tile">
+    <h4>Fine-tuning</h4>
+    <p><span class="lens-tag weights">weights</span></p>
+    <p><strong>Mechanism:</strong> show the model new examples; gradient descent updates weights. Full fine-tune updates all of them; <strong>LoRA</strong> learns a small low-rank "delta" attached to specific weight matrices and leaves the base alone. <strong>Effect:</strong> new behavior or knowledge baked in. <strong>Risk:</strong> forgetting other things ("catastrophic forgetting").</p>
+  </div>
+
+  <div class="tile">
+    <h4>Quantization</h4>
+    <p><span class="lens-tag weights">weights — representation</span></p>
+    <p><strong>Mechanism:</strong> store each weight in fewer bits (16 → 8 → 4). Same number of weights; coarser numerical resolution. <strong>Effect:</strong> 4× smaller and often faster, with small accuracy loss if done carefully (GPTQ, AWQ). <strong>Doesn't teach</strong> new behavior — just compresses what's already there.</p>
+  </div>
+
+  <div class="tile">
+    <h4>Context extension</h4>
+    <p><span class="lens-tag context">context</span></p>
+    <p><strong>Mechanism:</strong> stretch the positional encoding (RoPE scaling) so old position formulas cover new lengths, and/or restructure attention (sliding window). <strong>Effect:</strong> the model accepts more tokens. <strong>Cost:</strong> KV cache grows linearly, attention compute grows quadratically, and quality often drops past the originally trained length.</p>
+  </div>
+
+  <div class="tile">
+    <h4>Pruning</h4>
+    <p><span class="lens-tag weights">weights — structure</span></p>
+    <p><strong>Mechanism:</strong> remove weights — either individual ones (unstructured) or whole heads/layers (structured). <strong>Effect:</strong> smaller, faster model. Almost always followed by a "healing" fine-tune to recover lost quality. Useful when quantization alone isn't enough.</p>
+  </div>
+
+  <div class="tile">
+    <h4>Decoding controls</h4>
+    <p><span class="lens-tag decoding">decoding</span></p>
+    <p><strong>Mechanism:</strong> reshape the probability distribution before sampling. <strong>Temperature</strong> flattens (more random) or sharpens (more deterministic). <strong>Top-k / top-p</strong> truncate the tail of unlikely options. <strong>The model is unchanged.</strong> Confusing decoding settings with model quality is the most common diagnostic mistake.</p>
+  </div>
+
+</div>
+
+<div data-widget="sampling"></div>
+
+<a class="go-deeper" href="deep/levers.html">go deeper into every lever, with concrete configs and "what changes where"</a>
+</section>
+
+<!-- ===================================================================== -->
+<hr>
+
+<section class="where-next">
+<h3 style="margin-top:0;">Where to go from here</h3>
+<ul>
+  <li><strong>If you want to fine-tune</strong> → <a href="deep/levers.html">levers.html §1</a></li>
+  <li><strong>If you want to extend context</strong> → <a href="deep/levers.html">levers.html §3</a></li>
+  <li><strong>If you want to quantize / shrink the model</strong> → <a href="deep/levers.html">levers.html §2</a></li>
+  <li><strong>If you want to understand inference cost / pricing</strong> → <a href="deep/inference.html">inference.html</a></li>
+  <li><strong>If something is breaking and you don't know why</strong> → <a href="deep/diagnosis.html">diagnosis.html</a></li>
+  <li><strong>If you're picking a model</strong> → <a href="deep/eval.html">eval.html</a>, then <a href="deep/diagnosis.html">diagnosis.html</a> for stress tests</li>
+  <li><strong>If you want a vocabulary refresher</strong> → <a href="deep/glossary.html">glossary.html</a></li>
+</ul>
+</section>
+
+</main>
+<script src="assets/gpt-tokenizer.js"></script>
+<script src="assets/shared.js"></script>
+<script src="assets/widgets.js"></script>
+<script src="assets/glossary.js"></script>
+<script src="assets/progress.js"></script>
+<script src="assets/shortcuts.js"></script>
+<script src="assets/theme.js"></script>
+<script src="assets/nav.js"></script>
+<script src="assets/search-index.js"></script>
+<script src="assets/search.js"></script>
+<script src="assets/toc.js"></script>
+</body>
+</html>

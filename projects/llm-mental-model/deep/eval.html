@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Evaluation — Deep Dive</title>
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="page">
+
+<nav class="breadcrumb"><a href="../index.html">← Back to hub</a></nav>
+
+<h1>How do we know a change helped?</h1>
+<p class="prose" style="text-align:center; color:var(--text-soft); font-style:italic; margin-top:-0.5em;">
+Evaluation as the feedback loop for every other lever.
+</p>
+
+<div class="lens-block">
+  Eval doesn't change the model — it's how you <em>measure</em> changes from any of the other lenses. Without a matching eval, you're shipping changes blind.
+</div>
+
+<!-- ========================================================== -->
+<h2>The framing</h2>
+
+<p class="prose">Every lever in this artifact — fine-tune, quantize, extend context, prune, swap a decoding setting — is a <em>change</em>. Each one is meant to make something better. <strong>How do you actually tell?</strong> That's evaluation.</p>
+
+<p class="prose">There is no single eval that captures "is the model better." Different methods measure different things, and all of them have known holes. The skill is knowing which eval to reach for given which change you made.</p>
+
+<!-- ========================================================== -->
+<h2>Four families of evaluation</h2>
+
+<h3>1. Intrinsic — perplexity</h3>
+
+<p class="prose"><strong>What it measures:</strong> how well the model predicts held-out text. Lower perplexity = better at predicting the actual next token. Mathematically, it's just exp(loss).</p>
+
+<p class="prose"><strong>What it catches:</strong> raw modeling quality. If you quantize a model and perplexity blows up, something's broken. If pretraining loss is going down, the model is learning.</p>
+
+<p class="prose"><strong>What it misses:</strong> almost everything you actually care about in a chat product. A model can have great perplexity on Wikipedia and still refuse to answer your question, hallucinate, or be terrible at instruction-following. Perplexity rewards generic next-token prediction, not usefulness.</p>
+
+<div class="callout-analogy">
+  <p>Perplexity is like measuring a writer by how well they can guess the next word in random books. It tells you something about their general fluency. It tells you nothing about whether they'd write a useful email.</p>
+</div>
+
+<h3>2. Multiple-choice benchmarks — MMLU, ARC, GSM8K, HumanEval</h3>
+
+<p class="prose"><strong>What it measures:</strong> accuracy on a battery of test questions. MMLU has ~16k multiple-choice questions across 57 academic subjects. GSM8K is math word problems. HumanEval is Python coding problems. The model picks an answer (or generates code that runs); you score correctness automatically.</p>
+
+<p class="prose"><strong>What it catches:</strong> narrow, well-defined, automatable capability. Easy to compare two models — just run both, get two numbers.</p>
+
+<p class="prose"><strong>What it misses:</strong> real-world helpfulness. A model can be tuned to ace MMLU and still be a poor assistant. Worse, it might be a <em>poor assistant because</em> it was tuned to ace MMLU at the expense of conversational quality.</p>
+
+<div class="callout-break">
+  <p><strong>Contamination is the dirty secret.</strong> Many benchmark questions exist on the public internet, often in test prep materials. Pretraining corpora include the public internet. So benchmark questions leak into training data. Models then "score well" not because they reasoned to the answer but because they memorized the question. Most labs now do contamination checks, but it's an arms race.</p>
+</div>
+
+<h3>3. LLM-as-judge — MT-Bench, AlpacaEval</h3>
+
+<p class="prose"><strong>What it measures:</strong> have a strong reference model (often GPT-4) read pairs of model outputs and judge which is better. Aggregate over many prompts to get win rates.</p>
+
+<p class="prose"><strong>What it catches:</strong> open-ended quality at scale. You can evaluate "is this answer helpful and well-formatted?" without paying humans for every judgment.</p>
+
+<p class="prose"><strong>What it misses:</strong> <em>the judge has biases.</em> GPT-4 prefers GPT-4-style answers. It rewards length even when conciseness is better. It struggles to grade things outside its own competence (a GPT-4 judge is not a great judge of code that exceeds GPT-4's coding ability).</p>
+
+<h3>4. Preference / arena — LMSYS Chatbot Arena</h3>
+
+<p class="prose"><strong>What it measures:</strong> humans submit prompts to two anonymous models side-by-side and vote on the better response. After thousands of votes per model, an Elo-style score emerges.</p>
+
+<p class="prose"><strong>What it catches:</strong> real-world taste. Captures the messy gestalt of "do users actually like this model" — formatting, helpfulness, tone, creativity, refusal patterns all blended together.</p>
+
+<p class="prose"><strong>What it misses:</strong> attribution. If model A is rated higher than model B, you don't know <em>why</em>. Is A smarter? Better-formatted? Just different in style? Hard to tell. Also: most arena votes are short prompts in English, so capabilities outside that distribution may not be reflected.</p>
+
+<div data-widget="rank-outputs"></div>
+
+<!-- ========================================================== -->
+<h2>Match the eval to the lever</h2>
+
+<p class="prose">This is the practical payoff. When you pull a specific lever, certain evals will tell you whether it helped:</p>
+
+<table>
+  <thead><tr><th>Lever</th><th>Evals that will catch the effect</th><th>Evals that will miss it</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><strong>Fine-tuning</strong> for a task</td>
+      <td>Your task-specific eval (held-out test set); preference eval if it's about tone/format; held-out general benchmark to catch <em>forgetting</em></td>
+      <td>Perplexity on generic web text (changes in ways you don't care about)</td>
+    </tr>
+    <tr>
+      <td><strong>Quantization</strong></td>
+      <td>Perplexity (catches if numerics broke); your task eval (catches if the bits you care about degraded)</td>
+      <td>Arena (signal too coarse to catch sub-percent quality drops)</td>
+    </tr>
+    <tr>
+      <td><strong>Context extension</strong></td>
+      <td>Long-context retrieval probes (Needle-in-a-Haystack), long-document QA, multi-turn fidelity</td>
+      <td>Short-prompt benchmarks (most of MMLU); short-form arena prompts</td>
+    </tr>
+    <tr>
+      <td><strong>Pruning</strong></td>
+      <td>Perplexity (catches gross degradation), full task eval suite (catches narrow capability loss)</td>
+      <td>Anything narrow — pruning often degrades skills nobody tested for</td>
+    </tr>
+    <tr>
+      <td><strong>Decoding controls</strong> (temperature, top-p)</td>
+      <td>Variance metrics (multiple runs of same prompt); creativity/diversity metrics; user studies</td>
+      <td>Perplexity (decoding doesn't change next-token probabilities, just sampling from them)</td>
+    </tr>
+    <tr>
+      <td><strong>System prompt change</strong></td>
+      <td>Task-specific eval; preference eval focused on tone/format</td>
+      <td>Static benchmarks (don't run system prompts)</td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- ========================================================== -->
+<h2>How teams actually pick a model</h2>
+
+<p class="prose">Across many real conversations with people who ship LLM products, the pattern looks the same:</p>
+
+<ol class="prose">
+  <li><strong>Start with arena scores</strong> as a coarse filter. Top 10 by arena Elo is a reasonable shortlist.</li>
+  <li><strong>Check benchmark scores on the dimensions you care about</strong> — code (HumanEval, SWE-Bench), math (GSM8K, MATH), long-context (RULER), instruction-following (IFEval).</li>
+  <li><strong>Build a custom eval set on your task.</strong> Even 100 hand-picked examples beats any public benchmark for your specific use case.</li>
+  <li><strong>Vibe-check.</strong> Spend an hour talking to the top 2-3 candidates. Things you'll notice in conversation often don't show up in any number.</li>
+  <li><strong>Account for cost, latency, deployment constraints.</strong> The model that wins on capability per dollar is usually not the model with the highest absolute capability.</li>
+</ol>
+
+<p class="prose">"Vibes" gets disrespected as unscientific, but it's actually doing useful work — it's catching the residual after all your formal evals have run, telling you about the shape of capability that no individual eval is measuring.</p>
+
+<!-- ========================================================== -->
+<h2>The honest summary</h2>
+
+<p class="prose">Eval is hard. Every method has holes. The teams that ship best treat evals as a portfolio: a few automated benchmarks for fast iteration, a custom task-specific suite for honest measurement, periodic human review for catching things automation misses.</p>
+
+<p class="prose">If you're <em>making changes to an LLM</em> (any of the levers), commit to evaluating those changes. If you ship without evals, you don't actually know whether your last change helped — and you'll find out, painfully, when something breaks downstream.</p>
+
+<!-- ========================================================== -->
+<nav class="page-footer">
+  <a href="training.html">← Training</a>
+  <a href="levers.html">Next: levers →</a>
+</nav>
+
+</main>
+<script src="../assets/shared.js"></script>
+<script src="../assets/widgets.js"></script>
+<script src="../assets/glossary.js"></script>
+<script src="../assets/progress.js"></script>
+<script src="../assets/shortcuts.js"></script>
+<script src="../assets/theme.js"></script>
+<script src="../assets/nav.js"></script>
+<script src="../assets/search-index.js"></script>
+<script src="../assets/search.js"></script>
+<script src="../assets/toc.js"></script>
+</body>
+</html>
