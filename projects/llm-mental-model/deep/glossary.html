@@ -47,6 +47,9 @@ One-line definitions for every technical term in the artifact. Each links back t
   <dt><strong>Token</strong></dt>
   <dd>A small piece of text (often a sub-word) mapped to an integer ID. The unit a model reads and writes. → <a href="tokens.html">tokens.html</a></dd>
 
+  <dt><strong>Stop token</strong></dt>
+  <dd>A special token (e.g. <code>&lt;|endoftext|&gt;</code>, <code>&lt;/s&gt;</code>, or chat-template tokens like <code>&lt;|im_end|&gt;</code>) that the model emits to signal "I'm done." The decoding loop checks for it after each step and halts the generation; without one, you generate until the length cap.</dd>
+
   <dt><strong>Embedding</strong></dt>
   <dd>A vector representing a token's location in "meaning space." Tokens with related meanings sit near each other. → <a href="tokens.html">tokens.html</a></dd>
 
@@ -283,9 +286,73 @@ One-line definitions for every technical term in the artifact. Each links back t
 </dl>
 
 <!-- ========================================================== -->
+<h2 data-toc="MoE">Mixture-of-Experts (MoE)</h2>
+
+<dl class="prose">
+  <dt><strong>MoE (Mixture of Experts)</strong></dt>
+  <dd>A transformer variant where the per-block MLP is replaced by many smaller "expert" FFNs plus a router that picks a few per token. Total parameters balloon; per-token compute stays flat. → <a href="block.html#if-its-an-moe">block.html / If it's an MoE</a></dd>
+
+  <dt><strong>Router (gate)</strong></dt>
+  <dd>Small gating network inside an MoE block that picks which top-k experts handle each token. A single linear layer + softmax + top-k selection.</dd>
+
+  <dt><strong>Expert</strong></dt>
+  <dd>One FFN inside an MoE block. There are typically 8, 16, 64, or hundreds per block. Each specializes during training.</dd>
+
+  <dt><strong>Top-k routing</strong></dt>
+  <dd>How many experts are activated per token. Top-1 (Switch Transformer), top-2 (Mixtral), top-8 on fine-grained experts (DeepSeek-V3).</dd>
+
+  <dt><strong>Expert capacity</strong></dt>
+  <dd>Per-expert token budget per batch: <code>capacity_factor × (tokens / num_experts)</code>. Overflow is dropped; dropped tokens bypass the MLP via the residual stream.</dd>
+
+  <dt><strong>Auxiliary loss (load-balance)</strong></dt>
+  <dd>Training loss term encouraging even expert usage. Without it, routers collapse to a single expert.</dd>
+
+  <dt><strong>Router z-loss</strong></dt>
+  <dd>Stability loss penalizing large routing logits. Keeps the softmax from saturating across long training runs.</dd>
+
+  <dt><strong>Router collapse / Dead experts</strong></dt>
+  <dd>Failure modes where one expert dominates (collapse) or others go unused (death). Caused by insufficient aux loss or bad initialization.</dd>
+
+  <dt><strong>Shared expert</strong></dt>
+  <dd>Always-on expert running in parallel with routed experts (DeepSeek-V2/V3 style). Captures patterns common to all tokens so routed experts can specialize more sharply.</dd>
+
+  <dt><strong>Fine-grained experts</strong></dt>
+  <dd>Many small experts vs few large. DeepSeek-V3 uses 256 routed experts + 1 shared. The modern trend is finer.</dd>
+
+  <dt><strong>Expert parallelism / All-to-all</strong></dt>
+  <dd>Sharding experts across GPUs; the communication pattern that results when tokens route to experts on other GPUs. Often the serving bottleneck.</dd>
+
+  <dt><strong>Upcycling</strong></dt>
+  <dd>Converting a pretrained dense model into MoE by duplicating its MLP as expert copies, adding a fresh router, then continuing training.</dd>
+
+  <dt><strong>Active parameters / Sparsity ratio</strong></dt>
+  <dd>Active = parameters used per token. Total = all parameters in VRAM. Sparsity ratio = active / total. Mixtral 8×7B: ~28%. DeepSeek-V3: ~5.5%.</dd>
+</dl>
+
+<!-- ========================================================== -->
+<h2 data-toc="Landscape">Landscape — other families</h2>
+
+<dl class="prose">
+  <dt><strong>State-space model (SSM)</strong></dt>
+  <dd>Sequence model that replaces attention with a parameterized recurrence (Mamba). Linear-time in sequence length; constant-memory at inference.</dd>
+
+  <dt><strong>Selective scan</strong></dt>
+  <dd>Mamba's core operation: a recurrence whose update is input-dependent. Trains in parallel; runs recurrently at inference.</dd>
+
+  <dt><strong>Denoising / Score-matching / Flow-matching</strong></dt>
+  <dd>Diffusion training objectives. At inference, start from pure noise and iteratively refine toward a clean sample over N steps.</dd>
+
+  <dt><strong>Iterative refinement</strong></dt>
+  <dd>The diffusion inference loop — N denoising steps from noise to output.</dd>
+
+  <dt><strong>Encoder-decoder</strong></dt>
+  <dd>Two transformer stacks (T5, BART). Encoder reads the input bidirectionally; decoder generates the output autoregressively with cross-attention to the encoder.</dd>
+</dl>
+
+<!-- ========================================================== -->
 <nav class="page-footer">
   <a href="diagnosis.html">← Diagnosis</a>
-  <a href="../index.html">Back to hub →</a>
+  <a href="landscape.html">Landscape →</a>
 </nav>
 
 </main>
@@ -298,5 +365,6 @@ One-line definitions for every technical term in the artifact. Each links back t
 <script src="../assets/search-index.js"></script>
 <script src="../assets/search.js"></script>
 <script src="../assets/toc.js"></script>
+<script src="../assets/glossary-page.js"></script>
 </body>
 </html>

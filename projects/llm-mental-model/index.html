@@ -185,7 +185,7 @@ A first-principles mental model — architecture first, then the levers you can 
 
 <!-- ===================================================================== -->
 <section class="hub-section" id="s0">
-<h2 data-toc="What is an LLM?"><span class="num">0.</span> So what <em>is</em> an LLM, really?</h2>
+<h2 data-toc="What is an LLM?">What is an LLM?</h2>
 
 <p class="prose">An LLM is a function. You hand it a sequence of text. It hands you back, for every possible next token, a number — how strongly it predicts that token comes next. Pick one of those tokens, append it to the sequence, and ask again. Keep going until you've grown the answer you wanted.</p>
 
@@ -206,7 +206,8 @@ A first-principles mental model — architecture first, then the levers you can 
   <rect x="470" y="60" width="200" height="60" rx="6" class="stroke fill-muted"/>
   <text x="570" y="85" text-anchor="middle" class="label">Probability over</text>
   <text x="570" y="103" text-anchor="middle" class="label">every possible next token</text>
-  <path d="M 570 125 Q 570 160, 90 160 Q 90 140, 90 130" class="stroke-soft" stroke-dasharray="4,4" fill="none"/>
+  <path d="M 570 125 Q 570 160, 90 160 Q 90 130, 90 120" class="stroke-soft" stroke-dasharray="4,4" fill="none"/>
+  <polygon points="86,130 90,120 94,130" fill="var(--text-soft)"/>
   <text x="335" y="175" text-anchor="middle" class="label-small">…sample one, append, repeat…</text>
 </svg>
 
@@ -217,7 +218,7 @@ A first-principles mental model — architecture first, then the levers you can 
 
 <!-- ===================================================================== -->
 <section class="hub-section" id="s1">
-<h2 data-toc="Tokens & embeddings"><span class="num">1.</span> Words don't fit in math — so we cheat: tokens, embeddings, and position</h2>
+<h2 data-toc="Tokens & embeddings">Tokens, embeddings, and position</h2>
 
 <p class="prose">A model can't multiply <em>"hello"</em>. It can multiply numbers. So before anything else, every piece of text gets converted into numbers in three layers.</p>
 
@@ -249,7 +250,7 @@ A first-principles mental model — architecture first, then the levers you can 
 
 <!-- ===================================================================== -->
 <section class="hub-section" id="s2">
-<h2 data-toc="Attention"><span class="num">2.</span> Tokens have a group chat: attention</h2>
+<h2 data-toc="Attention">Attention</h2>
 
 <p class="prose">Now we have a sequence of position-aware vectors. The next problem: how does <em>each</em> token know what <em>other</em> tokens in the sequence say? In <em>"The cat sat on the mat because <strong>it</strong> was warm"</em>, what does <em>"it"</em> refer to — cat or mat? The model needs a way for tokens to <em>look at each other</em>.</p>
 
@@ -280,7 +281,7 @@ A first-principles mental model — architecture first, then the levers you can 
 
 <!-- ===================================================================== -->
 <section class="hub-section" id="s3">
-<h2 data-toc="Transformer block"><span class="num">3.</span> Same conversation, sixty times in a row: the transformer block</h2>
+<h2 data-toc="Transformer block">The transformer block</h2>
 
 <p class="prose">One round of attention isn't enough. Modern LLMs stack the same operation dozens of times — Llama 3 70B has 80 layers; GPT-4 is reportedly more. Each layer is called a <strong>transformer block</strong>, and each block does roughly the same thing:</p>
 
@@ -307,16 +308,20 @@ A first-principles mental model — architecture first, then the levers you can 
 
 <div data-widget="layer-stack"></div>
 
+<div class="callout-variant">
+  <p><strong>🌿 If it's an MoE</strong> — the block's MLP slot is replaced with many smaller "expert" FFNs and a router that picks a few per token. Total parameters balloon (Mixtral: 47B total, 13B active); per-token compute stays flat. Everything else in the block (attention, residual stream, norms) is unchanged. <a href="deep/block.html#if-its-an-moe">Full MoE treatment on the block page →</a></p>
+</div>
+
 <a class="go-deeper" href="deep/block.html">go deeper into the block, the residual stream, and depth</a>
 </section>
 
 <!-- ===================================================================== -->
 <section class="hub-section" id="s4">
-<h2 data-toc="Inference loop"><span class="num">4.</span> From hidden state to next token: the full inference loop</h2>
+<h2 data-toc="Inference loop">The inference loop</h2>
 
 <p class="prose">We've walked through the inside of the model. Now let's walk the full loop end-to-end — input text to next token to next next token. This is the part most explanations leave fuzzy.</p>
 
-<svg class="diagram" viewBox="0 0 940 320" aria-label="The full inference loop">
+<svg class="diagram" viewBox="0 0 985 320" aria-label="The full inference loop">
   <!-- Input text -->
   <rect x="20" y="20" width="180" height="50" rx="6" class="stroke fill-muted"/>
   <text x="110" y="50" text-anchor="middle" class="label">Input text</text>
@@ -390,9 +395,9 @@ A first-principles mental model — architecture first, then the levers you can 
   <text x="295" y="237" text-anchor="middle" class="label">Append the chosen token</text>
   <text x="295" y="254" text-anchor="middle" class="label-small">to the sequence</text>
 
-  <!-- Loop back -->
-  <path d="M 200 240 Q 60 240, 60 145 Q 60 45, 110 45" class="stroke-soft" stroke-dasharray="5,4" fill="none"/>
-  <polygon points="106,41 116,45 106,49" fill="var(--text-soft)"/>
+  <!-- Loop back: from Append box (left edge) curving up to the bottom edge of Input text -->
+  <path d="M 200 240 C 60 240, 110 100, 110 70" class="stroke-soft" stroke-dasharray="5,4" fill="none"/>
+  <polygon points="106,80 110,70 114,80" fill="var(--text-soft)"/>
   <text x="60" y="170" text-anchor="middle" class="label-small" transform="rotate(-90 60 170)">repeat</text>
 </svg>
 <p class="diagram-caption">One full pass produces one token. To produce a paragraph, the loop runs hundreds of times.</p>
@@ -422,7 +427,7 @@ A first-principles mental model — architecture first, then the levers you can 
 
 <!-- ===================================================================== -->
 <section class="hub-section" id="s5">
-<h2 data-toc="Four lenses"><span class="num">5.</span> Four lenses for thinking about LLMs</h2>
+<h2 data-toc="Four lenses">Four lenses for diagnosing LLMs</h2>
 
 <p class="prose">Before we look at training and the levers, here's a sorting framework. When something interesting (or broken) happens with an LLM, it's almost always one of <em>four</em> categories. Confusing them is the single most common source of wrong diagnoses.</p>
 
@@ -467,7 +472,7 @@ A first-principles mental model — architecture first, then the levers you can 
 
 <!-- ===================================================================== -->
 <section class="hub-section" id="s6">
-<h2 data-toc="Training"><span class="num">6.</span> How a model goes from "predicts the internet" to "answers your email"</h2>
+<h2 data-toc="Training">Training: pretraining, SFT, RLHF</h2>
 
 <p class="prose">Everything above describes how the model <em>runs</em>. Now: how does a model become any good in the first place? Modern LLMs go through three roughly distinct training stages — and each stage shapes the model in a different way. <span class="lens-tag weights">weights</span></p>
 
@@ -501,7 +506,7 @@ A first-principles mental model — architecture first, then the levers you can 
 
 <!-- ===================================================================== -->
 <section class="hub-section" id="s7">
-<h2 data-toc="Evaluation"><span class="num">7.</span> How do we know a change helped?</h2>
+<h2 data-toc="Evaluation">Evaluation</h2>
 
 <p class="prose">Every lever we're about to discuss is a <em>change</em> to the model or the system. Fine-tuning, quantizing, extending context, swapping decoding settings — each one is supposed to make things better. <strong>How do we tell?</strong> That's evaluation.</p>
 
@@ -523,7 +528,7 @@ A first-principles mental model — architecture first, then the levers you can 
 
 <!-- ===================================================================== -->
 <section class="hub-section" id="s8">
-<h2 data-toc="Levers"><span class="num">8.</span> Knobs you can turn after the model is trained</h2>
+<h2 data-toc="Levers">Post-training levers</h2>
 
 <p class="prose">Once a model exists, you have several distinct ways to change what it does. Each one touches a different lens.</p>
 
@@ -559,11 +564,65 @@ A first-principles mental model — architecture first, then the levers you can 
     <p><strong>Mechanism:</strong> reshape the probability distribution before sampling. <strong>Temperature</strong> flattens (more random) or sharpens (more deterministic). <strong>Top-k / top-p</strong> truncate the tail of unlikely options. <strong>The model is unchanged.</strong> Confusing decoding settings with model quality is the most common diagnostic mistake.</p>
   </div>
 
+  <div class="tile" style="border-color: var(--variant-border); background: var(--variant-bg);">
+    <h4>🌿 MoE levers</h4>
+    <p><span class="lens-tag weights">weights</span></p>
+    <p><strong>Only if the model is MoE:</strong> num experts, top-k, capacity factor, shared experts, aux loss weight, router temperature, expert parallelism, upcycling, expert pruning — a whole family of levers that don't exist on a dense model. <a href="deep/levers.html#if-its-an-moe">Full treatment on the levers page →</a></p>
+  </div>
+
 </div>
 
 <div data-widget="sampling"></div>
 
 <a class="go-deeper" href="deep/levers.html">go deeper into every lever, with concrete configs and "what changes where"</a>
+</section>
+
+<!-- ===================================================================== -->
+<section class="hub-section" id="s10">
+<h2 data-toc="Family of LLMs">The family of LLMs</h2>
+
+<p class="prose">Everything above taught the default frame: a dense decoder-only transformer, with MoE branches called out where the mental model materially changes. This last section is orientation — a one-liner per architecture family so you know where <em>other</em> things live when you run into them.</p>
+
+<div class="tile-grid">
+  <div class="tile">
+    <h4>Dense transformer</h4>
+    <p>Every token passes through every parameter. <em>GPT-3, Llama 3, Mistral 7B.</em></p>
+  </div>
+  <div class="tile">
+    <h4>MoE transformer</h4>
+    <p>A router picks a few experts per token. Big total, small active. <em>Mixtral, DeepSeek-V3, Llama 4 MoE.</em></p>
+  </div>
+  <div class="tile">
+    <h4>Encoder-decoder</h4>
+    <p>Read everything in one stack, write in the other. <em>T5, BART.</em></p>
+  </div>
+  <div class="tile">
+    <h4>State-space (Mamba)</h4>
+    <p>Linear-time sequence modeling, no attention. Strong on long context. <em>Mamba, Mamba-2.</em></p>
+  </div>
+  <div class="tile">
+    <h4>Hybrid</h4>
+    <p>Alternates Mamba, attention, and MoE in one stack. <em>Jamba.</em></p>
+  </div>
+  <div class="tile">
+    <h4>Post-attention recurrent</h4>
+    <p>Parallel-train, recurrent-infer. Constant memory. <em>RWKV, RetNet.</em></p>
+  </div>
+  <div class="tile">
+    <h4>Text diffusion</h4>
+    <p>Iterative denoising instead of left-to-right. <em>Mercury (Inception Labs).</em></p>
+  </div>
+  <div class="tile">
+    <h4>Media diffusion</h4>
+    <p>Denoising to generate images, audio, or video. <em>Stable Diffusion, Sora.</em></p>
+  </div>
+  <div class="tile">
+    <h4>Multimodal add-on</h4>
+    <p>Text transformer + modality encoders. Any of the above, plus vision/audio/video. <em>GPT-4V, Claude 3.5, Gemini.</em></p>
+  </div>
+</div>
+
+<p class="prose">Want the full comparison — cost shapes, training objectives, when to pick which? <a href="deep/landscape.html">→ landscape.html</a></p>
 </section>
 
 <!-- ===================================================================== -->

@@ -14,23 +14,28 @@ Open `/Users/apple/LLM learning/index.html` in any modern browser. Everything wo
 
 If you need to vendor an external library (as was done with `gpt-tokenizer`), use `curl` from unpkg to download the UMD bundle into `assets/` — do **not** add a build step.
 
-## Architectural baseline (locked)
+## Architectural baseline (softened — default frame, not the only one)
 
 The teaching spine of the artifact is fixed. Do **not** deviate without user approval:
 
-1. Tokens + position → 2. Attention → 3. Transformer blocks → 4. Inference loop → 5. **Four lenses** (weights / context / scaffolding / decoding) → 6. Training → 7. Eval → 8. Levers → 9. Diagnosis (capstone).
+1. Tokens + position → 2. Attention → 3. Transformer blocks → 4. Inference loop → 5. **Four lenses** (weights / context / scaffolding / decoding) → 6. Training → 7. Eval → 8. Levers → 9. Diagnosis (capstone) → 10. Landscape (family orientation).
 
-The canonical architecture is a **vanilla decoder-only transformer** (GPT family). Variants (MoE, GQA/MQA, encoder-decoder, multimodal, RAG, reasoning scaffolds) appear only as `🌿 Variant note` callouts on the deep pages where they naturally attach.
+**Dense decoder-only is the default frame.** When a variant *materially* changes the mental model, it gets a full `.variant-branch` sub-section on the relevant page. When a variant leaves the mechanism mostly the same, a one-line inline note or `🌿 Variant note` callout is enough. *Same world, different block.*
+
+The primary first-class variant is **MoE** (Mixture of Experts). It has full branches on `block.html`, `inference.html`, `training.html`, `levers.html`, and `diagnosis.html`, and a pointer + tile on the hub. Other architectures (encoder-decoder, SSM/Mamba, hybrid, RWKV/RetNet, text/media diffusion, multimodal) are covered in `landscape.html` as a family-level orientation.
 
 ## Locked component grammar (do not invent new patterns)
 
-Five reusable components are defined once in `assets/styles.css` and decorated by `assets/shared.js`. Every page must reuse them:
+Six reusable components are defined once in `assets/styles.css` and decorated by `assets/shared.js`. Every page must reuse them:
 
 - `callout-analogy` — 🔍 *Think of it like…* (analogy before the precise explanation)
 - `callout-break` — ⚠️ *Where this breaks…* (when the analogy is imperfect)
 - `callout-invariant` — 📐 *What this teaches (and what it doesn't)* (on every interactive widget)
-- `callout-variant` — 🌿 *Variant note* (deviations from the decoder-only baseline)
+- `callout-variant` — 🌿 *Variant note* (inline one-liners for minor variants)
+- `variant-branch` (`.variant-branch` with `data-variant-label="🌿 …"`) — full sub-sections for variants that materially change the mental model (e.g. MoE inside `block.html`)
 - `lens-tag` / `lens-box` — 🔭 *Which lens?* (tags concepts with one of the four lenses)
+
+**Rule for variants:** one-liner when the mechanism is mostly the same; `variant-branch` when the mental model changes materially.
 
 If a piece of content doesn't fit one of these, it's probably in the wrong place.
 
@@ -48,7 +53,9 @@ Every interactive widget lives in `assets/widgets.js` inside the IIFE. Contract:
 - Cross-page widgets (e.g. tokenizer appears on hub and tokens.html) should accept config via `data-*` attributes.
 - Use `var(--…)` for all colors — never hardcoded hex. This ensures dark mode works.
 
-Current widgets: `tokenizer`, `inference-stepper`, `attention-hover`, `layer-stack`, `lens-sorter`, `training-stages`, `sampling`, `lora-rank`, `quantization`, `context-length`, `prefill-decode`, `rank-outputs`, `embed-sim`, `rope-rotation`.
+Current widgets: `tokenizer`, `inference-stepper`, `attention-hover`, `layer-stack`, `lens-sorter`, `training-stages`, `sampling`, `lora-rank`, `quantization`, `context-length`, `prefill-decode`, `rank-outputs`, `embed-sim`, `rope-rotation`, plus the five MoE widgets: `moe-router`, `moe-capacity`, `moe-active-total`, `moe-load-heatmap`, `moe-cost-compare`.
+
+**Widget tiering (locked):** richness scales with conceptual leverage, not interface symmetry. Core-mechanism widgets (tokenizer, inference-stepper, attention-hover, sampling, moe-router, moe-capacity) earn the full template (presets + click-inspect + toggles + stats + tie-back). Peripheral widgets (rope-rotation, embed-sim, moe-cost-compare) stay tighter.
 
 ## File layout
 

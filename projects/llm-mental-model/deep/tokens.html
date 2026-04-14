@@ -21,6 +21,8 @@ How text becomes numbers — and how the model knows which number came first.
   <span class="lens-tag weights">weights</span> The embedding lookup table itself is part of the model's <em>weights</em> — it's learned.
 </div>
 
+<p class="prose" style="font-style: italic; color: var(--text-soft); font-size: var(--fs-md);">🌿 <strong>Same in MoE</strong> — tokenization, embeddings, and positional encoding are architecture-agnostic. MoE changes the block's MLP, nothing here.</p>
+
 <!-- ========================================================== -->
 <h2 data-toc="Tokens">Tokens — chopping text into reusable pieces</h2>
 

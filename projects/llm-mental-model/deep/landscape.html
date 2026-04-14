@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Landscape — Where this sits in the family of LLMs</title>
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="page">
+
+<nav class="breadcrumb"><a href="../index.html">← Back to hub</a></nav>
+
+<h1>Where this sits in the family of LLMs</h1>
+<p class="prose" style="text-align:center; color:var(--text-soft); font-style:italic; margin-top:-0.5em;">
+A one-glance orientation across dense, MoE, diffusion, SSMs, and the rest.
+</p>
+
+<div class="callout-invariant" data-label="📖 How to read this">
+  <p>This page is <strong>orientation, not mastery</strong>. The rest of the artifact teaches the default frame — a dense decoder-only transformer — and branches into MoE where the mental model materially changes. This page tells you what <em>else</em> exists and when you'd meet it. Each family gets a compact row in the table and a short paragraph. For the default and for MoE, the deep pages already do the full treatment.</p>
+</div>
+
+<!-- ========================================================== -->
+<h2 data-toc="The comparison">The comparison at a glance</h2>
+
+<div style="overflow-x: auto; max-width: 940px; margin: var(--space-4) auto;">
+<table style="max-width: none; font-size: var(--fs-sm);">
+<thead>
+  <tr>
+    <th>Family</th>
+    <th>Dominant mechanism</th>
+    <th>Sequence?</th>
+    <th>Objective</th>
+    <th>Cost shape</th>
+    <th>Memory</th>
+    <th>Typical use</th>
+    <th>Examples</th>
+    <th>Year</th>
+  </tr>
+</thead>
+<tbody>
+  <tr>
+    <td><strong>Dense transformer</strong></td>
+    <td>self-attention + FFN</td>
+    <td>✓</td>
+    <td>next-token</td>
+    <td>O(n²) attn, linear depth</td>
+    <td>all weights in VRAM</td>
+    <td>general text</td>
+    <td>GPT-3, Llama 3, Mistral 7B</td>
+    <td>2017+</td>
+  </tr>
+  <tr>
+    <td><strong>MoE transformer</strong></td>
+    <td>self-attention + routed experts</td>
+    <td>✓</td>
+    <td>next-token + aux losses</td>
+    <td>sparse compute, full memory</td>
+    <td>all experts in VRAM</td>
+    <td>frontier quality, cheap inference</td>
+    <td>Mixtral, DeepSeek-V3, Llama 4 MoE</td>
+    <td>2021+</td>
+  </tr>
+  <tr>
+    <td><strong>Encoder-decoder</strong></td>
+    <td>two-stack attention</td>
+    <td>✓</td>
+    <td>span corruption / seq2seq</td>
+    <td>O(n²) both stacks</td>
+    <td>both stacks in VRAM</td>
+    <td>translation, summarization</td>
+    <td>T5, BART, FLAN-T5</td>
+    <td>2017–2020</td>
+  </tr>
+  <tr>
+    <td><strong>State-space (Mamba)</strong></td>
+    <td>selective scan</td>
+    <td>✓</td>
+    <td>next-token</td>
+    <td>O(n) linear</td>
+    <td>small, constant</td>
+    <td>long context, edge devices</td>
+    <td>Mamba, Mamba-2</td>
+    <td>2023+</td>
+  </tr>
+  <tr>
+    <td><strong>Hybrid</strong></td>
+    <td>Mamba + attention + MoE (alternating)</td>
+    <td>✓</td>
+    <td>next-token</td>
+    <td>mixed</td>
+    <td>mixed</td>
+    <td>long context + quality</td>
+    <td>Jamba, Zamba</td>
+    <td>2024+</td>
+  </tr>
+  <tr>
+    <td><strong>Post-attention recurrent</strong></td>
+    <td>linear attention / receptance</td>
+    <td>✓</td>
+    <td>next-token</td>
+    <td>O(n) linear</td>
+    <td>constant</td>
+    <td>constant-memory inference</td>
+    <td>RWKV, RetNet</td>
+    <td>2023+</td>
+  </tr>
+  <tr>
+    <td><strong>Text diffusion</strong></td>
+    <td>iterative denoising</td>
+    <td>kind of</td>
+    <td>denoising</td>
+    <td>O(steps × seq)</td>
+    <td>moderate</td>
+    <td>research, infilling, fast parallel gen</td>
+    <td>Mercury (Inception Labs), research diffusion LMs</td>
+    <td>2024+</td>
+  </tr>
+  <tr>
+    <td><strong>Media diffusion</strong></td>
+    <td>iterative denoising over images/audio/video</td>
+    <td>n/a</td>
+    <td>score / flow-matching</td>
+    <td>many steps; expensive</td>
+    <td>large</td>
+    <td>image, audio, video generation</td>
+    <td>Stable Diffusion, DALL-E 3, Sora</td>
+    <td>2020+</td>
+  </tr>
+  <tr>
+    <td><strong>Multimodal add-on</strong></td>
+    <td>modality encoders + transformer</td>
+    <td>✓</td>
+    <td>next-token (usually)</td>
+    <td>baseline + encoder</td>
+    <td>baseline + encoder</td>
+    <td>text + images/audio/video in/out</td>
+    <td>GPT-4V, Claude 3.5, Gemini</td>
+    <td>2023+</td>
+  </tr>
+</tbody>
+</table>
+</div>
+
+<!-- ========================================================== -->
+<h2 data-toc="Row by row">Row by row</h2>
+
+<h3>Dense transformer</h3>
+<p class="prose">Every token passes through every parameter at every layer. This is the architecture the rest of the artifact teaches as the default frame. When someone says "LLM" without qualification, they usually mean this. Trade-off: simple to reason about, well-understood, but parameter count and compute grow together — you can't have a "big" model that's also "cheap" to run.</p>
+<p class="prose"><strong>Pick it when:</strong> you want the simplest deployment profile, well-supported tooling, and aren't pushing the quality frontier at a specific cost target. <a href="../index.html">Go to the hub</a> for the full treatment.</p>
+
+<h3>MoE transformer</h3>
+<p class="prose">Same as dense <em>outside the block</em>: tokens, embeddings, attention, KV cache, sampling — all unchanged. Inside the block, the single fat MLP is replaced by <em>N</em> smaller expert MLPs and a router that picks top-<em>k</em> per token. Total parameters balloon (Mixtral 8×7B has 47B total); per-token compute stays flat (~13B active). The headline trade: more quality per FLOP, at the cost of more VRAM and more training complexity (router must be load-balanced).</p>
+<p class="prose"><strong>Pick it when:</strong> you want frontier quality at lower inference cost per token and have the VRAM to hold all experts. <a href="block.html#the-sparse-block">See block.html</a> for the full mental model.</p>
+
+<h3>Encoder-decoder</h3>
+<p class="prose">Two transformer stacks. The encoder reads the full input bidirectionally (no causal mask) and produces a representation. The decoder generates the output autoregressively, attending to its own tokens and to the encoder's output via <em>cross-attention</em>. Popular pre-2022 for translation, summarization, and any task where input and output are clearly separate.</p>
+<p class="prose"><strong>Pick it when:</strong> the task is genuinely seq-in / seq-out with distinct sides (translation being the clearest example). For open chat and completion, decoder-only has largely won — it's simpler and scales better.</p>
+
+<h3>State-space models (Mamba)</h3>
+<p class="prose">Attention is O(n²); state-space models are O(n). Mamba replaces the attention sub-block with a <em>selective scan</em> — a parameterized recurrence that runs in linear time but, unlike classical RNNs, trains in parallel and captures long-range dependencies selectively. Memory is roughly constant regardless of sequence length.</p>
+<p class="prose"><strong>Pick it when:</strong> you need very long context or constant-memory inference on edge devices, and can accept somewhat lower pure-benchmark quality than a comparable dense transformer on short-context tasks.</p>
+
+<h3>Hybrid architectures</h3>
+<p class="prose">Take the strengths of multiple families and interleave them. Jamba alternates Mamba layers (cheap long-range context), attention layers (crisp local reasoning), and MoE (parameter-efficient scaling) within a single stack. The bet: the downsides of each family are specific enough that a mix can outperform any pure version at a given budget.</p>
+<p class="prose"><strong>Pick it when:</strong> you're building at the frontier and none of the pure families fits the profile you need — e.g., 128k+ context <em>and</em> frontier quality <em>and</em> reasonable inference cost.</p>
+
+<h3>Post-attention recurrent (RWKV, RetNet)</h3>
+<p class="prose">A different route to linear-time sequence modeling. RWKV uses a time-mix + channel-mix formulation that's trainable in parallel like a transformer but runs at inference like an RNN: constant memory, constant per-token cost. RetNet takes a similar "parallel-train, recurrent-infer" route with a retention mechanism. Neither uses attention in the classical sense.</p>
+<p class="prose"><strong>Pick it when:</strong> constant-memory inference is the dominant constraint and you're willing to accept somewhat less well-supported tooling than the transformer ecosystem.</p>
+
+<h3>Text diffusion</h3>
+<p class="prose">Instead of autoregressively predicting one token at a time, a text diffusion model starts with a noisy target and iteratively denoises it over <em>N</em> steps. Potentially much faster wall-clock (all positions update in parallel each step) and can naturally fill in blanks, but as of 2026 is still mostly research with a few production pilots (Inception Labs' Mercury being the most visible). Quality at the frontier is not yet at parity with autoregressive.</p>
+<p class="prose"><strong>Pick it when:</strong> you need massively parallel generation for a specific distribution and can tolerate research-grade tooling.</p>
+
+<h3>Media diffusion</h3>
+<p class="prose">The diffusion paradigm has conquered image, audio, and video generation. Train a network to denoise; at inference, start from pure noise and iteratively denoise toward something from the training distribution. Stable Diffusion and its descendants (SDXL, SD3) for images; Sora and Veo for video; Suno and Udio for audio. Different training objective (score-matching or flow-matching) than LLMs, but the underlying network is often a transformer (DiT — Diffusion Transformer).</p>
+<p class="prose"><strong>Pick it when:</strong> you're generating media, not text. Not a text-LLM choice at all — included here so the family-map is complete.</p>
+
+<h3>Multimodal add-on</h3>
+<p class="prose">Not really a separate architecture family — more a <em>technique</em> applied on top of any of the above. Take a text transformer (usually dense or MoE), bolt on modality-specific encoders (ViT for vision, an audio encoder, etc.), and project their outputs into the transformer's embedding space so the model sees "image tokens" alongside text tokens. The transformer backbone is unchanged; the input side becomes multimodal.</p>
+<p class="prose"><strong>Pick it when:</strong> the task involves non-text input or output. GPT-4V, Claude 3.5, Gemini all fit here with various text-backbone choices underneath.</p>
+
+<!-- ========================================================== -->
+<h2 data-toc="Further reading">Further reading — landmark papers</h2>
+
+<ul class="prose">
+  <li><strong>Dense transformer:</strong> <em>Attention Is All You Need</em> — Vaswani et al., 2017. <a href="https://arxiv.org/abs/1706.03762">arXiv:1706.03762</a></li>
+  <li><strong>MoE — Switch Transformer:</strong> Fedus, Zoph &amp; Shazeer, 2021. <a href="https://arxiv.org/abs/2101.03961">arXiv:2101.03961</a></li>
+  <li><strong>MoE — Mixtral:</strong> Mistral AI, 2024. <a href="https://arxiv.org/abs/2401.04088">arXiv:2401.04088</a></li>
+  <li><strong>MoE — DeepSeek-V3:</strong> DeepSeek, 2024. <a href="https://arxiv.org/abs/2412.19437">arXiv:2412.19437</a></li>
+  <li><strong>Encoder-decoder — T5:</strong> Raffel et al., 2019. <a href="https://arxiv.org/abs/1910.10683">arXiv:1910.10683</a></li>
+  <li><strong>Mamba:</strong> Gu &amp; Dao, 2023. <a href="https://arxiv.org/abs/2312.00752">arXiv:2312.00752</a></li>
+  <li><strong>Mamba-2:</strong> Dao &amp; Gu, 2024. <a href="https://arxiv.org/abs/2405.21060">arXiv:2405.21060</a></li>
+  <li><strong>Jamba:</strong> AI21 Labs, 2024. <a href="https://arxiv.org/abs/2403.19887">arXiv:2403.19887</a></li>
+  <li><strong>RWKV:</strong> Peng et al., 2023. <a href="https://arxiv.org/abs/2305.13048">arXiv:2305.13048</a></li>
+  <li><strong>RetNet:</strong> Sun et al., 2023. <a href="https://arxiv.org/abs/2307.08621">arXiv:2307.08621</a></li>
+  <li><strong>Latent Diffusion (Stable Diffusion):</strong> Rombach et al., 2021. <a href="https://arxiv.org/abs/2112.10752">arXiv:2112.10752</a></li>
+  <li><strong>DiT (Diffusion Transformer):</strong> Peebles &amp; Xie, 2022. <a href="https://arxiv.org/abs/2212.09748">arXiv:2212.09748</a></li>
+</ul>
+
+<nav class="page-footer">
+  <a href="diagnosis.html">← Diagnosis</a>
+  <a href="../index.html">Back to hub →</a>
+</nav>
+
+</main>
+<script src="../assets/shared.js"></script>
+<script src="../assets/widgets.js"></script>
+<script src="../assets/glossary.js"></script>
+<script src="../assets/progress.js"></script>
+<script src="../assets/shortcuts.js"></script>
+<script src="../assets/theme.js"></script>
+<script src="../assets/nav.js"></script>
+<script src="../assets/search-index.js"></script>
+<script src="../assets/search.js"></script>
+<script src="../assets/toc.js"></script>
+</body>
+</html>

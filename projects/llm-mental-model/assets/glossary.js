@@ -22,6 +22,7 @@
     // Architecture
     'token':              'A small piece of text mapped to an integer ID. Often sub-word.',
     'tokens':             'Small pieces of text mapped to integer IDs. Often sub-word.',
+    'stop token':         'A special token (e.g. <|endoftext|>, </s>) the model emits to signal end of generation. The decoding loop halts when it appears.',
     'tokenization':       'Splitting text into tokens — sub-word pieces with integer IDs.',
     'embedding':          'A vector representing a token\'s location in "meaning space."',
     'embeddings':         'Vectors representing tokens\' locations in "meaning space."',
@@ -112,6 +113,37 @@
     'function calling':   'Tool use via a structured JSON-schema interface for invoking external functions.',
     'agent':              'Multi-step scaffolding: model thinks → acts → observes → thinks again.',
     'chain-of-thought':   'Prompting the model to explain its reasoning step-by-step before answering.',
+
+    // MoE vocabulary
+    'MoE':                'Mixture of Experts. A transformer variant where the per-block MLP is replaced by many smaller expert FFNs plus a router that picks a few per token.',
+    'router':             'Small gating network inside an MoE block that picks which top-k experts handle each token.',
+    'gate':               'Same as router — the linear + softmax that routes tokens to experts.',
+    'expert':             'One FFN inside an MoE block. Specializes during training.',
+    'top-k routing':      'How many experts are activated per token in an MoE. Top-1 (Switch), top-2 (Mixtral), top-8 (DeepSeek-V3).',
+    'expert capacity':    'Per-expert token budget in an MoE batch: capacity_factor × (tokens / num_experts). Overflow is dropped.',
+    'capacity factor':    'Multiplier on the per-expert token budget. Higher = fewer drops, more VRAM idle when routing is balanced.',
+    'token dropping':     'When a token routes to an expert at capacity, it bypasses the MLP via the residual stream.',
+    'auxiliary loss':     'Training loss term encouraging even expert usage. Without it, routers collapse to a single expert.',
+    'router z-loss':      'Stability loss penalizing large routing logits. Keeps softmax from saturating across training.',
+    'load balance':       'How evenly tokens distribute across experts. Uneven = some experts under-trained, some over-subscribed.',
+    'router collapse':    'Training failure mode where one expert receives all tokens and the others die.',
+    'dead expert':        'An expert that receives few or no tokens and never learns anything useful.',
+    'shared expert':      'An always-on expert running in parallel with routed experts. DeepSeek-V2/V3 style.',
+    'fine-grained experts':'Many small experts vs few large ones. DeepSeek-V3 uses 256 routed + 1 shared.',
+    'expert parallelism': 'Sharding experts across GPUs. All-to-all communication moves tokens to their chosen expert.',
+    'all-to-all':         'Communication pattern where every GPU sends to and receives from every other GPU. Often the bottleneck in MoE serving.',
+    'upcycling':          'Converting a pretrained dense model into MoE by duplicating its MLP as expert copies, adding a fresh router, then continuing training.',
+    'active parameters':  'Parameters actually used per token. In an MoE, much smaller than total.',
+    'sparsity ratio':     'Active params / total params in a sparse model. Mixtral 8×7B: ~28%. DeepSeek-V3: ~5.5%.',
+
+    // Landscape vocabulary
+    'state-space model':  'Sequence model that replaces attention with a parameterized recurrence (Mamba). Linear-time, constant-memory at inference.',
+    'SSM':                'State-space model. See Mamba, Mamba-2.',
+    'selective scan':     'Mamba\'s core operation — a recurrence whose update is input-dependent. Trains in parallel; runs recurrently at inference.',
+    'denoising':          'Diffusion objective: learn to remove noise from a noisy sample, then iterate from pure noise toward a clean sample at inference.',
+    'score-matching':     'Diffusion training objective that learns the gradient of the data distribution.',
+    'flow-matching':      'A diffusion-adjacent training objective that learns a vector field mapping noise to data.',
+    'iterative refinement':'The diffusion inference loop: start from noise, denoise in N steps.',
   };
 
   // Decide where to point each term. By default, wrap-clicks navigate to glossary.
@@ -126,14 +158,32 @@
   const SKIP_TAGS = new Set(['SCRIPT', 'STYLE', 'CODE', 'PRE', 'H1', 'H2', 'H3', 'H4', 'A', 'BUTTON', 'INPUT', 'TEXTAREA', 'LABEL', 'SVG', 'NOSCRIPT']);
   const SKIP_CLASSES = ['callout-invariant', 'callout-analogy', 'callout-break', 'callout-variant', 'tie-back', 'lens-tag', 'lens-block', 'changes-where', 'widget', 'tokenizer-out', 'attn-tokens', 'kv-table', 'glossary-term'];
 
+  const SVG_NS = 'http://www.w3.org/2000/svg';
+
+  function slugify(s) {
+    return (s || '')
+      .toLowerCase()
+      .replace(/[^\w\s-]/g, '')
+      .replace(/\s+/g, '-')
+      .replace(/-+/g, '-')
+      .replace(/^-|-$/g, '');
+  }
+
   function shouldSkip(node) {
     let cur = node;
     while (cur && cur.nodeType === 1) {
-      if (SKIP_TAGS.has(cur.tagName)) return true;
+      // SVG: tagName is lowercase ("svg"), HTML: uppercase ("SVG"). Normalize.
+      const tag = cur.tagName ? cur.tagName.toUpperCase() : '';
+      if (SKIP_TAGS.has(tag)) return true;
+      // Belt-and-braces: skip anything in the SVG namespace (HTML <a> doesn't
+      // render inside <svg><text>, so wrapping there silently eats the word).
+      if (cur.namespaceURI === SVG_NS) return true;
       const cls = cur.className;
-      if (cls && typeof cls === 'string') {
+      // SVG elements have SVGAnimatedString, not string
+      const clsStr = (cls && typeof cls === 'string') ? cls : (cls && cls.baseVal) || '';
+      if (clsStr) {
         for (const skip of SKIP_CLASSES) {
-          if (cls.indexOf(skip) >= 0) return true;
+          if (clsStr.indexOf(skip) >= 0) return true;
         }
       }
       cur = cur.parentNode;
@@ -206,7 +256,7 @@
           const a = document.createElement('a');
           a.className = 'glossary-term';
           a.dataset.def = f.def;
-          a.href = GLOSSARY_HREF;
+          a.href = GLOSSARY_HREF + '#' + slugify(f.value);
           a.textContent = f.value;
           frag.appendChild(a);
         }

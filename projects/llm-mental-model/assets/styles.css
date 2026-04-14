@@ -92,6 +92,19 @@ html[data-theme="dark"] {
   --shadow-lg: 0 12px 32px rgba(0,0,0,0.65);
 }
 
+/* ---------- Reset (must come before body padding rules below) ---------- */
+html, body {
+  background: var(--bg);
+  color: var(--text);
+  margin: 0;
+  padding: 0;
+  font-family: Georgia, "Charter", "Iowan Old Style", "Times New Roman", serif;
+  font-size: 18px;
+  line-height: 1.75;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
 /* Top bar (hamburger on left, theme toggle on right) */
 #topbar {
   position: fixed;
@@ -122,7 +135,7 @@ html[data-theme="dark"] #topbar { background: rgba(26, 24, 20, 0.85); }
 /* On wide viewports the body reserves 244px for the TOC. Match the same
    right-padding on the topbar so its flex center aligns with the page
    content center (not the viewport center). */
-@media (min-width: 1280px) {
+@media (min-width: 1281px) {
   #topbar { padding-right: calc(244px + 18px); }
 }
 
@@ -228,7 +241,7 @@ body { padding-top: 56px; }
 /* When the TOC is visible (≥ 1280px), reserve right-side space so the
    main page reads as visually centered between the topbar's left edge
    and the TOC, not centered in the full viewport. */
-@media (min-width: 1280px) {
+@media (min-width: 1281px) {
   body { padding-right: 244px; }
 }
 
@@ -382,24 +395,12 @@ body { padding-top: 56px; }
 
 * { box-sizing: border-box; }
 
-html, body {
-  background: var(--bg);
-  color: var(--text);
-  margin: 0;
-  padding: 0;
-  font-family: Georgia, "Charter", "Iowan Old Style", "Times New Roman", serif;
-  font-size: 18px;
-  line-height: 1.75;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
 /* ---------- Page layout ---------- */
 
 .page {
   max-width: 940px;          /* full width for diagrams */
   margin: 0 auto;
-  padding: 32px 28px 96px;
+  padding: 32px 28px 48px;
 }
 
 .prose,
@@ -623,6 +624,65 @@ hr {
   font-size: 0.78em;
   font-weight: bold;
   margin-bottom: 4px;
+}
+
+/* 🌿 Variant branch — larger sub-section for variants that materially change
+   the mental model (e.g. MoE). Use when a one-line variant note isn't enough. */
+.variant-branch {
+  background: var(--variant-bg);
+  border-left: 4px solid var(--variant-border);
+  border-radius: 0 var(--radius-md) var(--radius-md) 0;
+  padding: var(--space-4) var(--space-5) var(--space-5);
+  margin: var(--space-5) auto;
+  max-width: 940px;
+  position: relative;
+}
+
+.variant-branch::before {
+  content: attr(data-variant-label);
+  display: inline-block;
+  background: var(--variant-border);
+  color: var(--bg);
+  padding: 2px var(--space-3);
+  border-radius: var(--radius-sm);
+  font-size: var(--fs-sm);
+  font-variant: small-caps;
+  letter-spacing: 0.08em;
+  font-weight: bold;
+  margin-bottom: var(--space-3);
+  position: relative;
+  top: calc(var(--space-4) * -1 + 2px);
+  margin-left: calc(var(--space-5) * -1 + var(--space-2));
+}
+
+.variant-branch > h3:first-of-type,
+.variant-branch > h4:first-of-type {
+  margin-top: 0;
+}
+
+.variant-branch .variant-branch-end {
+  margin-top: var(--space-4);
+  padding-top: var(--space-3);
+  border-top: 1px dashed var(--variant-border);
+  font-size: var(--fs-sm);
+  color: var(--text-soft);
+  font-style: italic;
+  text-align: center;
+}
+
+.variant-branch .variant-branch-end::before {
+  content: "↩︎ ";
+  color: var(--variant-border);
+}
+
+@media (max-width: 720px) {
+  .variant-branch {
+    padding: var(--space-3) var(--space-4) var(--space-4);
+    margin: var(--space-4) auto;
+  }
+  .variant-branch::before {
+    margin-left: calc(var(--space-4) * -1 + var(--space-2));
+  }
 }
 
 /* 🌿 Variant note */
@@ -1334,6 +1394,20 @@ button.secondary:hover {
   background: var(--bg-muted);
 }
 
+/* ---------- Glossary deep-link target ---------- */
+
+/* Push anchored <dt>s below the fixed topbar when jumped to via #hash */
+dt[id] { scroll-margin-top: 80px; }
+
+/* Brief background flash so the user's eye lands on the right entry */
+dt.flash-target {
+  background: var(--analogy-bg);
+  border-radius: var(--radius-sm);
+  padding: var(--space-1) var(--space-2);
+  margin-left: calc(-1 * var(--space-2));
+  transition: background 1.4s ease;
+}
+
 /* ---------- Glossary tooltip ---------- */
 
 .glossary-term {
@@ -1408,7 +1482,7 @@ th {
 
 @media (max-width: 720px) {
   body { font-size: 17px; }
-  .page { padding: 20px 18px 64px; }
+  .page { padding: 20px 18px 32px; }
   h1 { font-size: 2rem; }
   h2 { font-size: 1.4rem; }
   .lens-grid, .tile-grid { grid-template-columns: 1fr; }

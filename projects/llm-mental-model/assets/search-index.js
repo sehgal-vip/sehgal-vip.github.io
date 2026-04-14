@@ -13,6 +13,19 @@ window.LLM.searchIndex = [
   { url: 'index.html#how-a-model-goes-from-predicts-the-internet-to-answers-your-email', text: 'How a model goes from "predicts the internet" to "answers your email"', page: 'Hub §6' },
   { url: 'index.html#how-do-we-know-a-change-helped', text: 'How do we know a change helped?', page: 'Hub §7' },
   { url: 'index.html#knobs-you-can-turn-after-the-model-is-trained', text: 'Knobs you can turn after the model is trained', page: 'Hub §8' },
+  { url: 'index.html#where-this-sits-in-the-family-of-llms', text: 'Where this sits in the family of LLMs', page: 'Hub §10' },
+
+  // MoE branches — each lives inside an existing deep page
+  { url: 'deep/block.html#if-its-an-moe', text: 'MoE — the sparse block (router + experts)', page: 'MoE — block.html' },
+  { url: 'deep/inference.html#if-its-an-moe', text: 'MoE — compute ≠ memory (active vs total)', page: 'MoE — inference.html' },
+  { url: 'deep/training.html#if-its-an-moe', text: 'MoE — training (aux losses, upcycling, LoRA)', page: 'MoE — training.html' },
+  { url: 'deep/levers.html#if-its-an-moe', text: 'MoE — nine more levers', page: 'MoE — levers.html' },
+  { url: 'deep/diagnosis.html#if-its-an-moe', text: 'MoE — ten more failure modes', page: 'MoE — diagnosis.html' },
+
+  // Landscape (new page)
+  { url: 'deep/landscape.html#the-comparison', text: 'The comparison at a glance', page: 'landscape.html' },
+  { url: 'deep/landscape.html#row-by-row', text: 'Row by row', page: 'landscape.html' },
+  { url: 'deep/landscape.html#further-reading', text: 'Further reading — landmark papers', page: 'landscape.html' },
 
   // tokens.html
   { url: 'deep/tokens.html#tokens-chopping-text-into-reusable-pieces', text: 'Tokens — chopping text into reusable pieces', page: 'tokens.html' },

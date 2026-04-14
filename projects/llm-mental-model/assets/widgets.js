@@ -2471,6 +2471,545 @@
   // Auto-mount widgets after DOM ready
   // ====================================================================
 
+  // ====================================================================
+  // WIDGET: moe-router (Tier-1, rich)
+  // ====================================================================
+
+  const MOE_ROUTER_DATA = {
+    tokens: ['The', ' cat', ' sat', ' on', ' the', ' mat'],
+    weights: [
+      [0.02, 0.05, 0.08, 0.35, 0.04, 0.42, 0.02, 0.02],
+      [0.50, 0.08, 0.04, 0.03, 0.02, 0.02, 0.06, 0.25],
+      [0.04, 0.04, 0.45, 0.08, 0.08, 0.04, 0.05, 0.22],
+      [0.08, 0.12, 0.05, 0.06, 0.04, 0.15, 0.42, 0.08],
+      [0.03, 0.04, 0.05, 0.38, 0.03, 0.40, 0.02, 0.05],
+      [0.48, 0.06, 0.03, 0.04, 0.02, 0.02, 0.05, 0.30],
+    ],
+  };
+
+  function mountMoeRouter(host) {
+    host.innerHTML = '';
+    host.classList.add('widget');
+    host.appendChild(el('h4', null, 'Router — which experts each token goes to'));
+
+    const inv = el('div', { class: 'callout-invariant' });
+    inv.appendChild(el('p', null,
+      "Teaches: the router maps each token's hidden state to a softmax over experts, then picks the top-k. Click a token to inspect its full distribution. " +
+      "Doesn't: use real routing — weights are hand-authored to illustrate the mechanism."));
+    host.appendChild(inv);
+
+    let selectedIdx = -1;
+    const tokenRow = el('div', { class: 'attn-tokens' });
+    host.appendChild(tokenRow);
+    const heatmapHost = el('div');
+    host.appendChild(heatmapHost);
+    const inspector = makeInspectPanel(() => { selectedIdx = -1; render(); });
+    host.appendChild(inspector.node);
+    const stats = el('div', { class: 'stats-row' });
+    host.appendChild(stats);
+
+    host.appendChild(makeTieBack(
+      'Router collapse (<a href="{{deep}}diagnosis.html#if-its-an-moe">#11</a>) happens when one expert starts receiving every token. Rare-language degradation (<a href="{{deep}}diagnosis.html#if-its-an-moe">#19</a>) is the opposite problem — experts trained on dominant distributions don\'t specialize for the tail.'
+    ));
+
+    function topK(row, k) {
+      return row.map((p, i) => ({ p, i })).sort((a, b) => b.p - a.p).slice(0, k);
+    }
+    function entropy(row) {
+      let h = 0;
+      row.forEach(p => { if (p > 1e-9) h -= p * Math.log2(p); });
+      return h;
+    }
+
+    function render() {
+      tokenRow.innerHTML = '';
+      MOE_ROUTER_DATA.tokens.forEach((t, idx) => {
+        const top = topK(MOE_ROUTER_DATA.weights[idx], 2);
+        const span = el('span', { class: 'attn-tok' + (idx === selectedIdx ? ' selected' : '') });
+        span.appendChild(el('span', { class: 'w-bold' }, JSON.stringify(t)));
+        span.appendChild(el('span', { class: 'tok-meta' }, ' → E' + (top[0].i + 1) + ', E' + (top[1].i + 1)));
+        span.tabIndex = 0;
+        span.addEventListener('click', () => {
+          selectedIdx = idx;
+          render();
+          const row = MOE_ROUTER_DATA.weights[idx];
+          const lines = row.map((p, i) => ({ p, i })).sort((a, b) => b.p - a.p)
+            .map(o => 'E' + (o.i + 1).toString().padEnd(2) + ' ' + (o.p * 100).toFixed(1).padStart(5) + '%  ' + '█'.repeat(Math.max(0, Math.min(24, Math.round(o.p * 50)))))
+            .join('\n');
+          inspector.show({
+            title: '"' + t + '" routing',
+            fields: {
+              'Top-1': 'E' + (top[0].i + 1) + ' (' + (top[0].p * 100).toFixed(1) + '%)',
+              'Top-2': 'E' + (top[1].i + 1) + ' (' + (top[1].p * 100).toFixed(1) + '%)',
+              'Entropy': entropy(row).toFixed(2) + ' bits',
+            },
+            note: '<pre style="font-family: monospace; margin: 0;">' + lines + '</pre>'
+          });
+        });
+        tokenRow.appendChild(span);
+      });
+
+      const perExpert = [0, 0, 0, 0, 0, 0, 0, 0];
+      MOE_ROUTER_DATA.weights.forEach(row => row.forEach((p, i) => { perExpert[i] += p; }));
+      heatmapHost.innerHTML = '';
+      heatmapHost.appendChild(el('label', null, 'Expert utilization across this prompt:'));
+      const barRow = el('div', { class: 'w-row-wrap' });
+      const maxUsage = Math.max(...perExpert);
+      perExpert.forEach((t, i) => {
+        const cell = el('div', { class: 'stat-cell' });
+        const intensity = maxUsage > 0 ? t / maxUsage : 0;
+        cell.style.background = 'color-mix(in srgb, var(--analogy) ' + Math.round(intensity * 80) + '%, var(--bg))';
+        cell.appendChild(el('div', { class: 'stat-val' }, 'E' + (i + 1)));
+        cell.appendChild(el('div', { class: 'stat-lbl' }, t.toFixed(2)));
+        barRow.appendChild(cell);
+      });
+      heatmapHost.appendChild(barRow);
+
+      const avgH = MOE_ROUTER_DATA.weights.reduce((s, r) => s + entropy(r), 0) / MOE_ROUTER_DATA.weights.length;
+      const maxExpert = perExpert.indexOf(Math.max(...perExpert)) + 1;
+      const minExpert = perExpert.indexOf(Math.min(...perExpert)) + 1;
+      updateStatsRow(stats, [
+        { val: MOE_ROUTER_DATA.tokens.length, lbl: 'Tokens' },
+        { val: '8', lbl: 'Experts' },
+        { val: 'top-2', lbl: 'Routing' },
+        { val: avgH.toFixed(2), lbl: 'Avg entropy', hint: 'lower = more peaked' },
+        { val: 'E' + maxExpert + ' / E' + minExpert, lbl: 'Most / least used' },
+      ]);
+    }
+
+    render();
+  }
+
+  // ====================================================================
+  // WIDGET: moe-capacity (Tier-1, rich)
+  // ====================================================================
+
+  const MOE_CAPACITY_TOKENS = [10, 22, 14, 28, 6, 18, 19, 11]; // 128 total
+
+  function mountMoeCapacity(host) {
+    host.innerHTML = '';
+    host.classList.add('widget');
+    host.appendChild(el('h4', null, 'Expert capacity — dropped tokens vs capacity factor'));
+
+    const inv = el('div', { class: 'callout-invariant' });
+    inv.appendChild(el('p', null,
+      "Teaches: each expert has a budget of `capacity_factor × (tokens / num_experts)` tokens per batch. Overflow bypasses the MLP via the residual stream. " +
+      "Doesn't: use real routing data — per-expert loads are hand-chosen to show the mechanism."));
+    host.appendChild(inv);
+
+    const cfRow = el('div');
+    cfRow.appendChild(el('label', null, 'Capacity factor: '));
+    const cfVal = el('span', { class: 'w-bold' }, '1.25');
+    cfRow.appendChild(cfVal);
+    const cfSlider = el('input', { type: 'range', min: '50', max: '200', step: '5', value: '125' });
+    cfRow.appendChild(cfSlider);
+    host.appendChild(cfRow);
+
+    const presetRow = makePresetRow([
+      { label: 'Tight (0.75)',    data: 75 },
+      { label: 'Typical (1.25)',  data: 125 },
+      { label: 'Generous (1.75)', data: 175 },
+    ], (v) => { cfSlider.value = String(v); render(); });
+    host.appendChild(presetRow);
+
+    const plot = svg('svg', { viewBox: '0 0 640 220', class: 'diagram' });
+    host.appendChild(plot);
+
+    const stats = el('div', { class: 'stats-row' });
+    host.appendChild(stats);
+
+    host.appendChild(makeTieBack(
+      '"Throughput cratered" (diagnosis <a href="{{deep}}diagnosis.html#if-its-an-moe">#13</a>) is usually capacity hitting its limit. Raise capacity factor or rebalance routing.'
+    ));
+
+    function render() {
+      const cf = parseInt(cfSlider.value, 10) / 100;
+      cfVal.textContent = cf.toFixed(2);
+      const total = MOE_CAPACITY_TOKENS.reduce((s, v) => s + v, 0);
+      const capacity = (cf * total) / MOE_CAPACITY_TOKENS.length;
+
+      while (plot.firstChild) plot.removeChild(plot.firstChild);
+      const maxVal = Math.max(...MOE_CAPACITY_TOKENS, capacity);
+      const H = 160, W = 600, pad = 20;
+      const barW = (W / 8) - 4;
+      const yScale = (H - 40) / maxVal;
+      const capY = H - capacity * yScale - 10;
+
+      plot.appendChild(svg('line', { x1: pad, y1: capY, x2: W, y2: capY, stroke: 'var(--accent)', 'stroke-dasharray': '5,3', 'stroke-width': '1.5' }));
+      const capLbl = svg('text', { x: W + 4, y: capY + 4, 'font-size': '10', fill: 'var(--accent)' });
+      capLbl.textContent = 'cap = ' + capacity.toFixed(0);
+      plot.appendChild(capLbl);
+
+      let dropped = 0;
+      MOE_CAPACITY_TOKENS.forEach((tokens, i) => {
+        const x = pad + i * (barW + 4);
+        const served = Math.min(tokens, capacity);
+        const overflow = Math.max(0, tokens - capacity);
+        dropped += overflow;
+
+        const bY = H - served * yScale - 10;
+        const bH = served * yScale;
+        plot.appendChild(svg('rect', { x, y: bY, width: barW, height: bH, fill: 'var(--analogy-bg)', stroke: 'var(--analogy)' }));
+
+        if (overflow > 0) {
+          const oY = bY - overflow * yScale;
+          const oH = overflow * yScale;
+          plot.appendChild(svg('rect', { x, y: oY, width: barW, height: oH, fill: 'var(--accent-soft)', stroke: 'var(--accent)' }));
+        }
+
+        const lbl = svg('text', { x: x + barW / 2, y: H + 4, 'font-size': '10', 'text-anchor': 'middle', fill: 'var(--text-soft)' });
+        lbl.textContent = 'E' + (i + 1);
+        plot.appendChild(lbl);
+        const cnt = svg('text', { x: x + barW / 2, y: H + 16, 'font-size': '9', 'text-anchor': 'middle', fill: 'var(--text-soft)' });
+        cnt.textContent = tokens + 't';
+        plot.appendChild(cnt);
+      });
+
+      const dropRate = (dropped / total) * 100;
+      updateStatsRow(stats, [
+        { val: cf.toFixed(2), lbl: 'Capacity factor' },
+        { val: capacity.toFixed(0), lbl: 'Cap per expert' },
+        { val: dropped, lbl: 'Dropped tokens' },
+        { val: dropRate.toFixed(1) + '%', lbl: 'Drop rate' },
+      ]);
+    }
+    cfSlider.addEventListener('input', render);
+    render();
+  }
+
+  // ====================================================================
+  // WIDGET: moe-active-total (Tier-2, moderate)
+  // ====================================================================
+
+  const MOE_MODELS = [
+    { label: 'Mixtral 8×7B',  total: 46.7, active: 12.9, experts: 8,   topk: 2, shared: 0 },
+    { label: 'Mixtral 8×22B', total: 141,  active: 39,   experts: 8,   topk: 2, shared: 0 },
+    { label: 'DeepSeek-V2',   total: 236,  active: 21,   experts: 160, topk: 6, shared: 2 },
+    { label: 'DeepSeek-V3',   total: 671,  active: 37,   experts: 256, topk: 8, shared: 1 },
+    { label: 'Grok-1',        total: 314,  active: 86,   experts: 8,   topk: 2, shared: 0 },
+    { label: 'Arctic',        total: 480,  active: 17,   experts: 128, topk: 2, shared: 0 },
+  ];
+
+  function mountMoeActiveTotal(host) {
+    host.innerHTML = '';
+    host.classList.add('widget');
+    host.appendChild(el('h4', null, 'Active vs total parameters — the "big but fast" trick'));
+
+    const inv = el('div', { class: 'callout-invariant' });
+    inv.appendChild(el('p', null,
+      "Teaches: MoE models hold all experts in VRAM (total params) but only run top-k per token (active params). " +
+      "Doesn't: include attention / embedding overhead — these are totals as reported by model cards."));
+    host.appendChild(inv);
+
+    let active = MOE_MODELS[0];
+
+    const presetRow = makePresetRow(MOE_MODELS.map(m => ({ label: m.label, data: m })), (m) => {
+      active = m; render();
+    });
+    host.appendChild(el('label', null, 'Pick a real MoE model:'));
+    host.appendChild(presetRow);
+
+    const viz = el('div', { class: 'w-panel' });
+    host.appendChild(viz);
+
+    const stats = el('div', { class: 'stats-row' });
+    host.appendChild(stats);
+
+    host.appendChild(makeTieBack(
+      'Why a 671B model runs at ~13B-class latency. See <a href="{{deep}}inference.html#if-its-an-moe">inference.html / If it\'s an MoE</a>.'
+    ));
+
+    function render() {
+      const ratio = active.active / active.total;
+      const activePct = (ratio * 100).toFixed(1);
+      viz.innerHTML = '';
+
+      const wrap = el('div', { class: 'w-col' });
+
+      // Legend
+      const legend = el('div', { class: 'w-row', style: { gap: '16px', fontSize: '0.85em', marginBottom: '8px' } });
+      const sw1 = el('span', { style: { display: 'inline-flex', alignItems: 'center', gap: '6px' } },
+        el('span', { style: { display: 'inline-block', width: '14px', height: '14px', background: 'var(--accent)', border: '1px solid var(--accent)' } }),
+        el('span', null, 'Active this token — runs through GPU'));
+      const sw2 = el('span', { style: { display: 'inline-flex', alignItems: 'center', gap: '6px' } },
+        el('span', { style: { display: 'inline-block', width: '14px', height: '14px', background: 'var(--bg-muted)', border: '1px solid var(--rule)' } }),
+        el('span', null, 'Idle this token — sits in VRAM'));
+      legend.appendChild(sw1);
+      legend.appendChild(sw2);
+      wrap.appendChild(legend);
+
+      // One nested bar: total is the container, active fills from the left
+      const barWrap = el('div', {
+        style: {
+          position: 'relative',
+          width: '100%',
+          height: '54px',
+          background: 'var(--bg-muted)',
+          border: '1px solid var(--rule)',
+          borderRadius: '4px',
+          overflow: 'hidden',
+        },
+      });
+
+      const fill = el('div', {
+        style: {
+          position: 'absolute',
+          left: '0',
+          top: '0',
+          height: '100%',
+          width: activePct + '%',
+          background: 'var(--accent)',
+          borderRight: '2px solid var(--accent)',
+        },
+      });
+      barWrap.appendChild(fill);
+
+      // Inside-fill label: active
+      const activeLbl = el('div', {
+        style: {
+          position: 'absolute',
+          left: '8px',
+          top: '50%',
+          transform: 'translateY(-50%)',
+          color: 'var(--bg)',
+          fontWeight: 'bold',
+          fontSize: '0.92em',
+          pointerEvents: 'none',
+          whiteSpace: 'nowrap',
+        },
+      }, 'Active: ' + active.active + 'B (' + activePct + '%)');
+      barWrap.appendChild(activeLbl);
+
+      // Right-edge label: total
+      const totalLbl = el('div', {
+        style: {
+          position: 'absolute',
+          right: '8px',
+          top: '50%',
+          transform: 'translateY(-50%)',
+          color: 'var(--text)',
+          fontWeight: 'bold',
+          fontSize: '0.92em',
+          pointerEvents: 'none',
+          whiteSpace: 'nowrap',
+        },
+      }, 'Total: ' + active.total + 'B');
+      barWrap.appendChild(totalLbl);
+
+      wrap.appendChild(barWrap);
+
+      // Caption
+      const cap = el('p', {
+        class: 'w-caption',
+        style: { marginTop: '10px', fontStyle: 'italic', color: 'var(--text-soft)' },
+      }, 'All ' + active.total + 'B parameters live in VRAM. For each token, the router picks top-' +
+        active.topk + ' of ' + active.experts + ' experts — so only ~' + active.active +
+        'B ever touch the GPU\'s math units. The "gap" is the sparsity dividend.');
+      wrap.appendChild(cap);
+
+      viz.appendChild(wrap);
+
+      updateStatsRow(stats, [
+        { val: active.total + 'B', lbl: 'Total params' },
+        { val: active.active + 'B', lbl: 'Active / token' },
+        { val: activePct + '%', lbl: 'Sparsity ratio' },
+        { val: active.experts + ' / top-' + active.topk, lbl: 'Experts × routing' },
+        { val: active.shared, lbl: 'Shared experts' },
+      ]);
+    }
+    render();
+  }
+
+  // ====================================================================
+  // WIDGET: moe-load-heatmap (Tier-2, moderate)
+  // ====================================================================
+
+  function mountMoeLoadHeatmap(host) {
+    host.innerHTML = '';
+    host.classList.add('widget');
+    host.appendChild(el('h4', null, 'Expert load across training — with and without aux loss'));
+
+    const inv = el('div', { class: 'callout-invariant' });
+    inv.appendChild(el('p', null,
+      "Teaches: without an auxiliary load-balance loss, one expert dominates and the others starve (router collapse). With it, expert usage converges toward uniform. " +
+      "Doesn't: show real training curves — shapes are illustrative."));
+    host.appendChild(inv);
+
+    const toggles = makeToggleRow([
+      { id: 'lh-aux', label: 'Aux loss ON', checked: true, onChange: () => render() },
+    ]);
+    host.appendChild(toggles);
+
+    const plot = svg('svg', { viewBox: '0 0 600 240', class: 'diagram' });
+    host.appendChild(plot);
+
+    const stats = el('div', { class: 'stats-row' });
+    host.appendChild(stats);
+
+    host.appendChild(makeTieBack(
+      'Router collapse (<a href="{{deep}}diagnosis.html#if-its-an-moe">diagnosis #11</a>) and dead experts (<a href="{{deep}}diagnosis.html#if-its-an-moe">#12</a>) both trace to this mechanism.'
+    ));
+
+    function render() {
+      const on = host.querySelector('#lh-aux').checked;
+      while (plot.firstChild) plot.removeChild(plot.firstChild);
+
+      // Plot region: x from 40 to 580 (width 540), y from 30 to 200 (height 170)
+      const X0 = 40, X1 = 580, Y0 = 30, Y1 = 200;
+      const PLOT_H = Y1 - Y0;
+
+      // Compute curves first so we can autoscale the y-axis to fit them
+      const numExperts = 8, numSteps = 100;
+      const curves = [];
+      for (let e = 0; e < numExperts; e++) {
+        const c = [];
+        for (let s = 0; s < numSteps; s++) {
+          const t = s / numSteps;
+          let y;
+          if (on) {
+            const target = 0.125;
+            const initial = 0.05 + Math.sin(e * 1.3) * 0.1 + 0.1;
+            y = initial + (target - initial) * Math.min(1, t * 2);
+          } else {
+            if (e === 3) y = 0.12 + t * 0.7;
+            else         y = 0.12 * (1 - t * 0.8);
+          }
+          c.push(y);
+        }
+        curves.push(c);
+      }
+      // Autoscale: max y across all curves with 25% headroom
+      const allY = curves.flat();
+      const yMax = Math.max(...allY) * 1.25;
+      const yScale = PLOT_H / yMax;
+
+      // Axes
+      plot.appendChild(svg('line', { x1: X0, y1: Y1, x2: X1, y2: Y1, stroke: 'var(--rule)' }));
+      plot.appendChild(svg('line', { x1: X0, y1: Y0, x2: X0, y2: Y1, stroke: 'var(--rule)' }));
+
+      // Y-axis ticks at nice fractions of yMax
+      const ticks = [0, 0.25, 0.5, 0.75, 1.0].map(f => f * yMax);
+      ticks.forEach(tv => {
+        const py = Y1 - tv * yScale;
+        plot.appendChild(svg('line', { x1: X0 - 4, y1: py, x2: X0, y2: py, stroke: 'var(--rule)' }));
+        const lbl = svg('text', { x: X0 - 8, y: py + 3, 'font-size': '9', fill: 'var(--text-soft)', 'text-anchor': 'end' });
+        lbl.textContent = tv.toFixed(2);
+        plot.appendChild(lbl);
+        // Faint horizontal gridline
+        if (tv > 0) {
+          plot.appendChild(svg('line', { x1: X0, y1: py, x2: X1, y2: py, stroke: 'var(--rule)', 'stroke-dasharray': '2,3', opacity: '0.4' }));
+        }
+      });
+
+      // "Uniform" reference line at 1/8 = 0.125
+      const uniformY = Y1 - 0.125 * yScale;
+      plot.appendChild(svg('line', { x1: X0, y1: uniformY, x2: X1, y2: uniformY, stroke: 'var(--analogy)', 'stroke-dasharray': '4,3', 'stroke-width': '1.2', opacity: '0.7' }));
+      const uLbl = svg('text', { x: X1 + 4, y: uniformY + 3, 'font-size': '9', fill: 'var(--analogy)' });
+      uLbl.textContent = 'uniform = 0.125';
+      plot.appendChild(uLbl);
+
+      // Axis labels
+      const xLbl = svg('text', { x: (X0 + X1) / 2, y: Y1 + 24, 'font-size': '11', fill: 'var(--text-soft)', 'text-anchor': 'middle' });
+      xLbl.textContent = 'training steps →';
+      plot.appendChild(xLbl);
+
+      const yLbl = svg('text', { x: 12, y: (Y0 + Y1) / 2, 'font-size': '11', fill: 'var(--text-soft)', 'text-anchor': 'middle', transform: 'rotate(-90 12 ' + ((Y0 + Y1) / 2) + ')' });
+      yLbl.textContent = 'per-expert usage';
+      plot.appendChild(yLbl);
+
+      // Curves
+      const COL = ['var(--analogy)', 'var(--lens-context)', 'var(--lens-scaffold)', 'var(--lens-decoding)',
+                   'var(--analogy)', 'var(--lens-context)', 'var(--lens-scaffold)', 'var(--lens-decoding)'];
+      curves.forEach((c, e) => {
+        let d = '';
+        c.forEach((y, s) => {
+          const x = X0 + s * (X1 - X0) / numSteps;
+          const py = Y1 - y * yScale;
+          d += (s === 0 ? 'M' : 'L') + ' ' + x + ' ' + py + ' ';
+        });
+        const isCollapser = (e === 3 && !on);
+        plot.appendChild(svg('path', {
+          d,
+          stroke: isCollapser ? 'var(--accent)' : COL[e],
+          'stroke-width': isCollapser ? '2.5' : '1.6',
+          fill: 'none',
+          opacity: '0.9',
+        }));
+      });
+
+      // Annotation for the collapser line (off mode)
+      if (!on) {
+        const cFinal = curves[3][curves[3].length - 1];
+        const annY = Y1 - cFinal * yScale;
+        const annX = X1 + 4;
+        const t = svg('text', { x: annX, y: annY + 4, 'font-size': '10', fill: 'var(--accent)', 'font-weight': 'bold' });
+        t.textContent = 'E4 collapse';
+        plot.appendChild(t);
+      }
+
+      const finals = curves.map(c => c[c.length - 1]);
+      const mean = finals.reduce((s, v) => s + v, 0) / finals.length;
+      const variance = finals.reduce((s, v) => s + (v - mean) * (v - mean), 0) / finals.length;
+      updateStatsRow(stats, [
+        { val: on ? 'ON' : 'OFF', lbl: 'Aux loss' },
+        { val: curves[3][curves[3].length - 1].toFixed(2), lbl: 'E4 final share' },
+        { val: variance.toFixed(4), lbl: 'Usage variance', hint: 'lower = more balanced' },
+      ]);
+    }
+    render();
+  }
+
+  // ====================================================================
+  // WIDGET: moe-cost-compare (Tier-3, lighter)
+  // ====================================================================
+
+  function mountMoeCostCompare(host) {
+    host.innerHTML = '';
+    host.classList.add('widget');
+    host.appendChild(el('h4', null, 'Dense vs MoE — cost at matched quality'));
+
+    const inv = el('div', { class: 'callout-invariant' });
+    inv.appendChild(el('p', null,
+      "Teaches: to reach a given quality target, MoE needs more VRAM but less compute per token than dense. " +
+      "Doesn't: use real benchmark numbers — curves are illustrative."));
+    host.appendChild(inv);
+
+    const qRow = el('div');
+    qRow.appendChild(el('label', null, 'Target quality (arbitrary units): '));
+    const qVal = el('span', { class: 'w-bold' }, '70');
+    qRow.appendChild(qVal);
+    const qSlider = el('input', { type: 'range', min: '40', max: '90', step: '5', value: '70' });
+    qRow.appendChild(qSlider);
+    host.appendChild(qRow);
+
+    const out = el('div', { class: 'w-formula-out' });
+    host.appendChild(out);
+
+    host.appendChild(makeTieBack(
+      'Why teams reach for MoE: at frontier quality, compute-per-token dominates serving cost. See <a href="{{deep}}landscape.html">landscape.html</a> for the full family comparison.'
+    ));
+
+    function render() {
+      const q = parseInt(qSlider.value, 10);
+      qVal.textContent = String(q);
+      const denseParams = Math.pow(10, (q - 40) / 20);
+      const moeTotal   = denseParams * 5;
+      const moeActive  = denseParams * 0.8;
+      out.innerHTML =
+        '<strong>Dense model</strong><br>' +
+        '&nbsp;&nbsp;VRAM:   ~' + denseParams.toFixed(1) + 'B params<br>' +
+        '&nbsp;&nbsp;Compute: ~' + denseParams.toFixed(1) + 'B / token<br><br>' +
+        '<strong>MoE model (equivalent quality)</strong><br>' +
+        '&nbsp;&nbsp;VRAM:   ~' + moeTotal.toFixed(1) + 'B params &nbsp;<em>(~5× dense)</em><br>' +
+        '&nbsp;&nbsp;Compute: ~' + moeActive.toFixed(1) + 'B / token &nbsp;<em>(~0.8× dense)</em>';
+    }
+    qSlider.addEventListener('input', render);
+    render();
+  }
+
+  // ====================================================================
+  // REGISTRY
+  // ====================================================================
   const REGISTRY = {
     'tokenizer': mountTokenizer,
     'inference-stepper': mountInferenceStepper,
@@ -2486,6 +3025,11 @@
     'rank-outputs': mountRankOutputs,
     'embed-sim': mountEmbedSim,
     'rope-rotation': mountRopeRotation,
+    'moe-router': mountMoeRouter,
+    'moe-capacity': mountMoeCapacity,
+    'moe-active-total': mountMoeActiveTotal,
+    'moe-load-heatmap': mountMoeLoadHeatmap,
+    'moe-cost-compare': mountMoeCostCompare,
   };
 
   function mountAll() {

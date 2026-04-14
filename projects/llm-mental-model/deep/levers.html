@@ -255,6 +255,117 @@ config = LoraConfig(
 <p class="prose">Also covered in inference.html. The setting you'd see in an inference engine is something like <code>--speculative-model llama-1b</code> alongside the main model. Output is identical to non-speculative decoding; only latency improves. If your serving infra supports it, almost always worth turning on.</p>
 
 <!-- ========================================================== -->
+<!-- MoE adds a new family of levers → full branch -->
+<section class="variant-branch" data-variant-label="🌿 If it's an MoE">
+  <h2 id="if-its-an-moe" data-toc="If it's an MoE">Nine more levers — only when the model is MoE</h2>
+
+  <p class="prose">Everything above still applies. What's added: a family of levers that don't exist on a dense model, because they manipulate routing and experts specifically.</p>
+
+  <div class="changes-where">
+    <h4>Num experts (total)</h4>
+    <p><span class="lens-tag weights">weights</span></p>
+    <dl>
+      <dt>Object:</dt> <dd>Model config — how many expert FFNs per block.</dd>
+      <dt>When:</dt> <dd>At model design / training time; can't change post-training without re-architecture.</dd>
+      <dt>Where it lives:</dt> <dd>Model config + weight count on disk + full weight set in VRAM.</dd>
+      <dt>Tradeoffs:</dt> <dd>More experts → more total params, more specialization potential, more VRAM, harder load balance.</dd>
+    </dl>
+  </div>
+
+  <div class="changes-where">
+    <h4>Top-k (active experts per token)</h4>
+    <p><span class="lens-tag weights">weights</span></p>
+    <dl>
+      <dt>Object:</dt> <dd>Router config — how many top experts each token activates.</dd>
+      <dt>When:</dt> <dd>At training time; fixed per model. Some systems allow top-k override at inference but quality usually suffers.</dd>
+      <dt>Where it lives:</dt> <dd>Inference path cost.</dd>
+      <dt>Tradeoffs:</dt> <dd>Higher k → more compute per token, better ensembling, smoother outputs. Lower k → faster, sharper specialization, more brittle.</dd>
+    </dl>
+  </div>
+
+  <div class="changes-where">
+    <h4>Capacity factor</h4>
+    <p><span class="lens-tag weights">weights — representation</span></p>
+    <dl>
+      <dt>Object:</dt> <dd>Per-expert token budget multiplier. Effective capacity = <code>cf × (tokens / num_experts)</code>.</dd>
+      <dt>When:</dt> <dd>Training time <em>and</em> inference time; they don't have to match.</dd>
+      <dt>Where it lives:</dt> <dd>Serving config.</dd>
+      <dt>Tradeoffs:</dt> <dd>Higher cf → fewer dropped tokens, more VRAM, more idle compute when routing is balanced. Lower cf → lower memory, more drops when routing is skewed.</dd>
+    </dl>
+  </div>
+
+  <div class="changes-where">
+    <h4>Shared experts on / off</h4>
+    <p><span class="lens-tag weights">weights</span></p>
+    <dl>
+      <dt>Object:</dt> <dd>Whether the block includes always-on shared expert(s) alongside routed ones (DeepSeek-V2/V3 style).</dd>
+      <dt>When:</dt> <dd>Model design time.</dd>
+      <dt>Where it lives:</dt> <dd>Architecture.</dd>
+      <dt>Tradeoffs:</dt> <dd>Shared experts free up routed experts to specialize more; cost is a slightly higher always-active parameter count.</dd>
+    </dl>
+  </div>
+
+  <div class="changes-where">
+    <h4>Auxiliary loss weight</h4>
+    <p><span class="lens-tag weights">weights</span></p>
+    <dl>
+      <dt>Object:</dt> <dd>Multiplier on the load-balance loss (and separately on the router z-loss).</dd>
+      <dt>When:</dt> <dd>Training time; often scheduled (high early, decayed later).</dd>
+      <dt>Where it lives:</dt> <dd>Training config.</dd>
+      <dt>Tradeoffs:</dt> <dd>Too low → router collapse. Too high → forced uniform routing that prevents specialization.</dd>
+    </dl>
+  </div>
+
+  <div class="changes-where">
+    <h4>Router temperature</h4>
+    <p><span class="lens-tag weights">weights</span></p>
+    <dl>
+      <dt>Object:</dt> <dd>Temperature applied to routing logits before softmax.</dd>
+      <dt>When:</dt> <dd>Training time (for exploration) and sometimes inference time.</dd>
+      <dt>Where it lives:</dt> <dd>Router module.</dd>
+      <dt>Tradeoffs:</dt> <dd>Higher temperature → softer, more diverse routing. Lower → sharper specialization but more collapse risk.</dd>
+    </dl>
+  </div>
+
+  <div class="changes-where">
+    <h4>Expert parallelism degree</h4>
+    <p><span class="lens-tag scaffolding">scaffolding</span></p>
+    <dl>
+      <dt>Object:</dt> <dd>How experts are sharded across GPUs (e.g., 8 experts across 4 GPUs vs 2 GPUs).</dd>
+      <dt>When:</dt> <dd>Deployment / serving time.</dd>
+      <dt>Where it lives:</dt> <dd>Serving infrastructure.</dd>
+      <dt>Tradeoffs:</dt> <dd>More parallelism → fits larger models, adds all-to-all communication cost. Balance matters more than total compute.</dd>
+    </dl>
+  </div>
+
+  <div class="changes-where">
+    <h4>Upcycling (dense → MoE)</h4>
+    <p><span class="lens-tag weights">weights</span></p>
+    <dl>
+      <dt>Object:</dt> <dd>Converting a pretrained dense model's single MLP per block into N expert copies, adding a fresh router, and continuing training.</dd>
+      <dt>When:</dt> <dd>Model-init time for the MoE; followed by fine-tuning with aux losses.</dd>
+      <dt>Where it lives:</dt> <dd>Checkpoint conversion script.</dd>
+      <dt>Tradeoffs:</dt> <dd>Cheaper than training MoE from scratch; quality lands below a scratch-trained MoE but well above the dense start.</dd>
+    </dl>
+  </div>
+
+  <div class="changes-where">
+    <h4>Expert pruning</h4>
+    <p><span class="lens-tag weights">weights — structure</span></p>
+    <dl>
+      <dt>Object:</dt> <dd>Remove experts that are rarely picked by the router on representative data.</dd>
+      <dt>When:</dt> <dd>Post-training, usually paired with a healing fine-tune.</dd>
+      <dt>Where it lives:</dt> <dd>Smaller model on disk / in VRAM.</dd>
+      <dt>Tradeoffs:</dt> <dd>Smaller, faster; often loses rare-distribution quality (the experts you pruned were specialized for the things you pruned on).</dd>
+    </dl>
+  </div>
+
+  <div data-widget="moe-cost-compare"></div>
+
+  <div class="variant-branch-end">Back to the default (dense) frame.</div>
+</section>
+
+<!-- ========================================================== -->
 <h2 data-toc="Diagnosis preview">Putting it together — diagnosis preview</h2>
 
 <p class="prose">Once you have all five levers in your head, the diagnostic move is: <em>given a problem, which lever is most likely to fix it?</em></p>

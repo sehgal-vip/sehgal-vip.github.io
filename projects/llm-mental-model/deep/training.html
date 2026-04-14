@@ -133,6 +133,57 @@ Pretraining → SFT → RLHF / DPO. What each stage actually changes inside the 
 <p class="prose">All of these share the same <em>shape</em>: gather some signal about preferred vs unpreferred outputs, use that signal to nudge the weights. The mental model is the same; the data pipeline differs.</p>
 
 <!-- ========================================================== -->
+<!-- MoE adds genuinely new training mechanics → full branch -->
+<section class="variant-branch" data-variant-label="🌿 If it's an MoE">
+  <h2 id="if-its-an-moe" data-toc="If it's an MoE">Training an MoE adds two real concerns</h2>
+
+  <p class="prose">Pretraining, SFT, RLHF/DPO — all three stages work the same way on an MoE as on a dense model. What's new is that the router needs to be shaped alongside the experts, and the router is a fragile thing. Two training-time mechanics that don't exist in dense models:</p>
+
+  <h3>Auxiliary losses — keeping the router from collapsing</h3>
+  <p class="prose">The main loss (predict the next token) doesn't care how tokens are routed; it only cares about the final output. So the router, left to its own devices, can collapse every token onto one expert and still hit decent loss (because that one expert gets all the gradient and becomes competent). Two extra loss terms fight this:</p>
+  <ul class="prose">
+    <li><strong>Load-balance loss</strong> — penalizes uneven expert usage. Computed per batch from the routing distribution; gradient pushes the router toward uniform routing.</li>
+    <li><strong>Router z-loss</strong> (ST-MoE) — penalizes large routing logits. Keeps the softmax from saturating, which stabilizes routing decisions over long training runs.</li>
+  </ul>
+
+  <p class="prose">These aux losses have <strong>small weights</strong> relative to the main cross-entropy loss (typically ~0.01 for load-balance, ~0.001 for z-loss). They're nudges, not instructions — enough to spread tokens without preventing the experts from actually specializing.</p>
+
+  <svg class="diagram" viewBox="0 0 640 180" aria-label="Aux loss weight schedule">
+    <rect x="40" y="30" width="520" height="110" fill="none" stroke="var(--rule)"/>
+    <text x="300" y="20" text-anchor="middle" class="label-small">Aux-loss weight schedule over training</text>
+
+    <!-- Axis -->
+    <line x1="40"  y1="140" x2="560" y2="140" stroke="var(--rule)"/>
+    <text x="40"  y="158" class="label-small">start</text>
+    <text x="540" y="158" class="label-small">end</text>
+
+    <!-- Main line: high early, decay -->
+    <path d="M40 50 Q 150 70, 300 110 Q 450 128, 560 132" stroke="var(--accent)" stroke-width="2" fill="none"/>
+    <circle cx="40" cy="50" r="4" fill="var(--accent)"/>
+    <text x="50" y="48" class="label-small" fill="var(--accent)">high: force exploration</text>
+
+    <circle cx="560" cy="132" r="4" fill="var(--accent)"/>
+    <text x="470" y="128" class="label-small" fill="var(--accent)">decay: let experts specialize</text>
+  </svg>
+  <p class="diagram-caption">Aux loss weight starts high (forces the router to explore so no expert dies) and decays as training progresses (lets experts drift into specializations).</p>
+
+  <h3>Router warm-up and upcycling</h3>
+  <p class="prose">Training from scratch is one thing; <strong>upcycling</strong> — starting from a pretrained dense model and converting it to MoE — is another. In upcycling, the router is the only randomly-initialized thing in the model. Everything else (attention, embeddings, expert initial weights) starts from a competent dense checkpoint.</p>
+  <p class="prose">That random-router problem needs care. If you drop the router in and train normally, the router might not learn useful routing before the aux loss pushes it to uniform, ending up with experts that are all copies of the original MLP. The fix is a <strong>router warm-up</strong>: crank aux loss high early, decay it over the first few thousand steps, and only then let the main loss dominate. Gives the router a chance to find its feet before the experts diverge.</p>
+
+  <h3>Fine-tuning — LoRA on MoE is tricky</h3>
+  <p class="prose">LoRA works by attaching a low-rank adapter to a weight matrix. In an MoE block, there are <em>N</em> expert weight matrices. Three choices, each with problems:</p>
+  <ul class="prose">
+    <li><strong>One LoRA shared across all experts.</strong> Cheap. But if the task wants different behavior per expert, the shared adapter can't provide it.</li>
+    <li><strong>Per-expert LoRAs.</strong> More expressive. But sparsely-activated experts (ones the router rarely picks for your fine-tune data) never get meaningful gradient. You end up with uneven adaptation.</li>
+    <li><strong>LoRA only on the router</strong> — change routing behavior without touching experts. Useful for narrow tweaks; useless for broader behavioral change.</li>
+  </ul>
+  <p class="prose">In practice: fine-tuning MoEs with LoRA is still an active area. If you're doing serious MoE fine-tuning, consider full or partial fine-tuning (expensive but predictable) over LoRA.</p>
+
+  <div class="variant-branch-end">Back to the default (dense) frame.</div>
+</section>
+
+<!-- ========================================================== -->
 <nav class="page-footer">
   <a href="inference.html">← Inference loop</a>
   <a href="eval.html">Next: evaluation →</a>

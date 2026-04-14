@@ -182,6 +182,130 @@ Ten common symptoms → which lens to suspect, how to confirm, what to try.
 </div>
 
 <!-- ========================================================== -->
+<!-- MoE-specific failure modes — things that can't happen in a dense model -->
+<section class="variant-branch" data-variant-label="🌿 If it's an MoE">
+  <h2 id="if-its-an-moe" data-toc="If it's an MoE">Ten more failure modes — MoE only</h2>
+
+  <p class="prose">These ten can't happen in a dense model. They're all about routing, experts, or sparsity. Same symptom → suspect lens → confirm → try format.</p>
+
+  <div class="changes-where">
+    <h4>#11 — "Router sends everything to expert 3."</h4>
+    <p><span class="lens-tag weights">weights</span></p>
+    <dl>
+      <dt>Confirm by:</dt> <dd>Inspect expert utilization on a batch of varied prompts. If one expert is receiving &gt;50% of tokens, it's collapse.</dd>
+      <dt>Try (in order):</dt> <dd><ol>
+        <li>Increase aux-loss weight (load-balance term).</li>
+        <li>Add router noise during training.</li>
+        <li>If post-training (can't retrain), accept that this model has bad routing; use it only for the distribution it was trained on.</li>
+      </ol></dd>
+    </dl>
+  </div>
+
+  <div class="changes-where">
+    <h4>#12 — "Some experts are never used."</h4>
+    <p><span class="lens-tag weights">weights</span></p>
+    <dl>
+      <dt>Confirm by:</dt> <dd>Per-expert usage histogram. If some experts are &lt;1% of traffic, they're dead.</dd>
+      <dt>Try (in order):</dt> <dd><ol>
+        <li>Early in training: stronger aux loss, more router noise.</li>
+        <li>Mid-training: consider reinitializing dead experts from the mean of live ones ("expert revival").</li>
+        <li>Post-training: prune the dead experts (they don't help), accept the smaller effective model.</li>
+      </ol></dd>
+    </dl>
+  </div>
+
+  <div class="changes-where">
+    <h4>#13 — "Throughput cratered."</h4>
+    <p><span class="lens-tag weights">weights — representation</span></p>
+    <dl>
+      <dt>Confirm by:</dt> <dd>Check drop rate and per-expert overflow during inference. Elevated drops → capacity is limiting you.</dd>
+      <dt>Try (in order):</dt> <dd><ol>
+        <li>Raise capacity factor.</li>
+        <li>Reduce batch size so drops don't concentrate.</li>
+        <li>If throughput is still bad, the routing itself is skewed — see #11, fix at training time.</li>
+      </ol></dd>
+    </dl>
+  </div>
+
+  <div class="changes-where">
+    <h4>#14 — "The model got big but didn't slow down — is it broken?"</h4>
+    <p><em>(not actually a failure mode, but people ask)</em></p>
+    <dl>
+      <dt>Confirm by:</dt> <dd>Check active-vs-total parameter ratio. If it's an MoE, that's by design.</dd>
+      <dt>Try:</dt> <dd>Nothing — this is the point of MoE. Total params in VRAM; sparse compute per token. See inference.html.</dd>
+    </dl>
+  </div>
+
+  <div class="changes-where">
+    <h4>#15 — "Quantized the experts and quality crashed."</h4>
+    <p><span class="lens-tag weights">weights — representation</span></p>
+    <dl>
+      <dt>Confirm by:</dt> <dd>Run perplexity + your task eval before vs after quantization. MoE quality often drops more than dense at the same bit-depth.</dd>
+      <dt>Try (in order):</dt> <dd><ol>
+        <li>Keep experts at higher precision than the backbone (mixed precision — 8-bit experts, 4-bit attention).</li>
+        <li>Use AWQ or GPTQ-style quantization (activation-aware), not naive RTN.</li>
+        <li>Quantize only the most-used experts; leave the specialists full-precision.</li>
+      </ol></dd>
+    </dl>
+  </div>
+
+  <div class="changes-where">
+    <h4>#16 — "LoRA fine-tuning on MoE gave weird outputs."</h4>
+    <p><span class="lens-tag weights">weights</span></p>
+    <dl>
+      <dt>Confirm by:</dt> <dd>Inspect which experts got meaningful gradient during fine-tune. If only 2-3 of 8 experts were consistently picked on your fine-tune data, the others didn't adapt at all.</dd>
+      <dt>Try (in order):</dt> <dd><ol>
+        <li>Diversify fine-tune data so routing is less skewed.</li>
+        <li>Consider full fine-tuning instead of LoRA (expensive but predictable on MoE).</li>
+        <li>Try router-only LoRA (change routing behavior without touching experts) — works for narrow tweaks.</li>
+      </ol></dd>
+    </dl>
+  </div>
+
+  <div class="changes-where">
+    <h4>#17 — "Upcycled from dense but training stalled."</h4>
+    <p><span class="lens-tag weights">weights</span></p>
+    <dl>
+      <dt>Confirm by:</dt> <dd>Check whether the router is actually learning (does expert usage differ from uniform after a few thousand steps?).</dd>
+      <dt>Try:</dt> <dd>Router warm-up — aux loss weight high (e.g., 0.1) for the first few thousand steps, then decay to the typical 0.01.</dd>
+    </dl>
+  </div>
+
+  <div class="changes-where">
+    <h4>#18 — "Scales on one GPU but breaks on 8."</h4>
+    <p><span class="lens-tag scaffolding">scaffolding</span></p>
+    <dl>
+      <dt>Confirm by:</dt> <dd>Profile all-to-all communication volume between GPUs. Check if routing is skewing to experts on specific GPUs.</dd>
+      <dt>Try (in order):</dt> <dd><ol>
+        <li>Balance expert placement across GPUs (don't put all "popular" experts on one GPU).</li>
+        <li>Reduce expert-parallelism degree; use tensor-parallelism alongside.</li>
+        <li>Pick a framework designed for MoE serving (vLLM with MoE support, TensorRT-LLM, DeepSpeed-Inference).</li>
+      </ol></dd>
+    </dl>
+  </div>
+
+  <div class="changes-where">
+    <h4>#19 — "Hindi (or any rare-in-training) prompts are worse than on an equivalent dense model."</h4>
+    <p><span class="lens-tag weights">weights</span></p>
+    <dl>
+      <dt>Confirm by:</dt> <dd>Compare the same prompt on a same-quality dense model. If MoE is specifically worse on low-resource distributions, experts for that content are undertrained.</dd>
+      <dt>Try:</dt> <dd>For production: pick a model with more shared-expert or fine-grained-expert coverage (DeepSeek-style) for language-agnostic use. For research: continued pretraining on the low-resource distribution specifically.</dd>
+    </dl>
+  </div>
+
+  <div class="changes-where">
+    <h4>#20 — "After pruning unused experts, out-of-distribution prompts got worse."</h4>
+    <p><span class="lens-tag weights">weights — structure</span></p>
+    <dl>
+      <dt>Confirm by:</dt> <dd>Compare OOD eval before vs after pruning.</dd>
+      <dt>Try:</dt> <dd>Accept the trade-off. Pruned experts were holding rare-pattern capacity; you saved memory by giving that up. If OOD matters, un-prune or re-train.</dd>
+    </dl>
+  </div>
+
+  <div class="variant-branch-end">Back to the default (dense) frame.</div>
+</section>
+
+<!-- ========================================================== -->
 <h2 data-toc="Diagnostic moves">The diagnostic moves, summarized</h2>
 
 <p class="prose">After internalizing the ten cases, the pattern becomes:</p>

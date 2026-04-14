@@ -143,9 +143,270 @@ Attention + MLP + residual + norm, repeated N times. What depth actually buys yo
 <p class="prose">Modern open-weight models tend to land in the 30-80 layer range for this reason. <em>Width</em> (embedding dimension and MLP expansion) and <em>depth</em> (number of blocks) are tuned together — there's no universal right answer, but for a given parameter budget, very deep + very narrow rarely wins.</p>
 
 <!-- ========================================================== -->
-<div class="callout-variant">
-  <p><strong>Mixture-of-Experts (MoE).</strong> In standard transformers, every token goes through the same MLP at every layer. MoE replaces the single MLP with <em>many</em> MLPs ("experts") and a small "router" that picks one or two experts per token per layer. The total parameter count balloons (Mixtral 8×7B has ~47B parameters total) but per-token compute stays small (only ~2 experts active per token). The headline trade: more capacity at similar inference cost, but harder to train (load-balancing experts is fiddly) and harder to serve (memory still has to hold every expert).</p>
-</div>
+<!-- MoE is a MATERIAL change to the block's mental model → full branch -->
+<section class="variant-branch" data-variant-label="🌿 If it's an MoE">
+  <h2 id="if-its-an-moe" data-toc="If it's an MoE">The sparse block — same attention, different MLP</h2>
+
+  <p class="prose">Most of this page still applies if a model is MoE: attention, residual stream, norm, stacking — unchanged. What changes is the MLP slot. Instead of one fat feed-forward network that every token runs through, an MoE block has <em>many</em> smaller expert FFNs and a router that picks a few per token. Total parameters balloon; per-token compute stays roughly flat.</p>
+
+  <h3>The motivation</h3>
+  <p class="prose">In a dense block, the MLP is where most of the parameters live. Scaling the model means scaling the MLP — and that means <em>every</em> token pays for <em>every</em> parameter, at every layer. At some point you're paying a lot for capacity the current token doesn't need.</p>
+  <p class="prose"><em>Idea:</em> keep many specialized MLPs, and only run a few of them per token. Memory goes up (you still need all of them on the GPU); per-token compute stays small.</p>
+
+  <div class="callout-analogy">
+    <p>A dense block is a single chef doing every step of every dish. An MoE block is a kitchen brigade — a pasta chef, a grill chef, a dessert chef — and a <strong>maître d'</strong> who sends each order to the right specialists. Only two chefs touch your meal, but the whole brigade is on the clock.</p>
+  </div>
+
+  <h3>Anatomy of a sparse block</h3>
+
+  <svg class="diagram" viewBox="0 0 720 360" aria-label="Sparse block anatomy — attention, router, experts, merge">
+    <!-- Input -->
+    <rect x="300" y="16" width="120" height="34" rx="6" class="stroke fill-muted"/>
+    <text x="360" y="38" text-anchor="middle" class="label">Input vector</text>
+
+    <path d="M360 54 L360 74" class="stroke"/>
+    <polygon points="356,72 360,82 364,72" fill="currentColor"/>
+
+    <!-- Attention (unchanged) -->
+    <rect x="240" y="84" width="240" height="40" rx="6" class="stroke fill-accent"/>
+    <text x="360" y="108" text-anchor="middle" class="label">Self-attention (unchanged)</text>
+
+    <path d="M360 128 L360 148" class="stroke"/>
+    <polygon points="356,146 360,156 364,146" fill="currentColor"/>
+
+    <!-- Norm -->
+    <rect x="290" y="158" width="140" height="28" rx="4" class="stroke fill-muted"/>
+    <text x="360" y="176" text-anchor="middle" class="label-small">LayerNorm / RMSNorm</text>
+
+    <path d="M360 188 L360 206" class="stroke"/>
+    <polygon points="356,204 360,214 364,204" fill="currentColor"/>
+
+    <!-- Router -->
+    <rect x="290" y="216" width="140" height="36" rx="6" stroke="var(--variant-border)" stroke-width="2" fill="var(--variant-bg)"/>
+    <text x="360" y="239" text-anchor="middle" class="label" fill="var(--variant-ink)">Router (gate)</text>
+
+    <!-- Fan-out to 8 experts -->
+    <g stroke="var(--rule)" stroke-width="1" fill="none">
+      <path d="M360 254 Q 100 270, 60 298"/>
+      <path d="M360 254 Q 170 268, 145 298"/>
+      <path d="M360 254 Q 240 266, 230 298"/>
+      <path d="M360 254 L 315 298"/>
+      <path d="M360 254 L 405 298"/>
+      <path d="M360 254 Q 480 266, 490 298"/>
+      <path d="M360 254 Q 550 268, 575 298"/>
+      <path d="M360 254 Q 620 270, 660 298"/>
+    </g>
+
+    <!-- Experts row (8), with two highlighted (top-2) -->
+    <g>
+      <rect x="40"  y="300" width="40" height="30" rx="4" class="stroke fill-muted"/>
+      <rect x="125" y="300" width="40" height="30" rx="4" stroke="var(--accent)" stroke-width="2" fill="var(--analogy-bg)"/>
+      <rect x="210" y="300" width="40" height="30" rx="4" class="stroke fill-muted"/>
+      <rect x="295" y="300" width="40" height="30" rx="4" class="stroke fill-muted"/>
+      <rect x="385" y="300" width="40" height="30" rx="4" stroke="var(--accent)" stroke-width="2" fill="var(--analogy-bg)"/>
+      <rect x="470" y="300" width="40" height="30" rx="4" class="stroke fill-muted"/>
+      <rect x="555" y="300" width="40" height="30" rx="4" class="stroke fill-muted"/>
+      <rect x="640" y="300" width="40" height="30" rx="4" class="stroke fill-muted"/>
+
+      <text x="60"  y="320" text-anchor="middle" class="label-small">E1</text>
+      <text x="145" y="320" text-anchor="middle" class="label-small" fill="var(--accent)" font-weight="bold">E2</text>
+      <text x="230" y="320" text-anchor="middle" class="label-small">E3</text>
+      <text x="315" y="320" text-anchor="middle" class="label-small">E4</text>
+      <text x="405" y="320" text-anchor="middle" class="label-small" fill="var(--accent)" font-weight="bold">E5</text>
+      <text x="490" y="320" text-anchor="middle" class="label-small">E6</text>
+      <text x="575" y="320" text-anchor="middle" class="label-small">E7</text>
+      <text x="660" y="320" text-anchor="middle" class="label-small">E8</text>
+    </g>
+
+    <text x="60" y="350" class="label-small">top-2 highlighted: only these compute for this token</text>
+  </svg>
+  <p class="diagram-caption">A sparse block with 8 experts, top-2 routing. The other 6 experts sit idle for this token but are still in memory.</p>
+
+  <h3>The router (gate)</h3>
+  <p class="prose">The router is small — just a single linear layer from embedding-dim to num-experts, followed by softmax and a <strong>top-<em>k</em></strong> selection. Input: the token's hidden vector at this layer. Output: <em>k</em> expert indices + a weight for each (how much the final merge weights that expert's contribution).</p>
+
+  <svg class="diagram" viewBox="0 0 700 120" aria-label="Router close-up">
+    <rect x="20"  y="40" width="110" height="40" rx="6" class="stroke fill-muted"/>
+    <text x="75"  y="57" text-anchor="middle" class="label-small">Token hidden</text>
+    <text x="75"  y="72" text-anchor="middle" class="label-small">state (d-dim)</text>
+
+    <path d="M130 60 L170 60" class="stroke"/>
+    <polygon points="168,56 178,60 168,64" fill="currentColor"/>
+
+    <rect x="180" y="40" width="140" height="40" rx="6" class="stroke fill-muted"/>
+    <text x="250" y="57" text-anchor="middle" class="label-small">Linear: d → N experts</text>
+    <text x="250" y="72" text-anchor="middle" class="label-small">(~a few KB of weights)</text>
+
+    <path d="M320 60 L360 60" class="stroke"/>
+    <polygon points="358,56 368,60 358,64" fill="currentColor"/>
+
+    <rect x="370" y="40" width="110" height="40" rx="6" class="stroke fill-muted"/>
+    <text x="425" y="65" text-anchor="middle" class="label">softmax</text>
+
+    <path d="M480 60 L520 60" class="stroke"/>
+    <polygon points="518,56 528,60 518,64" fill="currentColor"/>
+
+    <rect x="530" y="40" width="150" height="40" rx="6" stroke="var(--variant-border)" stroke-width="2" fill="var(--variant-bg)"/>
+    <text x="605" y="57" text-anchor="middle" class="label" fill="var(--variant-ink)">top-k indices +</text>
+    <text x="605" y="72" text-anchor="middle" class="label" fill="var(--variant-ink)">weights</text>
+  </svg>
+  <p class="diagram-caption">The gate is a tiny classifier. Cheap to run; its whole job is picking which experts to use.</p>
+
+  <div data-widget="moe-router"></div>
+
+  <h3>The experts</h3>
+  <p class="prose">Each expert is a regular FFN, the same shape the MLP would have been in a dense model. There are typically 8, 16, 64, or (DeepSeek-V3) hundreds. They're randomly initialized at start; the aux loss (see below) encourages them to specialize — one expert might drift toward code-like tokens, another toward punctuation contexts, another toward numeric sequences. Nobody tells them how to specialize; it emerges.</p>
+
+  <div class="callout-analogy">
+    <p>Each expert is a specialist chef. Pasta chef, grill chef, dessert chef. They never do each other's jobs. Over a year of service, each gets faster and better at their one thing.</p>
+  </div>
+
+  <h3>Top-1, top-2, higher-k</h3>
+  <p class="prose">How many experts to activate per token is a trade-off. Top-1 (Switch Transformer) is simplest and cheapest but risks brittle routing — if the router picks wrong, you have no fallback. Top-2 (Mixtral) is the modern default: cheap enough, gives you ensemble-like robustness, weighted-merged output. DeepSeek-V3 uses top-8 with very fine-grained experts (256 routed). Higher <em>k</em> on fine-grained experts is increasingly the frontier move.</p>
+
+  <h3>Expert capacity — the tokens-per-chef limit</h3>
+  <p class="prose">Batched matrix multiplication needs fixed-size tensors. But routing is per-token — if 40% of a batch routes to expert 3, that expert's tensor is huge while others are empty. The solution: <strong>expert capacity</strong>. Each expert gets a budget of<br><code>capacity_factor × (tokens_in_batch / num_experts)</code><br>tokens per batch. When an expert is full, overflow tokens are <strong>dropped</strong> — they skip the MLP for this layer entirely and rely on the residual stream to carry information forward.</p>
+
+  <svg class="diagram" viewBox="0 0 640 200" aria-label="Expert capacity overflow">
+    <!-- Capacity line -->
+    <line x1="30" y1="60" x2="600" y2="60" stroke="var(--accent)" stroke-dasharray="5,3" stroke-width="1.5"/>
+    <text x="610" y="64" class="label-small" fill="var(--accent)">capacity</text>
+
+    <!-- Expert bars -->
+    <g>
+      <!-- E1: under capacity -->
+      <rect x="50"  y="75" width="60" height="85" fill="var(--analogy-bg)" stroke="var(--analogy)"/>
+      <text x="80" y="175" text-anchor="middle" class="label-small">E1</text>
+      <text x="80" y="188" text-anchor="middle" class="label-small">16 toks</text>
+
+      <!-- E2: at capacity -->
+      <rect x="130" y="60" width="60" height="100" fill="var(--analogy-bg)" stroke="var(--analogy)"/>
+      <text x="160" y="175" text-anchor="middle" class="label-small">E2</text>
+      <text x="160" y="188" text-anchor="middle" class="label-small">20 toks</text>
+
+      <!-- E3: OVER capacity -->
+      <rect x="210" y="60" width="60" height="100" fill="var(--analogy-bg)" stroke="var(--analogy)"/>
+      <rect x="210" y="30" width="60" height="30" fill="var(--accent-soft)" stroke="var(--accent)"/>
+      <text x="240" y="50" text-anchor="middle" class="label-small" fill="var(--accent)">dropped</text>
+      <text x="240" y="175" text-anchor="middle" class="label-small">E3</text>
+      <text x="240" y="188" text-anchor="middle" class="label-small">26 toks</text>
+
+      <!-- E4: under -->
+      <rect x="290" y="85" width="60" height="75" fill="var(--analogy-bg)" stroke="var(--analogy)"/>
+      <text x="320" y="175" text-anchor="middle" class="label-small">E4</text>
+      <text x="320" y="188" text-anchor="middle" class="label-small">14 toks</text>
+
+      <!-- E5: at -->
+      <rect x="370" y="62" width="60" height="98" fill="var(--analogy-bg)" stroke="var(--analogy)"/>
+      <text x="400" y="175" text-anchor="middle" class="label-small">E5</text>
+      <text x="400" y="188" text-anchor="middle" class="label-small">19 toks</text>
+
+      <!-- E6: under -->
+      <rect x="450" y="95" width="60" height="65" fill="var(--analogy-bg)" stroke="var(--analogy)"/>
+      <text x="480" y="175" text-anchor="middle" class="label-small">E6</text>
+      <text x="480" y="188" text-anchor="middle" class="label-small">12 toks</text>
+
+      <!-- E7: very under -->
+      <rect x="530" y="130" width="60" height="30" fill="var(--analogy-bg)" stroke="var(--analogy)"/>
+      <text x="560" y="175" text-anchor="middle" class="label-small">E7</text>
+      <text x="560" y="188" text-anchor="middle" class="label-small">5 toks</text>
+    </g>
+
+    <text x="30" y="20" class="label-small">Tokens routed per expert per batch:</text>
+  </svg>
+  <p class="diagram-caption">Expert 3 is over capacity; the overflow tokens are dropped — they bypass the MLP and rely on the residual stream.</p>
+
+  <div data-widget="moe-capacity"></div>
+
+  <h3>Load balance — keeping every chef busy</h3>
+  <p class="prose">Without incentive to spread, routers collapse. Early in training, one expert happens to be slightly better than the others by chance; the router routes more tokens to it; that expert gets more gradient; improves further; gets even more tokens. Eventually all tokens route to one expert, the others are dead. <strong>Router collapse.</strong></p>
+
+  <p class="prose">The fix: an <strong>auxiliary loss</strong> during training that penalizes uneven routing. If expert usage is concentrated, the aux loss pushes back. Paired with small Gaussian noise injected into routing logits (exploration), this is enough to keep the kitchen balanced.</p>
+
+  <svg class="diagram" viewBox="0 0 700 200" aria-label="Load balance over training">
+    <!-- Two small charts side-by-side -->
+    <g>
+      <text x="80" y="20" text-anchor="middle" class="label-small">Aux loss OFF</text>
+      <rect x="20" y="30" width="160" height="130" fill="none" stroke="var(--rule)"/>
+      <!-- Lines: one diverges upward (collapse), others flatline at zero -->
+      <path d="M20 150 Q 80 140, 180 40" stroke="var(--accent)" stroke-width="2" fill="none"/>
+      <path d="M20 150 Q 80 148, 180 146" stroke="var(--text-soft)" stroke-width="1" fill="none"/>
+      <path d="M20 150 Q 80 149, 180 148" stroke="var(--text-soft)" stroke-width="1" fill="none"/>
+      <path d="M20 150 Q 80 149, 180 149" stroke="var(--text-soft)" stroke-width="1" fill="none"/>
+      <text x="190" y="50" class="label-small" fill="var(--accent)">collapse</text>
+      <text x="80" y="180" text-anchor="middle" class="label-small">training steps →</text>
+    </g>
+    <g transform="translate(330 0)">
+      <text x="80" y="20" text-anchor="middle" class="label-small">Aux loss ON</text>
+      <rect x="20" y="30" width="160" height="130" fill="none" stroke="var(--rule)"/>
+      <!-- All lines converge to middle -->
+      <path d="M20 150 Q 100 100, 180 90" stroke="var(--analogy)" stroke-width="1.5" fill="none"/>
+      <path d="M20 150 Q 100 110, 180 92" stroke="var(--analogy)" stroke-width="1.5" fill="none"/>
+      <path d="M20 150 Q 100 105, 180 94" stroke="var(--analogy)" stroke-width="1.5" fill="none"/>
+      <path d="M20 150 Q 100 115, 180 96" stroke="var(--analogy)" stroke-width="1.5" fill="none"/>
+      <text x="190" y="90" class="label-small" fill="var(--analogy)">balanced</text>
+      <text x="80" y="180" text-anchor="middle" class="label-small">training steps →</text>
+    </g>
+  </svg>
+  <p class="diagram-caption">Without aux loss (left), one expert monopolizes; the others are starved. With aux loss (right), usage converges toward even.</p>
+
+  <div data-widget="moe-load-heatmap"></div>
+
+  <div class="callout-analogy">
+    <p>The aux loss is the <strong>maître d's manager</strong> walking the floor with a clipboard. Any chef who got fewer than their fair share of orders this hour, the maître d' gets a talking-to. Next hour: the maître d' spreads orders more evenly. Repeat.</p>
+  </div>
+
+  <h3>Shared experts (DeepSeek-style)</h3>
+  <p class="prose">Newer MoE designs (DeepSeek-V2, V3) use a hybrid: one or two <strong>shared experts</strong> that run for every token, alongside the router-selected experts. The shared expert captures patterns common across all tokens (basic syntactic structure, common phrases), so the routed experts don't waste capacity re-learning those — they specialize further.</p>
+
+  <svg class="diagram" viewBox="0 0 620 180" aria-label="Shared + routed experts">
+    <!-- Token -->
+    <rect x="20" y="75" width="80" height="30" rx="4" class="stroke fill-muted"/>
+    <text x="60" y="95" text-anchor="middle" class="label-small">token</text>
+
+    <!-- Arrow splits -->
+    <path d="M100 90 L150 40" class="stroke"/>
+    <path d="M100 90 L150 135" class="stroke"/>
+
+    <!-- Shared expert (always on) -->
+    <rect x="150" y="20" width="160" height="40" rx="6" fill="var(--analogy-bg)" stroke="var(--analogy)" stroke-width="2"/>
+    <text x="230" y="37" text-anchor="middle" class="label-small" fill="var(--analogy)">SHARED EXPERT</text>
+    <text x="230" y="52" text-anchor="middle" class="label-small">(always on)</text>
+
+    <!-- Router -->
+    <rect x="150" y="120" width="100" height="36" rx="6" stroke="var(--variant-border)" stroke-width="2" fill="var(--variant-bg)"/>
+    <text x="200" y="143" text-anchor="middle" class="label-small" fill="var(--variant-ink)">router</text>
+
+    <!-- Routed experts (4 shown; 2 active) -->
+    <path d="M250 138 L290 118" class="stroke-soft"/>
+    <path d="M250 138 L290 138" class="stroke-soft"/>
+    <path d="M250 138 L290 158" class="stroke-soft"/>
+    <rect x="290" y="102" width="60" height="26" rx="3" stroke="var(--accent)" stroke-width="2" fill="var(--analogy-bg)"/>
+    <rect x="290" y="132" width="60" height="26" rx="3" class="stroke fill-muted"/>
+    <rect x="290" y="162" width="60" height="26" rx="3" class="stroke fill-muted" opacity="0.4"/>
+    <rect x="360" y="102" width="60" height="26" rx="3" class="stroke fill-muted"/>
+    <rect x="360" y="132" width="60" height="26" rx="3" stroke="var(--accent)" stroke-width="2" fill="var(--analogy-bg)"/>
+
+    <text x="320" y="117" text-anchor="middle" class="label-small" fill="var(--accent)">R1</text>
+    <text x="320" y="147" text-anchor="middle" class="label-small">R2</text>
+    <text x="390" y="117" text-anchor="middle" class="label-small">R3</text>
+    <text x="390" y="147" text-anchor="middle" class="label-small" fill="var(--accent)">R4</text>
+
+    <!-- Merge -->
+    <path d="M310 40 Q 480 40, 500 90" class="stroke"/>
+    <path d="M420 140 Q 480 130, 500 100" class="stroke"/>
+    <circle cx="510" cy="95" r="12" class="stroke fill-muted"/>
+    <text x="510" y="100" text-anchor="middle" class="label">+</text>
+
+    <text x="450" y="175" class="label-small">output = shared + top-k routed</text>
+  </svg>
+  <p class="diagram-caption">Shared experts handle common patterns for every token in parallel with router-selected specialists.</p>
+
+  <h3>Fine-grained vs coarse experts</h3>
+  <p class="prose">The old default was 8 experts with top-2. The modern trend is many small experts: DeepSeek-V3 has 256 routed experts (plus 1 shared), with top-8 routing. The intuition: smaller experts can specialize more sharply; more of them means more total capacity without making any single one bulky. The router learns to pick a richer combination per token.</p>
+
+  <div class="variant-branch-end">Back to the default (dense) frame. Everything below applies to both dense and MoE unless called out.</div>
+</section>
 
 <div class="callout-variant">
   <p><strong>Encoder-decoder (T5, BART, original transformer).</strong> Two stacks. The <em>encoder</em> reads the input bidirectionally — no causal mask, every token sees every other token — and produces a representation. The <em>decoder</em> generates the output one token at a time, attending to both itself (causally) and the encoder's output. Useful for translation/summarization where input and output are clearly separate. Most modern chat LLMs are decoder-only because it scales better and is simpler — but the encoder-decoder lineage isn't dead, especially for narrow tasks.</p>

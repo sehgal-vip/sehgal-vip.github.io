@@ -21,6 +21,8 @@ How tokens look at each other — the mechanism that made transformers possible.
   <span class="lens-tag weights">weights</span> The Q, K, V projection matrices are part of the model's learned weights.
 </div>
 
+<p class="prose" style="font-style: italic; color: var(--text-soft); font-size: var(--fs-md);">🌿 <strong>Same in MoE</strong> — attention is unchanged. If anything, GQA/MQA matters <em>more</em> in MoE because the KV cache can be a bigger share of your VRAM when experts already fill most of it.</p>
+
 <!-- ========================================================== -->
 <h2 data-toc="The problem">The problem attention solves</h2>
 

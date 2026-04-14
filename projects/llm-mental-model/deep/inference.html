@@ -119,6 +119,132 @@ Forward pass, KV cache, prefill vs decode, batching, speculative decoding.
 <p class="prose">In practice this gives 1.5×–3× decode speedup with no quality loss (the big model is still the only one whose output is final). The tricky part is choosing a good draft model that agrees with the big model often enough to make verification worthwhile.</p>
 
 <!-- ========================================================== -->
+<!-- MoE adds a new dimension to inference cost → full branch -->
+<section class="variant-branch" data-variant-label="🌿 If it's an MoE">
+  <h2 id="if-its-an-moe" data-toc="If it's an MoE">Compute ≠ memory — the active-vs-total trick</h2>
+
+  <p class="prose">The forward pass, the KV cache, prefill vs decode, sampling — all unchanged in an MoE. What changes is a single but substantial insight: <strong>an MoE's compute cost per token is much smaller than its total parameter count suggests</strong>. You pay for all the weights in VRAM, but only a slice of them run per token.</p>
+
+  <h3>Active params vs total params</h3>
+  <p class="prose">Real numbers:</p>
+  <ul class="prose">
+    <li><strong>Mixtral 8×7B</strong> — 47B total parameters, ~13B active per token. Memory: 47B. Compute: ~13B (≈ a single 13B dense model's compute).</li>
+    <li><strong>DeepSeek-V3</strong> — 671B total, 37B active. Memory: 671B. Compute: ~37B.</li>
+    <li><strong>Arctic</strong> — 480B total, 17B active. One of the sparsest ratios shipped.</li>
+  </ul>
+
+  <svg class="diagram" viewBox="0 0 700 240" aria-label="Active vs total parameters">
+    <!-- Total cloud (big ellipse of dots) -->
+    <ellipse cx="200" cy="120" rx="160" ry="90" fill="none" stroke="var(--analogy)" stroke-dasharray="5,4"/>
+    <text x="200" y="36" text-anchor="middle" class="label" fill="var(--analogy)">total params — 671B (all in VRAM)</text>
+
+    <!-- Simulated dots — light ones for unused experts, dark for active -->
+    <g fill="var(--analogy)" opacity="0.35">
+      <circle cx="80" cy="80" r="3"/><circle cx="110" cy="70" r="3"/><circle cx="140" cy="80" r="3"/>
+      <circle cx="95" cy="110" r="3"/><circle cx="130" cy="100" r="3"/><circle cx="160" cy="90" r="3"/>
+      <circle cx="80" cy="140" r="3"/><circle cx="110" cy="150" r="3"/><circle cx="145" cy="140" r="3"/>
+      <circle cx="90" cy="170" r="3"/><circle cx="130" cy="165" r="3"/><circle cx="165" cy="175" r="3"/>
+      <circle cx="200" cy="60" r="3"/><circle cx="230" cy="75" r="3"/><circle cx="260" cy="85" r="3"/>
+      <circle cx="210" cy="100" r="3"/><circle cx="240" cy="105" r="3"/><circle cx="270" cy="100" r="3"/>
+      <circle cx="205" cy="135" r="3"/><circle cx="245" cy="130" r="3"/><circle cx="280" cy="140" r="3"/>
+      <circle cx="215" cy="165" r="3"/><circle cx="250" cy="170" r="3"/><circle cx="290" cy="165" r="3"/>
+      <circle cx="305" cy="85" r="3"/><circle cx="325" cy="100" r="3"/><circle cx="345" cy="110" r="3"/>
+      <circle cx="300" cy="130" r="3"/><circle cx="330" cy="140" r="3"/><circle cx="350" cy="150" r="3"/>
+    </g>
+
+    <!-- Active cluster — dark tight dots -->
+    <g fill="var(--accent)">
+      <circle cx="170" cy="120" r="4.5"/>
+      <circle cx="180" cy="115" r="4.5"/>
+      <circle cx="190" cy="125" r="4.5"/>
+      <circle cx="200" cy="120" r="4.5"/>
+      <circle cx="210" cy="130" r="4.5"/>
+      <circle cx="220" cy="125" r="4.5"/>
+      <circle cx="175" cy="135" r="4.5"/>
+      <circle cx="195" cy="140" r="4.5"/>
+    </g>
+    <text x="200" y="218" text-anchor="middle" class="label" fill="var(--accent)">active per token — 37B</text>
+
+    <!-- Arrow to cost summary -->
+    <path d="M380 120 L440 120" stroke="var(--text)" stroke-width="2"/>
+    <polygon points="438,114 450,120 438,126" fill="currentColor"/>
+
+    <g transform="translate(460 50)">
+      <rect x="0" y="0" width="220" height="140" rx="8" class="stroke fill-muted"/>
+      <text x="110" y="30" text-anchor="middle" class="label">VRAM:  671B weights</text>
+      <text x="110" y="58" text-anchor="middle" class="label">Compute / token: ~37B</text>
+      <text x="110" y="92" text-anchor="middle" class="label-small">sparsity ratio: 37/671 = 5.5%</text>
+      <text x="110" y="120" text-anchor="middle" class="label-small" fill="var(--accent)">big model, 13B-class speed</text>
+    </g>
+  </svg>
+  <p class="diagram-caption">Total params stay in VRAM; only a small fraction compute per token. This is why MoE models feel paradoxically "big but fast" — that's the design, not a bug.</p>
+
+  <div data-widget="moe-active-total"></div>
+
+  <div class="callout-analogy">
+    <p>Imagine a kitchen brigade of 200 chefs. For your meal, only 8 of them touch any ingredient. You pay the restaurant to employ 200; you eat at 8-chef speed.</p>
+  </div>
+
+  <h3>Expert parallelism — experts sharded across GPUs</h3>
+  <p class="prose">A 671B-parameter MoE doesn't fit on one GPU. The natural sharding is <strong>expert parallelism</strong>: put different experts on different GPUs. Each GPU holds, say, 32 of the 256 experts. When a batch is routed, tokens have to physically travel to the GPU holding their chosen expert — and come back. This is called <strong>all-to-all communication</strong>, and it's often the bottleneck in MoE inference.</p>
+
+  <svg class="diagram" viewBox="0 0 720 220" aria-label="Expert parallelism topology">
+    <!-- 4 GPUs with 2 experts each -->
+    <g>
+      <rect x="40"  y="40" width="120" height="110" rx="6" class="stroke fill-muted"/>
+      <text x="100" y="60" text-anchor="middle" class="label-small">GPU 0</text>
+      <rect x="60"  y="75" width="80" height="22" rx="3" class="stroke fill-accent"/>
+      <text x="100" y="90" text-anchor="middle" class="label-small">E0</text>
+      <rect x="60"  y="105" width="80" height="22" rx="3" class="stroke fill-accent"/>
+      <text x="100" y="120" text-anchor="middle" class="label-small">E1</text>
+
+      <rect x="200" y="40" width="120" height="110" rx="6" class="stroke fill-muted"/>
+      <text x="260" y="60" text-anchor="middle" class="label-small">GPU 1</text>
+      <rect x="220" y="75" width="80" height="22" rx="3" class="stroke fill-accent"/>
+      <text x="260" y="90" text-anchor="middle" class="label-small">E2</text>
+      <rect x="220" y="105" width="80" height="22" rx="3" class="stroke fill-accent"/>
+      <text x="260" y="120" text-anchor="middle" class="label-small">E3</text>
+
+      <rect x="360" y="40" width="120" height="110" rx="6" class="stroke fill-muted"/>
+      <text x="420" y="60" text-anchor="middle" class="label-small">GPU 2</text>
+      <rect x="380" y="75" width="80" height="22" rx="3" class="stroke fill-accent"/>
+      <text x="420" y="90" text-anchor="middle" class="label-small">E4</text>
+      <rect x="380" y="105" width="80" height="22" rx="3" class="stroke fill-accent"/>
+      <text x="420" y="120" text-anchor="middle" class="label-small">E5</text>
+
+      <rect x="520" y="40" width="120" height="110" rx="6" class="stroke fill-muted"/>
+      <text x="580" y="60" text-anchor="middle" class="label-small">GPU 3</text>
+      <rect x="540" y="75" width="80" height="22" rx="3" class="stroke fill-accent"/>
+      <text x="580" y="90" text-anchor="middle" class="label-small">E6</text>
+      <rect x="540" y="105" width="80" height="22" rx="3" class="stroke fill-accent"/>
+      <text x="580" y="120" text-anchor="middle" class="label-small">E7</text>
+    </g>
+
+    <!-- All-to-all arrows between GPUs -->
+    <g stroke="var(--accent)" stroke-width="1" opacity="0.55" fill="none">
+      <path d="M160 160 L200 160" marker-end="url(#arrow)"/>
+      <path d="M320 160 L360 160" marker-end="url(#arrow)"/>
+      <path d="M480 160 L520 160" marker-end="url(#arrow)"/>
+      <path d="M200 175 L160 175" marker-end="url(#arrow)"/>
+      <path d="M360 175 L320 175" marker-end="url(#arrow)"/>
+      <path d="M520 175 L480 175" marker-end="url(#arrow)"/>
+      <path d="M340 195 L80 195" />
+      <path d="M380 195 L620 195" />
+    </g>
+    <defs>
+      <marker id="arrow" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+        <path d="M0,0 L10,5 L0,10 Z" fill="var(--accent)"/>
+      </marker>
+    </defs>
+    <text x="340" y="215" text-anchor="middle" class="label-small" fill="var(--accent)">all-to-all: tokens route to their chosen GPU's experts, results return</text>
+  </svg>
+  <p class="diagram-caption">Experts sharded across 4 GPUs. Routing pushes tokens across the interconnect; return traffic brings results back. Balance is critical — one overloaded GPU stalls the whole batch.</p>
+
+  <h3>Routing is runtime state, not a cache</h3>
+  <p class="prose">The routing decisions made during a forward pass don't get cached across steps the way K and V vectors do. Each new token is routed fresh based on its own hidden state. So "runtime state" in an MoE includes: the KV cache (same as dense) + the routing decisions for the current step (not persisted). They're both ephemeral, they both disappear between requests, neither is part of the model's weights.</p>
+</section>
+
+<!-- ========================================================== -->
 <div class="callout-variant">
   <p><strong>Scaffolding (RAG, tool use, agents, reasoning chains).</strong> None of these change the model. They change <em>what the model sees</em> in its context window, and <em>what happens with the model's output</em> before the next call. RAG injects retrieved documents into the prompt. Tool use parses the model's output, runs an external function (search, calculator, code execution), and injects the result back into the conversation. Reasoning scaffolds (chain-of-thought, ReAct, multi-step agent loops) just structure prompting and feedback. From the model's point of view, every call looks like another forward pass on whatever's currently in its context. The intelligence in scaffolding lives entirely <em>outside</em> the weights.</p>
 </div>

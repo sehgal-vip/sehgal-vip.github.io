@@ -8,15 +8,16 @@
   'use strict';
 
   const PAGES = [
-    { label: 'Hub — the mental model',     href: 'index.html',       kind: 'hub'  },
-    { label: '§1  Tokens & embeddings',    href: 'deep/tokens.html', kind: 'deep' },
-    { label: '§2  Attention',              href: 'deep/attention.html', kind: 'deep' },
-    { label: '§3  Transformer block',      href: 'deep/block.html',  kind: 'deep' },
-    { label: '§4  Inference loop',         href: 'deep/inference.html', kind: 'deep' },
-    { label: '§5  Training',               href: 'deep/training.html', kind: 'deep' },
-    { label: '§6  Evaluation',             href: 'deep/eval.html',   kind: 'deep' },
-    { label: '§7  Levers',                 href: 'deep/levers.html', kind: 'deep' },
-    { label: '§8  Diagnosis (capstone)',   href: 'deep/diagnosis.html', kind: 'deep' },
+    { label: 'The hub',                    href: 'index.html',       kind: 'hub'  },
+    { label: 'Tokens & embeddings',        href: 'deep/tokens.html', kind: 'deep' },
+    { label: 'Attention',                  href: 'deep/attention.html', kind: 'deep' },
+    { label: 'Transformer block',          href: 'deep/block.html',  kind: 'deep' },
+    { label: 'Inference loop',             href: 'deep/inference.html', kind: 'deep' },
+    { label: 'Training',                   href: 'deep/training.html', kind: 'deep' },
+    { label: 'Evaluation',                 href: 'deep/eval.html',   kind: 'deep' },
+    { label: 'Levers',                     href: 'deep/levers.html', kind: 'deep' },
+    { label: 'Diagnosis',                  href: 'deep/diagnosis.html', kind: 'deep' },
+    { label: 'Landscape',                  href: 'deep/landscape.html', kind: 'deep' },
     { label: 'Glossary',                   href: 'deep/glossary.html', kind: 'deep' },
   ];
 
