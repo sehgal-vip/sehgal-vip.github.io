@@ -132,7 +132,11 @@ html {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   width: 100%;
+  // `clip` prevents horizontal overflow without creating a scroll container,
+  // so descendants can use `position: sticky`. Falls back to `hidden` on
+  // browsers that don't support `clip`.
   overflow-x: hidden;
+  overflow-x: clip;
 }
 
 body {
@@ -148,6 +152,7 @@ body {
   flex-direction: column;
   width: 100%;
   overflow-x: hidden;
+  overflow-x: clip;
   margin: 0;
   padding: 0;
   position: relative;
@@ -975,10 +980,11 @@ strong, b {
   min-height: calc(100vh - var(--header-height));
   display: flex;
   flex-direction: column;
-  justify-content: flex-end;  // Position text at bottom
+  justify-content: flex-end;  // Title + subtitle start anchored at the bottom,
+                              // then translate up + fade during scroll.
   align-items: center;
   padding: 2rem;
-  padding-bottom: 4rem;
+  padding-bottom: 9rem;       // Room above the scroll indicator pinned at the bottom.
   position: relative;
   width: 100%;
 }
@@ -1090,7 +1096,8 @@ strong, b {
 .hero-title {
   font-size: clamp(3rem, 8vw, 5rem);
   font-weight: 400;
-  margin-bottom: 0;
+  margin: 0;
+  line-height: 1.05;
   letter-spacing: -0.03em;
   text-shadow: 0 2px 20px rgba(0, 0, 0, 0.15);
 }
@@ -1103,15 +1110,16 @@ strong, b {
   width: 80px;
   height: 1px;
   background: linear-gradient(90deg, transparent, var(--color-primary), transparent);
-  margin: 0.5rem 0;
+  margin: 0.9rem 0 0.75rem;
 }
 
 .hero-subtitle {
   font-size: clamp(1rem, 2.5vw, 1.2rem);
   color: var(--text-muted);
   max-width: 400px;
-  line-height: 1.6;
+  line-height: 1.5;
   font-style: italic;
+  margin: 0;
 }
 
 // Scroll Indicator
@@ -1171,7 +1179,9 @@ strong, b {
   text-align: center;
   position: relative;
   z-index: 10;
-  background: var(--bg-color);
+  // Gradient fade so the top edge blends into the fading hero-bg image
+  // instead of ending at a hard horizontal line.
+  background: linear-gradient(to bottom, transparent 0, var(--bg-color) 140px);
   // Full-bleed background
   margin-left: calc(-50vw + 50%);
   margin-right: calc(-50vw + 50%);
@@ -1203,7 +1213,7 @@ strong, b {
 }
 
 [data-theme="dark"] .about-section {
-  background: var(--bg-color);
+  background: linear-gradient(to bottom, transparent 0, var(--bg-color) 140px);
 
   &::before,
   &::after {
@@ -3045,26 +3055,31 @@ strong, b {
   th:nth-child(4), td:nth-child(4) { width: 45%; } // Description/Excerpt
 }
 
-// 4-column tables (blog/posts page: Title, Date, Category, Excerpt)
-.reading-list .collapsible-section[data-section="posts"] .data-table {
+// 5-column tables (blog page: Title, Date, Read, Category, Excerpt)
+.reading-list [data-section="posts"] .data-table {
   th:nth-child(1),
   td:nth-child(1) {
     width: 22% !important; // Title
   }
-  
+
   th:nth-child(2),
   td:nth-child(2) {
     width: 10% !important; // Date
   }
-  
+
   th:nth-child(3),
   td:nth-child(3) {
-    width: 20% !important; // Category
+    width: 8% !important; // Read
   }
-  
+
   th:nth-child(4),
   td:nth-child(4) {
-    width: 48% !important; // Excerpt
+    width: 15% !important; // Category
+  }
+
+  th:nth-child(5),
+  td:nth-child(5) {
+    width: 45% !important; // Excerpt
   }
 }
 
@@ -3488,3 +3503,346 @@ strong, b {
 .row-selected td {
   background: var(--bg-tertiary);
 }
+
+// =============================================================================
+// Audit fixes — SCSS pass
+// =============================================================================
+
+// Dark-mode hero scrim — the bright Parthenon scene clashes with the dark UI.
+[data-theme="dark"] .hero-bg-fixed::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  pointer-events: none;
+  z-index: 1;
+}
+
+// Tagline contrast — gold (#d4af37) fails WCAG against the pale background in light mode.
+// Darken to ~5:1 in light mode; keep gold in dark mode.
+.about-text.lead {
+  color: #997614;
+}
+
+[data-theme="dark"] .about-text.lead {
+  color: var(--color-primary);
+}
+
+// Hide pagination that has only one page, and hide it inside collapsed sections.
+.collapsible-section.collapsed .pagination,
+.collapsible-section.collapsed .pagination-info {
+  display: none;
+}
+
+.pagination-info[data-single-page="true"] {
+  display: none;
+}
+
+// About page — bio intro that sits above the creative "log".
+.about-intro {
+  max-width: 720px;
+  margin: 1rem auto 3rem;
+  padding: 0 1rem;
+}
+
+.about-intro-title {
+  font-family: var(--font-display, serif);
+  font-size: clamp(1.75rem, 4vw, 2.5rem);
+  margin: 0 0 0.75rem;
+}
+
+.about-intro-lead {
+  font-size: 1.2rem;
+  color: #997614;
+  margin: 0 0 1.5rem;
+  line-height: 1.4;
+}
+
+[data-theme="dark"] .about-intro-lead {
+  color: var(--color-primary);
+}
+
+.about-intro-body {
+  font-size: 1.05rem;
+  line-height: 1.7;
+  color: var(--text-color);
+  margin: 0 0 1.5rem;
+
+  a {
+    color: var(--color-primary);
+  }
+}
+
+.about-intro-links {
+  list-style: none;
+  padding: 0;
+  margin: 1rem 0 2rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.25rem;
+  font-size: 0.95rem;
+
+  a {
+    color: var(--text-color);
+    border-bottom: 1px solid var(--color-primary);
+    text-decoration: none;
+    padding-bottom: 1px;
+
+    &:hover {
+      color: var(--color-primary);
+    }
+  }
+}
+
+.about-intro-divider {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  font-style: italic;
+  border-top: 1px dashed var(--border-color);
+  padding-top: 1rem;
+  margin-top: 2rem;
+}
+
+// Categories page — jump index chips + chronological list styling.
+.category-index {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 1.5rem 0 2.5rem;
+}
+
+.category-index-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0.75rem;
+  border-radius: 999px;
+  background: var(--bg-tertiary);
+  color: var(--text-color);
+  font-size: 0.85rem;
+  text-decoration: none;
+  transition: background 0.15s ease;
+
+  &:hover {
+    background: var(--color-primary);
+    color: #fff;
+  }
+}
+
+.category-index-count {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  background: var(--bg-color);
+  border-radius: 999px;
+  padding: 0.1rem 0.4rem;
+}
+
+.archive-chronological {
+  margin-bottom: 3rem;
+
+  .archive-post-title {
+    flex: 1;
+  }
+
+  .archive-post-meta {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+}
+
+// Author byline on reading cards — plain muted italic, not a clickable-looking pill.
+.post-card-byline {
+  font-size: 0.8rem;
+  font-style: italic;
+  color: var(--text-muted);
+  margin: 0.75rem 0 0;
+  line-height: 1.4;
+}
+
+// Prev / next post navigation.
+.post-nav {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin: 3rem 0 2rem;
+  padding: 1.5rem 0;
+  border-top: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.post-nav-link {
+  display: flex;
+  flex-direction: column;
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  text-decoration: none;
+  color: var(--text-color);
+  transition: background 0.15s ease;
+
+  &:hover:not(.post-nav-placeholder) {
+    background: var(--bg-tertiary);
+    color: var(--text-color);
+  }
+}
+
+.post-nav-next {
+  text-align: right;
+  align-items: flex-end;
+}
+
+.post-nav-placeholder {
+  visibility: hidden;
+}
+
+.post-nav-label {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.25rem;
+}
+
+.post-nav-title {
+  font-weight: 500;
+  font-size: 0.95rem;
+}
+
+@media (max-width: 600px) {
+  .post-nav {
+    grid-template-columns: 1fr;
+  }
+  .post-nav-next {
+    text-align: left;
+    align-items: flex-start;
+  }
+}
+
+// Related-post card thumbnail fallback — keeps visual rhythm when posts lack cover images.
+.post-card-thumbnail-fallback {
+  width: 100%;
+  height: 100%;
+  min-height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255, 255, 255, 0.9);
+  font-family: var(--font-display, serif);
+  font-size: 2rem;
+  font-weight: 600;
+  background: linear-gradient(135deg, #4a5b7a 0%, #2f3d56 100%);
+}
+
+.post-card-thumbnail[data-category="ai"] .post-card-thumbnail-fallback {
+  background: linear-gradient(135deg, #8e44ad 0%, #3b2753 100%);
+}
+.post-card-thumbnail[data-category="technology"] .post-card-thumbnail-fallback {
+  background: linear-gradient(135deg, #2980b9 0%, #1a3d5c 100%);
+}
+.post-card-thumbnail[data-category="economics"] .post-card-thumbnail-fallback {
+  background: linear-gradient(135deg, #b8860b 0%, #5c420b 100%);
+}
+.post-card-thumbnail[data-category="philosophy"] .post-card-thumbnail-fallback {
+  background: linear-gradient(135deg, #6a5acd 0%, #322866 100%);
+}
+.post-card-thumbnail[data-category="personal"] .post-card-thumbnail-fallback {
+  background: linear-gradient(135deg, #d35400 0%, #5a2401 100%);
+}
+.post-card-thumbnail[data-category="meta"] .post-card-thumbnail-fallback {
+  background: linear-gradient(135deg, #16a085 0%, #0a4037 100%);
+}
+
+// Reading page layout — two-column grid on wide viewports: content + sticky
+// TOC. On narrow viewports the TOC is hidden and content fills the row.
+.reading-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+@media (min-width: 1101px) {
+  .reading-layout {
+    grid-template-columns: minmax(0, 1fr) 110px;
+    column-gap: 3rem;
+    align-items: start;
+  }
+}
+
+// Unboxed, minimalist TOC — a thin vertical list in its own column.
+// Active item gets a gold left-rule; no surrounding panel.
+.reading-toc {
+  font-size: 0.8rem;
+  position: sticky;
+  top: calc(var(--header-height) + 1.5rem);
+  align-self: start;
+
+  ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    border-left: 1px solid var(--border-color);
+  }
+
+  li + li {
+    margin-top: 0;
+  }
+
+  a {
+    display: block;
+    padding: 0.35rem 0 0.35rem 0.75rem;
+    margin-left: -1px; // sit atop the column rule so the active rule replaces it
+    color: var(--text-muted);
+    text-decoration: none;
+    border-left: 2px solid transparent;
+    line-height: 1.3;
+    transition: color 0.15s ease, border-color 0.15s ease;
+
+    &:hover {
+      color: var(--text-color);
+    }
+
+    &.is-active {
+      color: var(--color-primary);
+      border-left-color: var(--color-primary);
+    }
+  }
+}
+
+// Hide the TOC on narrow viewports — content gets the full row.
+@media (max-width: 1100px) {
+  .reading-toc {
+    display: none;
+  }
+}
+
+// Reading page section heading + filters — one horizontal row.
+// Title anchored left, filters anchored right. The heading remains sticky
+// when scrolled, but the row wrapper is static so only the chip pins.
+.reading-list .section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+
+.reading-list .section-head .section-filters {
+  margin-left: auto;
+  justify-content: flex-end;
+}
+
+.reading-list .collapsible-section .section-toggle {
+  position: sticky;
+  top: var(--header-height);
+  z-index: 20;
+  display: inline-flex;
+  width: fit-content;
+  padding: 0.4rem 0.75rem;
+  border-bottom: none;
+  border-radius: 0.5rem;
+  background: var(--bg-color);
+  font-size: 1.05rem;
+  margin: 0;
+}
+

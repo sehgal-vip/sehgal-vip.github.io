@@ -46,19 +46,18 @@ hide_breadcrumbs: true
   </div>
 </section>
 
-<!-- Latest Updates Section -->
-{% assign latest_post = site.posts.first %}
-{% assign latest_book = site.data.reading_books | last %}
-{% assign latest_paper = site.data.reading_papers | last %}
+<!-- Latest Writing -->
+{% assign latest_posts = site.posts | slice: 0, 3 %}
 
+{% if latest_posts.size > 0 %}
 <section class="latest-updates scroll-reveal">
   <div class="section-header">
-    <h2 class="section-title">Latest</h2>
+    <h2 class="section-title">Latest writing</h2>
     <div class="divider"></div>
   </div>
 
   <div class="posts-grid">
-    {% if latest_post %}
+    {% for latest_post in latest_posts %}
       <a href="{{ latest_post.url | relative_url }}" class="post-card">
         <div class="post-card-meta">
           <span class="post-card-date">Blog</span>
@@ -69,66 +68,78 @@ hide_breadcrumbs: true
           <p class="post-card-excerpt">{{ latest_post.excerpt | strip_html | truncate: 150 }}</p>
         {% endif %}
       </a>
-    {% endif %}
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
 
-    {% if latest_book %}
-      {% if latest_book.url and latest_book.url != "" %}
-        <a href="{{ latest_book.url }}" target="_blank" rel="noopener noreferrer" class="post-card">
-      {% else %}
-        <div class="post-card">
-      {% endif %}
-          <div class="post-card-meta">
-            <span class="post-card-date">Book</span>
-            <span class="post-card-readtime">{{ latest_book.year }}</span>
-          </div>
-          <h3 class="post-card-title">{{ latest_book.title }}</h3>
-          {% if latest_book.description %}
-            <p class="post-card-excerpt">{{ latest_book.description }}</p>
-          {% endif %}
-          {% if latest_book.author %}
-            <div class="post-card-tags">
-              <span class="tag-badge">{{ latest_book.author }}</span>
-            </div>
-          {% endif %}
-      {% if latest_book.url and latest_book.url != "" %}
-        </a>
-      {% else %}
-        </div>
-      {% endif %}
-    {% endif %}
+<!-- Recently added to reading -->
+{% assign latest_papers = site.data.reading_papers | reverse | slice: 0, 2 %}
+{% assign latest_books = site.data.reading_books | reverse | slice: 0, 1 %}
 
-    {% if latest_paper %}
-      {% if latest_paper.url and latest_paper.url != "" %}
-        <a href="{{ latest_paper.url }}" target="_blank" rel="noopener noreferrer" class="post-card">
+{% if latest_papers.size > 0 or latest_books.size > 0 %}
+<section class="latest-updates scroll-reveal">
+  <div class="section-header">
+    <h2 class="section-title">Recently added to reading</h2>
+    <div class="divider"></div>
+  </div>
+
+  <div class="posts-grid">
+    {% for item in latest_papers %}
+      {% if item.url and item.url != "" %}
+        <a href="{{ item.url }}" target="_blank" rel="noopener noreferrer" class="post-card">
       {% else %}
         <div class="post-card">
       {% endif %}
           <div class="post-card-meta">
             <span class="post-card-date">Paper</span>
-            <span class="post-card-readtime">{{ latest_paper.year }}</span>
+            <span class="post-card-readtime">{{ item.year }}</span>
           </div>
-          <h3 class="post-card-title">{{ latest_paper.title }}</h3>
-          {% if latest_paper.description %}
-            <p class="post-card-excerpt">{{ latest_paper.description }}</p>
+          <h3 class="post-card-title">{{ item.title }}</h3>
+          {% if item.description %}
+            <p class="post-card-excerpt">{{ item.description | truncate: 150 }}</p>
           {% endif %}
-          {% if latest_paper.author %}
-            <div class="post-card-tags">
-              <span class="tag-badge">{{ latest_paper.author }}</span>
-            </div>
+          {% if item.author %}
+            <p class="post-card-byline">{{ item.author }}</p>
           {% endif %}
-      {% if latest_paper.url and latest_paper.url != "" %}
+      {% if item.url and item.url != "" %}
         </a>
       {% else %}
         </div>
       {% endif %}
-    {% endif %}
-  </div>
+    {% endfor %}
 
-  {% unless latest_post or latest_book or latest_paper %}
-    <p class="text-center" style="color: var(--text-muted); padding: 2rem 0;">
-      No updates yet. Add a post or update the reading CSV files.
-    </p>
-  {% endunless %}
+    {% for item in latest_books %}
+      {% if item.url and item.url != "" %}
+        <a href="{{ item.url }}" target="_blank" rel="noopener noreferrer" class="post-card">
+      {% else %}
+        <div class="post-card">
+      {% endif %}
+          <div class="post-card-meta">
+            <span class="post-card-date">Book</span>
+            <span class="post-card-readtime">{{ item.year }}</span>
+          </div>
+          <h3 class="post-card-title">{{ item.title }}</h3>
+          {% if item.description %}
+            <p class="post-card-excerpt">{{ item.description | truncate: 150 }}</p>
+          {% endif %}
+          {% if item.author %}
+            <p class="post-card-byline">{{ item.author }}</p>
+          {% endif %}
+      {% if item.url and item.url != "" %}
+        </a>
+      {% else %}
+        </div>
+      {% endif %}
+    {% endfor %}
+  </div>
 </section>
+{% endif %}
+
+{% unless latest_posts.size > 0 or latest_papers.size > 0 or latest_books.size > 0 %}
+  <p class="text-center" style="color: var(--text-muted); padding: 2rem 0;">
+    No updates yet. Add a post or update the reading CSV files.
+  </p>
+{% endunless %}
 
 <script src="{{ '/assets/js/hero-video-scrub.js' | relative_url }}" defer></script>

@@ -17,17 +17,50 @@
 
   if (!video || !heroSection) return;
 
-  // Scroll distance for full animation (200vh)
-  const scrollDistance = window.innerHeight * 2;
+  // Respect reduced-motion and bail on small / slow devices.
+  const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const isNarrow = window.innerWidth < 720;
+
+  if (prefersReducedMotion || isNarrow) {
+    // Static hero: let the page flow normally, skip the scroll scrub entirely.
+    heroSection.style.minHeight = 'calc(100vh - 64px)';
+    if (scrollIndicator) scrollIndicator.style.display = 'none';
+    return;
+  }
+
+  // Scroll distance for full animation. Original was 200vh (2,186 px spacer
+  // on a 900px viewport). Reduced to ~50vh so content appears ~1.3 viewports
+  // after load — enough runway for the scrub to feel smooth, not enough to
+  // feel like dead space.
+  const scrollDistance = window.innerHeight * 0.5;
   const videoEndPoint = scrollDistance * 0.7;
   const heroHeight = window.innerHeight;
 
-  // Spacer for scroll space
+  // Spacer for scroll space. Original scrub runway: scrub 0→videoEndPoint,
+  // then the hero fades + translates up over heroHeight worth of scroll.
   const spacer = document.createElement('div');
   spacer.style.cssText = 'height:' + (videoEndPoint + heroHeight) + 'px;';
   heroSection.after(spacer);
 
-  // Hero fixed positioning
+  // Safety: if the video hasn't reached playable state within 1.5s, tear down
+  // the scrub and render the hero statically so visitors don't stare at a
+  // dead scroll runway.
+  const videoReadyTimer = setTimeout(function() {
+    if (video.readyState < 2) {
+      spacer.remove();
+      heroSection.style.cssText = 'min-height:calc(100vh - 64px);';
+      if (scrollIndicator) scrollIndicator.style.display = 'none';
+      window.removeEventListener('scroll', onScroll);
+    }
+  }, 1500);
+
+  video.addEventListener('loadeddata', function() {
+    clearTimeout(videoReadyTimer);
+  }, { once: true });
+
+  // Hero fixed positioning. Title + subtitle anchor to the bottom of the
+  // viewport as the starting position; they translate up + fade out during
+  // scroll via updateScroll().
   heroSection.style.cssText = [
     'position:fixed',
     'top:64px',
@@ -40,8 +73,7 @@
     'flex-direction:column',
     'justify-content:flex-end',
     'align-items:center',
-    'padding:2rem',
-    'padding-bottom:4rem',
+    'padding:2rem 2rem 9rem',
     'box-sizing:border-box',
     'transform:translateY(0)'
   ].join(';');
@@ -72,23 +104,31 @@
       progressFill.style.width = (videoProgress * 100) + '%';
     }
 
+    // Post-scrub phase: after the video finishes scrubbing at videoEndPoint,
+    // the hero stays visible and fades out linearly across the next heroHeight
+    // of scroll — so opacity hits 0 exactly when the about-section reaches
+    // the top of the viewport. No dead scroll runway.
+    const scrollBeyond = scrollY - videoEndPoint;
+    const fadeT = scrollBeyond <= 0
+      ? 0
+      : Math.min(scrollBeyond / heroHeight, 1);
+
     // HERO TRANSFORM
-    if (scrollY <= videoEndPoint) {
+    if (scrollBeyond <= 0) {
       heroSection.style.transform = 'translateY(0)';
       heroSection.style.visibility = 'visible';
-    } else {
-      const scrollBeyond = scrollY - videoEndPoint;
+    } else if (fadeT < 1) {
       heroSection.style.transform = 'translateY(' + (-scrollBeyond) + 'px)';
-      heroSection.style.visibility = scrollBeyond > heroHeight ? 'hidden' : 'visible';
+      heroSection.style.visibility = 'visible';
+    } else {
+      heroSection.style.transform = 'translateY(' + (-heroHeight) + 'px)';
+      heroSection.style.visibility = 'hidden';
     }
 
-    // HERO BACKGROUND FADE: 70-100%
+    // HERO BACKGROUND FADE (full post-scrub range)
     if (heroBg) {
-      if (progress <= 0.7) {
-        heroBg.style.opacity = '1';
-        heroBg.style.visibility = 'visible';
-      } else if (progress < 1) {
-        heroBg.style.opacity = 1 - (progress - 0.7) / 0.3;
+      if (fadeT < 1) {
+        heroBg.style.opacity = (1 - fadeT).toString();
         heroBg.style.visibility = 'visible';
       } else {
         heroBg.style.opacity = '0';
@@ -96,13 +136,10 @@
       }
     }
 
-    // HERO CONTENT FADE: 70-100%
+    // HERO CONTENT FADE (full post-scrub range)
     if (heroContent) {
-      if (progress <= 0.7) {
-        heroContent.style.opacity = '1';
-        heroContent.style.visibility = 'visible';
-      } else if (progress < 1) {
-        heroContent.style.opacity = 1 - (progress - 0.7) / 0.3;
+      if (fadeT < 1) {
+        heroContent.style.opacity = (1 - fadeT).toString();
         heroContent.style.visibility = 'visible';
       } else {
         heroContent.style.opacity = '0';

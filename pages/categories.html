@@ -13,13 +13,45 @@ permalink: /categories/
     {% if site.categories.size > 0 %}
   <div class="archive-section">
       {% assign sorted_categories = site.categories | sort %}
+
+      {% comment %}Jump index — small chips linking to the on-page category anchors.{% endcomment %}
+      <nav class="category-index" aria-label="Jump to category">
+        {% for category in sorted_categories %}
+          <a class="category-index-link" href="#{{ category[0] | slugify }}">
+            {{ category[0] }} <span class="category-index-count">{{ category[1].size }}</span>
+          </a>
+        {% endfor %}
+      </nav>
+
+      {% comment %}Chronological list — each post once, with its categories inline.{% endcomment %}
+      <section class="archive-chronological">
+        <h2 class="archive-category-title">All posts</h2>
+        <ul class="archive-posts">
+          {% assign all_posts = site.posts | sort: 'date' | reverse %}
+          {% for post in all_posts %}
+          <li>
+            <a href="{{ post.url | relative_url }}">
+              <span class="archive-post-title">{{ post.title }}</span>
+              <span class="archive-post-meta">
+                {% for cat in post.categories %}
+                  <span class="category-badge">{{ cat }}</span>
+                {% endfor %}
+                <span class="date">{{ post.date | date: "%b %d, %Y" }}</span>
+              </span>
+            </a>
+          </li>
+          {% endfor %}
+        </ul>
+      </section>
+
+      {% comment %}Grouped-by-category — still useful for the anchor links above.{% endcomment %}
         {% for category in sorted_categories %}
       <section class="archive-category" id="{{ category[0] | slugify }}">
         <h2 class="archive-category-title">
               {{ category[0] }}
           <span class="count">({{ category[1].size }} post{% if category[1].size != 1 %}s{% endif %})</span>
         </h2>
-        
+
         <ul class="archive-posts">
           {% for post in category[1] %}
           <li>

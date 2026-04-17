@@ -11,26 +11,52 @@ permalink: /tags/
 </header>
 
 {% if site.tags.size > 0 %}
+  {% assign sorted_tags = site.tags | sort %}
+
+  {% comment %}Split tags into "popular" (>=2 posts) and "all" (shown behind a toggle).{% endcomment %}
+  {% assign popular_tags = '' | split: ',' %}
+  {% assign solo_tags = '' | split: ',' %}
+  {% for tag in sorted_tags %}
+    {% if tag[1].size >= 2 %}
+      {% assign popular_tags = popular_tags | push: tag %}
+    {% else %}
+      {% assign solo_tags = solo_tags | push: tag %}
+    {% endif %}
+  {% endfor %}
+
   <!-- Tag Cloud -->
-  <div class="tag-cloud" style="margin-bottom: 3rem;">
-    {% assign sorted_tags = site.tags | sort %}
-    {% for tag in sorted_tags %}
+  <div class="tag-cloud" style="margin-bottom: 1rem;">
+    {% for tag in popular_tags %}
       <a href="#{{ tag[0] | slugify }}" class="tag-badge" style="font-size: 1rem; padding: 0.5rem 1rem;">
         {{ tag[0] }} ({{ tag[1].size }})
       </a>
     {% endfor %}
   </div>
-  
+
+  {% if solo_tags.size > 0 %}
+  <details class="tag-cloud-more" style="margin-bottom: 3rem;">
+    <summary style="cursor: pointer; color: var(--text-muted); font-size: 0.9rem; padding: 0.5rem 0;">
+      Show {{ solo_tags.size }} tag{% if solo_tags.size != 1 %}s{% endif %} with a single post
+    </summary>
+    <div class="tag-cloud" style="margin-top: 0.75rem;">
+      {% for tag in solo_tags %}
+        <a href="#{{ tag[0] | slugify }}" class="tag-badge tag-badge--solo" style="font-size: 0.85rem; padding: 0.35rem 0.75rem;">
+          {{ tag[0] }}
+        </a>
+      {% endfor %}
+    </div>
+  </details>
+  {% endif %}
+
   <!-- Tag Sections -->
   <div class="archive-section">
-    {% assign sorted_tags = site.tags | sort %}
     {% for tag in sorted_tags %}
       <section class="archive-category" id="{{ tag[0] | slugify }}">
         <h2 class="archive-category-title">
           {{ tag[0] }}
           <span class="count">({{ tag[1].size }} post{% if tag[1].size != 1 %}s{% endif %})</span>
         </h2>
-        
+
         <ul class="archive-posts">
           {% for post in tag[1] %}
           <li>

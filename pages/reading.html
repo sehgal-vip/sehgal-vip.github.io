@@ -5,6 +5,8 @@ description: Papers, books, articles, and other things I've found valuable
 permalink: /reading/
 ---
 
+<div class="reading-layout">
+
 <div class="reading-list">
   <!-- Papers Section -->
   {% if site.data.reading_papers.size > 0 %}
@@ -12,9 +14,9 @@ permalink: /reading/
   {% assign papers_years = papers_by_year_temp | map: "name" | sort | reverse %}
   {% assign papers_by_author_temp = site.data.reading_papers | group_by: "author" %}
   {% assign papers_authors = papers_by_author_temp | map: "name" | sort %}
-  <section class="collapsible-section collapsed" data-section="papers">
-    <h2 class="section-title section-toggle" role="button" tabindex="0" aria-expanded="false">
-      <span class="section-icon">📄</span>
+  <section id="papers" class="collapsible-section" data-section="papers">
+    <div class="section-head">
+    <h2 class="section-title section-toggle" role="button" tabindex="0" aria-expanded="true">
       Papers ({{ site.data.reading_papers.size }})
       <svg class="toggle-chevron" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
     </h2>
@@ -62,7 +64,8 @@ permalink: /reading/
         </div>
       </div>
     </div>
-    
+    </div><!-- /.section-head -->
+
     {% assign papers_sorted = site.data.reading_papers | sort: "year" | reverse %}
     <table class="data-table">
       <thead>
@@ -111,9 +114,9 @@ permalink: /reading/
   {% assign books_years = books_by_year_temp | map: "name" | sort | reverse %}
   {% assign books_by_author_temp = site.data.reading_books | group_by: "author" %}
   {% assign books_authors = books_by_author_temp | map: "name" | sort %}
-  <section class="collapsible-section collapsed" data-section="books">
+  <section id="books" class="collapsible-section collapsed" data-section="books">
+    <div class="section-head">
     <h2 class="section-title section-toggle" role="button" tabindex="0" aria-expanded="false">
-      <span class="section-icon">📚</span>
       Books ({{ site.data.reading_books.size }})
       <svg class="toggle-chevron" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
     </h2>
@@ -184,7 +187,8 @@ permalink: /reading/
         </div>
       </div>
     </div>
-    
+    </div><!-- /.section-head -->
+
     {% assign books_sorted = site.data.reading_books | sort: "year" | reverse %}
     <table class="data-table">
       <thead>
@@ -233,9 +237,9 @@ permalink: /reading/
   {% assign articles_years = articles_by_year_temp | map: "name" | sort | reverse %}
   {% assign articles_by_author_temp = site.data.reading_articles | group_by: "author" %}
   {% assign articles_authors = articles_by_author_temp | map: "name" | sort %}
-  <section class="collapsible-section" data-section="articles">
+  <section id="articles" class="collapsible-section" data-section="articles">
+    <div class="section-head">
     <h2 class="section-title">
-      <span class="section-icon">📰</span>
       Articles
     </h2>
     <div class="section-filters" aria-label="Filter articles">
@@ -282,7 +286,8 @@ permalink: /reading/
         </div>
       </div>
     </div>
-    
+    </div><!-- /.section-head -->
+
     {% assign articles_sorted = site.data.reading_articles | sort: "year" | reverse %}
     <table class="data-table">
       <thead>
@@ -331,9 +336,9 @@ permalink: /reading/
   {% assign others_years = others_by_year_temp | map: "name" | sort | reverse %}
   {% assign others_by_author_temp = site.data.reading_others | group_by: "author" %}
   {% assign others_authors = others_by_author_temp | map: "name" | sort %}
-  <section class="collapsible-section collapsed" data-section="others">
+  <section id="others" class="collapsible-section collapsed" data-section="others">
+    <div class="section-head">
     <h2 class="section-title section-toggle" role="button" tabindex="0" aria-expanded="false">
-      <span class="section-icon">🔗</span>
       Others ({{ site.data.reading_others.size }})
       <svg class="toggle-chevron" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
     </h2>
@@ -404,7 +409,8 @@ permalink: /reading/
         </div>
       </div>
     </div>
-    
+    </div><!-- /.section-head -->
+
     {% assign others_sorted = site.data.reading_others | sort: "year" | reverse %}
     <table class="data-table">
       <thead>
@@ -447,6 +453,27 @@ permalink: /reading/
   </section>
   {% endif %}
 </div>
+
+<aside class="reading-toc" aria-label="Sections">
+  <nav>
+    <ul>
+      {% if site.data.reading_papers.size > 0 %}
+      <li><a href="#papers" data-section-link="papers">Papers</a></li>
+      {% endif %}
+      {% if site.data.reading_books.size > 0 %}
+      <li><a href="#books" data-section-link="books">Books</a></li>
+      {% endif %}
+      {% if site.data.reading_articles.size > 0 %}
+      <li><a href="#articles" data-section-link="articles">Articles</a></li>
+      {% endif %}
+      {% if site.data.reading_others.size > 0 %}
+      <li><a href="#others" data-section-link="others">Others</a></li>
+      {% endif %}
+    </ul>
+  </nav>
+</aside>
+
+</div><!-- /.reading-layout -->
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
@@ -683,14 +710,17 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Hide pagination if only one page and not in showAll mode
     if (totalPages <= 1 && !state.showAll) {
-      paginationContainer.style.display = totalRows > 0 ? 'flex' : 'none';
+      const showAllBtnOnly = totalRows > state.perPage;
+      paginationContainer.style.display = (totalRows > 0 && showAllBtnOnly) ? 'flex' : 'none';
       if (prevBtn) prevBtn.style.display = 'none';
       if (nextBtn) nextBtn.style.display = 'none';
-      if (allBtn) allBtn.style.display = totalRows > state.perPage ? '' : 'none';
+      if (infoSpan) infoSpan.style.display = 'none';
+      if (allBtn) allBtn.style.display = showAllBtnOnly ? '' : 'none';
     } else {
       paginationContainer.style.display = 'flex';
       if (prevBtn) prevBtn.style.display = '';
       if (nextBtn) nextBtn.style.display = '';
+      if (infoSpan) infoSpan.style.display = '';
       if (allBtn) allBtn.style.display = '';
     }
   };
@@ -995,5 +1025,54 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // Initial filter and pagination application
   applyFilters();
+
+  // Reading TOC — scroll-sync: highlight the link whose section is currently
+  // in the viewport. IntersectionObserver picks the section nearest to the top
+  // of the viewport (accounting for the fixed header).
+  (function() {
+    const toc = document.querySelector('.reading-toc');
+    if (!toc) return;
+    const links = toc.querySelectorAll('a[data-section-link]');
+    if (!links.length) return;
+
+    const byId = new Map();
+    links.forEach(a => byId.set(a.dataset.sectionLink, a));
+
+    const setActive = (id) => {
+      links.forEach(a => a.classList.toggle('is-active', a.dataset.sectionLink === id));
+    };
+
+    const headerOffset = 80; // nav + small breathing room
+    const observer = new IntersectionObserver((entries) => {
+      // Pick the entry whose top is closest to (but not past) headerOffset.
+      const candidates = entries
+        .filter(e => e.isIntersecting)
+        .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
+      if (candidates.length) {
+        setActive(candidates[0].target.id);
+      }
+    }, {
+      rootMargin: `-${headerOffset}px 0px -60% 0px`,
+      threshold: 0
+    });
+
+    ['papers','books','articles','others'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) observer.observe(el);
+    });
+
+    // Smooth-scroll with offset when clicking a TOC link.
+    links.forEach(a => {
+      a.addEventListener('click', (e) => {
+        const id = a.dataset.sectionLink;
+        const el = document.getElementById(id);
+        if (!el) return;
+        e.preventDefault();
+        const y = el.getBoundingClientRect().top + window.scrollY - 70;
+        window.scrollTo({top: y, behavior: 'smooth'});
+        history.replaceState(null, '', '#' + id);
+      });
+    });
+  })();
 });
 </script>

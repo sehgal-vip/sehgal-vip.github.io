@@ -11,11 +11,7 @@ permalink: /blog/
   {% assign posts_years = posts_by_year_temp | map: "name" | sort | reverse %}
   {% assign posts_by_category_temp = site.posts | where_exp: "post", "post.categories.size > 0" | group_by_exp: "post", "post.categories[0]" %}
   {% assign posts_categories = posts_by_category_temp | map: "name" | sort %}
-  <section class="collapsible-section" data-section="posts">
-    <h2 class="section-title">
-      <span class="section-icon">📝</span>
-      Blog Posts
-    </h2>
+  <section data-section="posts">
     <div class="section-filters" aria-label="Filter posts">
       <div class="filter-group">
         <button class="filter-toggle" data-filter="year" data-section="posts">

@@ -11,7 +11,6 @@ permalink: /projects/
   {% assign projects_years = projects_by_year_temp | map: "name" | sort | reverse %}
   <section class="collapsible-section" data-section="projects">
     <h2 class="section-title">
-      <span class="section-icon">🚀</span>
       Projects
     </h2>
     <div class="section-filters" aria-label="Filter projects">
@@ -255,5 +254,23 @@ document.addEventListener('DOMContentLoaded', function() {
   
   // Initial filter application
   applyFilters();
+
+  // Make entire row clickable (only the title was a link before).
+  document.querySelectorAll('.data-table tbody tr').forEach(function(row) {
+    const link = row.querySelector('a');
+    if (!link) return;
+    row.style.cursor = 'pointer';
+    row.addEventListener('click', function(e) {
+      // Don't steal clicks from the anchor or from selectable text.
+      if (e.target.closest('a')) return;
+      if (window.getSelection && String(window.getSelection()).length > 0) return;
+      // Open new tab if the anchor would have, matching original behavior.
+      if (link.target === '_blank') {
+        window.open(link.href, '_blank', 'noopener,noreferrer');
+      } else {
+        window.location.href = link.href;
+      }
+    });
+  });
 });
 </script>

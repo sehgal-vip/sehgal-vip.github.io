@@ -14,9 +14,20 @@
   {% for crumb in crumbs %}
     {% if crumb != '' and crumb != 'index.html' %}
       {% assign crumb_path = crumb_path | append: '/' | append: crumb %}
-      
+
+      {% comment %}Skip numeric-only path segments (year/month) that produce noisy `2026 / 02` crumbs.{% endcomment %}
+      {% assign crumb_int = crumb | plus: 0 %}
+      {% assign is_numeric = false %}
+      {% if crumb_int > 0 %}
+        {% assign round_tripped = crumb_int | append: '' %}
+        {% if round_tripped == crumb or crumb == '00' or crumb == '01' or crumb == '02' or crumb == '03' or crumb == '04' or crumb == '05' or crumb == '06' or crumb == '07' or crumb == '08' or crumb == '09' %}
+          {% assign is_numeric = true %}
+        {% endif %}
+      {% endif %}
+
+      {% unless is_numeric and forloop.last == false %}
       <span class="breadcrumb-separator" aria-hidden="true">→</span>
-      
+
       {% if forloop.last %}
         <span class="breadcrumb-item current" aria-current="page">
           {% if page.title %}
@@ -35,6 +46,7 @@
           {% endif %}
         </span>
       {% endif %}
+      {% endunless %}
     {% endif %}
   {% endfor %}
 </nav>
