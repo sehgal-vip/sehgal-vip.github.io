@@ -298,6 +298,16 @@ a {
   }
 }
 
+// Hide the focus ring on mouse/touch clicks while keeping it for keyboard
+// navigation (Tab). `:focus-visible` is a subset of `:focus` that browsers
+// only match when focus arrived via keyboard, so suppressing
+// `:focus:not(:focus-visible)` removes click-focus outlines site-wide
+// without breaking a11y for screen-reader / keyboard users.
+:focus:not(:focus-visible) {
+  outline: none;
+  box-shadow: none;
+}
+
 strong, b {
   font-weight: 600;
 }
