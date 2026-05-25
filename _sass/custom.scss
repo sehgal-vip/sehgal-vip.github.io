@@ -3243,8 +3243,8 @@ strong, b {
     }
 
     tr {
-      padding: 1rem;
-      margin-bottom: 0.5rem;
+      padding: 0.75rem 0.875rem;
+      margin-bottom: 0.375rem;
       border-radius: 8px;
       border: 1px solid var(--border-color);
       background: var(--card-bg);
@@ -3267,8 +3267,8 @@ strong, b {
       &.title-cell {
         font-size: 1rem;
         font-weight: 500;
-        margin-bottom: 0.35rem;
-        line-height: 1.4;
+        margin-bottom: 0.125rem;
+        line-height: 1.35;
 
         a {
           color: var(--text-color);
@@ -3279,7 +3279,7 @@ strong, b {
         }
       }
 
-      // Show author and year inline
+      // Show author and year inline as a single meta line
       &.author-cell,
       &.year-cell {
         display: inline;
@@ -3294,17 +3294,18 @@ strong, b {
       }
 
       &.year-cell {
-        margin-bottom: 0.5rem;
-
         &::after {
           content: '';
           display: block;
-          margin-bottom: 0.5rem;
+          margin-bottom: 0.3rem;
         }
       }
 
       &.desc-cell {
-        display: none;
+        display: block;
+        font-size: 0.8125rem;
+        line-height: 1.5;
+        color: var(--text-muted);
       }
     }
   }

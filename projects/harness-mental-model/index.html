@@ -1,14 +1,14 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>The Harness · Field Notes on What Wraps a Model</title>
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+---
+layout: artifact
+title: Model Harness Mental Model
+description: Field notes on what wraps a model
+permalink: /projects/harness-mental-model/
+hide_breadcrumbs: true
+hide_sidebar: true
+---
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-  :root {
+  .artifact-harness {
     --parchment: #F4ECDC;
     --parchment-deep: #EBE2CC;
     --parchment-darker: #DFD3B5;
@@ -31,10 +31,10 @@
     --mono: 'IBM Plex Mono', 'SF Mono', Menlo, monospace;
   }
 
-  * { box-sizing: border-box; margin: 0; padding: 0; }
+  .artifact-harness, .artifact-harness * { box-sizing: border-box; }
   html { scroll-behavior: smooth; }
 
-  body {
+  .artifact-harness {
     background: var(--parchment);
     background-image:
       radial-gradient(circle at 20% 30%, rgba(184,146,74,0.05) 0%, transparent 50%),
@@ -52,7 +52,7 @@
   /* =============== HAMBURGER + DRAWER =============== */
   .hamburger {
     position: fixed;
-    top: 24px;
+    top: calc(var(--header-height, 64px) + 16px);
     right: 24px;
     z-index: 50;
     width: 44px;
@@ -674,8 +674,7 @@
     .tooltip { display: none; }
   }
 </style>
-</head>
-<body>
+<div class="artifact-harness">
 
 <!-- =============== HAMBURGER + DRAWER =============== -->
 <button class="hamburger" id="hamburger" aria-label="Open navigation">
@@ -1746,5 +1745,4 @@
     });
   });
 </script>
-</body>
-</html>
+</div>

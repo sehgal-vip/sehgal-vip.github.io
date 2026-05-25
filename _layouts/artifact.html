@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+
+  {% seo %}
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:wght@400;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="{{ '/assets/css/main.css' | relative_url }}">
+  {% feed_meta %}
+
+  <link rel="icon" href="{{ '/favicon.ico' | relative_url }}" type="image/x-icon">
+
+  <script>
+    (function() {
+      const stored = localStorage.getItem('theme-preference');
+      const systemDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+      const theme = stored || (systemDark ? 'dark' : 'light');
+      document.documentElement.setAttribute('data-theme', theme);
+    })();
+  </script>
+
+  {% if page.head_extra %}{{ page.head_extra }}{% endif %}
+
+  <style>
+    main.artifact-page {
+      padding-top: var(--header-height, 64px);
+      padding-bottom: 0 !important;
+      margin: 0 !important;
+      max-width: none !important;
+      width: 100% !important;
+    }
+    main.artifact-page > .artifact-scope {
+      min-height: calc(100vh - var(--header-height, 64px));
+    }
+    main.artifact-page + .site-footer {
+      margin-top: 0 !important;
+    }
+  </style>
+</head>
+<body>
+  <a href="#main-content" class="skip-link">Skip to content</a>
+
+  <div class="site-wrapper">
+    {% include header.html %}
+
+    <main id="main-content" class="main-content artifact-page">
+      {{ content }}
+    </main>
+
+    {% include footer.html %}
+  </div>
+
+  {% include mobile-nav.html %}
+  {% include command-palette.html %}
+  {% include analytics.html %}
+
+  <script src="{{ '/assets/js/theme-toggle.js' | relative_url }}"></script>
+  <script src="{{ '/assets/js/command-palette.js' | relative_url }}"></script>
+  <script src="{{ '/assets/js/search.js' | relative_url }}"></script>
+  <script src="{{ '/assets/js/main.js' | relative_url }}"></script>
+</body>
+</html>
