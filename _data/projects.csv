@@ -1,5 +1,6 @@
 title,description,year,url
 "How LLMs Work","From tokens to next token: a visual walkthrough of the LLM stack",2026,/llm-mental-model/
+"Model Harness Mental Model","Field notes on what wraps a model",2026,/projects/harness-mental-model/
 "Quire","Split, merge, rotate, reorder, and more — client-side in the browser",2026,/projects/quire/
 "JSONL Reader","Read, parse, and visualize JSONL files with streaming support for 1M+ lines",2026,/projects/jsonlreader/
 "Format And Beautify","Client-side code formatter, beautifier, and minifier for 18 languages with themes",2026,/projects/CodeFormatBeautify/

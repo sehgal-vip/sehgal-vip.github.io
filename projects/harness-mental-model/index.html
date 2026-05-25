@@ -1,0 +1,1750 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>The Harness · Field Notes on What Wraps a Model</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --parchment: #F4ECDC;
+    --parchment-deep: #EBE2CC;
+    --parchment-darker: #DFD3B5;
+    --cream: #FAF4E4;
+    --oxblood: #6B1F2C;
+    --oxblood-faded: #8B3A45;
+    --oxblood-soft: #A55260;
+    --oxblood-tint: #E8D0CC;
+    --ink: #2A2520;
+    --ink-soft: #4D4438;
+    --ink-muted: #5C534A;
+    --ink-faint: #877E72;
+    --sepia: #8B6F47;
+    --gold: #B8924A;
+    --gold-tint: #ECDDB8;
+    --hairline: #C9BFA5;
+    --hairline-soft: #D9CFB5;
+    --highlight: #F0DFB5;
+    --serif: 'EB Garamond', Georgia, 'Times New Roman', serif;
+    --mono: 'IBM Plex Mono', 'SF Mono', Menlo, monospace;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--parchment);
+    background-image:
+      radial-gradient(circle at 20% 30%, rgba(184,146,74,0.05) 0%, transparent 50%),
+      radial-gradient(circle at 80% 70%, rgba(107,31,44,0.04) 0%, transparent 50%);
+    color: var(--ink);
+    font-family: var(--serif);
+    font-size: 18px;
+    line-height: 1.6;
+    min-height: 100vh;
+    padding: 0;
+  }
+
+  .wrap { max-width: 880px; margin: 0 auto; padding: 48px 28px 96px; }
+
+  /* =============== HAMBURGER + DRAWER =============== */
+  .hamburger {
+    position: fixed;
+    top: 24px;
+    right: 24px;
+    z-index: 50;
+    width: 44px;
+    height: 44px;
+    background: var(--parchment);
+    border: 1px solid var(--oxblood);
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 5px;
+    padding: 0;
+    transition: background 0.15s;
+  }
+  .hamburger:hover { background: var(--oxblood-tint); }
+  .hamburger span {
+    display: block;
+    width: 20px;
+    height: 1.5px;
+    background: var(--oxblood);
+    transition: transform 0.25s, opacity 0.2s;
+  }
+  .hamburger.open span:nth-child(1) { transform: translateY(6.5px) rotate(45deg); }
+  .hamburger.open span:nth-child(2) { opacity: 0; }
+  .hamburger.open span:nth-child(3) { transform: translateY(-6.5px) rotate(-45deg); }
+
+  .drawer-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(42, 37, 32, 0.4);
+    z-index: 40;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+  }
+  .drawer-overlay.open { opacity: 1; pointer-events: auto; }
+
+  .drawer {
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: 340px;
+    max-width: 88vw;
+    height: 100vh;
+    background: var(--parchment);
+    border-left: 3px double var(--oxblood);
+    z-index: 45;
+    transform: translateX(100%);
+    transition: transform 0.28s cubic-bezier(0.2, 0.7, 0.2, 1);
+    padding: 84px 32px 32px;
+    overflow-y: auto;
+  }
+  .drawer.open { transform: translateX(0); }
+  .drawer h3 {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--oxblood);
+    margin-bottom: 18px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--hairline);
+  }
+  .drawer-nav { list-style: none; counter-reset: drawer-counter; }
+  .drawer-nav li { counter-increment: drawer-counter; }
+  .drawer-nav button {
+    width: 100%;
+    text-align: left;
+    background: transparent;
+    border: none;
+    border-bottom: 1px dotted var(--hairline);
+    padding: 14px 0;
+    font-family: var(--serif);
+    font-size: 19px;
+    color: var(--ink);
+    cursor: pointer;
+    display: flex;
+    align-items: baseline;
+    gap: 14px;
+    transition: color 0.15s, padding-left 0.15s;
+  }
+  .drawer-nav button::before {
+    content: counter(drawer-counter, decimal-leading-zero);
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--oxblood);
+    min-width: 26px;
+  }
+  .drawer-nav button:hover { color: var(--oxblood); padding-left: 4px; }
+  .drawer-nav button.active { color: var(--oxblood); font-style: italic; }
+
+  /* =============== TOOLTIP =============== */
+  .tooltip {
+    position: fixed;
+    pointer-events: none;
+    background: var(--cream);
+    color: var(--ink);
+    padding: 14px 18px;
+    max-width: 320px;
+    min-width: 220px;
+    border: 1px solid var(--oxblood);
+    border-left: 3px solid var(--oxblood);
+    box-shadow: 3px 3px 0 rgba(107, 31, 44, 0.12);
+    z-index: 100;
+    opacity: 0;
+    transform: translateY(4px);
+    transition: opacity 0.14s, transform 0.14s;
+    top: 0;
+    left: 0;
+  }
+  .tooltip.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  .tooltip .tt-title {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--oxblood);
+    margin-bottom: 8px;
+    display: block;
+  }
+  .tooltip .tt-body {
+    font-family: var(--serif);
+    font-size: 15px;
+    line-height: 1.5;
+    color: var(--ink);
+    display: block;
+  }
+  .tooltip .tt-hint {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--sepia);
+    margin-top: 10px;
+    padding-top: 8px;
+    border-top: 1px dotted var(--hairline);
+    display: block;
+  }
+
+  /* =============== MASTHEAD =============== */
+  header.masthead {
+    border-top: 3px double var(--oxblood);
+    border-bottom: 1px solid var(--hairline);
+    padding: 28px 0 24px;
+    margin-bottom: 44px;
+  }
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: var(--oxblood);
+    margin-bottom: 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding-right: 60px;
+  }
+  .eyebrow .right { color: var(--ink-muted); letter-spacing: 0.1em; }
+  h1.title {
+    font-family: var(--serif);
+    font-size: 54px;
+    font-weight: 500;
+    line-height: 1.04;
+    letter-spacing: -0.01em;
+    color: var(--ink);
+    margin-bottom: 14px;
+  }
+  h1.title em { color: var(--oxblood); font-style: italic; }
+  .dek {
+    font-family: var(--serif);
+    font-size: 20px;
+    font-style: italic;
+    color: var(--ink-soft);
+    max-width: 660px;
+    line-height: 1.4;
+  }
+
+  /* =============== PAGES =============== */
+  .page { display: none; animation: fadeIn 0.28s ease; }
+  .page.active { display: block; }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* =============== LANDING (MAP) =============== */
+  .map-instruction {
+    text-align: center;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--sepia);
+    margin-bottom: 28px;
+    line-height: 1.6;
+  }
+  .map-instruction .key {
+    color: var(--oxblood);
+  }
+
+  .cross-section {
+    background: var(--cream);
+    border: 1px solid var(--hairline);
+    padding: 28px;
+    margin-bottom: 36px;
+  }
+  .cross-section svg { width: 100%; height: auto; display: block; }
+
+  .map-legend {
+    margin-top: 36px;
+    padding: 22px 26px;
+    background: var(--cream);
+    border-left: 3px solid var(--oxblood);
+    border-top: 1px solid var(--hairline);
+    border-right: 1px solid var(--hairline);
+    border-bottom: 1px solid var(--hairline);
+  }
+  .map-legend h4 {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--oxblood);
+    margin-bottom: 10px;
+  }
+  .map-legend p { font-size: 17px; line-height: 1.55; margin-bottom: 10px; color: var(--ink-soft); }
+  .map-legend p:last-child { margin-bottom: 0; }
+  .map-legend strong { color: var(--oxblood); }
+
+  /* =============== SUB-PAGE COMMON =============== */
+  .breadcrumb {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--sepia);
+    margin-bottom: 28px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--hairline);
+  }
+  .breadcrumb a {
+    color: var(--ink-muted);
+    text-decoration: none;
+    cursor: pointer;
+    transition: color 0.15s;
+  }
+  .breadcrumb a:hover { color: var(--oxblood); }
+  .breadcrumb .sep { margin: 0 8px; color: var(--hairline); }
+  .breadcrumb .current { color: var(--oxblood); }
+
+  .section-num {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--oxblood);
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .section-num::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: var(--hairline);
+  }
+  h2 {
+    font-family: var(--serif);
+    font-size: 40px;
+    font-weight: 500;
+    line-height: 1.08;
+    color: var(--ink);
+    margin-bottom: 18px;
+    letter-spacing: -0.005em;
+  }
+  h2 em { color: var(--oxblood); font-style: italic; }
+  h3.subhead {
+    font-family: var(--serif);
+    font-size: 24px;
+    font-style: italic;
+    font-weight: 500;
+    color: var(--ink-soft);
+    margin: 32px 0 12px;
+    padding-top: 18px;
+    border-top: 1px solid var(--hairline-soft);
+    scroll-margin-top: 24px;
+  }
+  h3.subhead:first-of-type { padding-top: 0; border-top: none; }
+  h3.subhead.flash {
+    animation: flash 1.4s ease-out;
+  }
+  @keyframes flash {
+    0%   { background: var(--gold-tint); }
+    100% { background: transparent; }
+  }
+  h4.label {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--oxblood);
+    margin: 22px 0 8px;
+  }
+  p {
+    font-size: 18px;
+    line-height: 1.62;
+    color: var(--ink);
+    margin-bottom: 16px;
+  }
+  p.lede {
+    font-size: 21px;
+    line-height: 1.5;
+    color: var(--ink-soft);
+    font-style: italic;
+    margin-bottom: 28px;
+  }
+  strong { color: var(--oxblood); font-weight: 600; }
+
+  .dropcap::first-letter {
+    font-family: var(--serif);
+    font-size: 64px;
+    line-height: 0.85;
+    float: left;
+    padding: 4px 10px 0 0;
+    color: var(--oxblood);
+    font-weight: 500;
+  }
+
+  ul.notebook, ol.notebook {
+    margin: 12px 0 20px 0;
+    padding-left: 0;
+    list-style: none;
+  }
+  ul.notebook li, ol.notebook li {
+    padding: 8px 0 8px 26px;
+    position: relative;
+    line-height: 1.55;
+    border-bottom: 1px dotted var(--hairline-soft);
+  }
+  ul.notebook li:last-child, ol.notebook li:last-child { border-bottom: none; }
+  ul.notebook li::before {
+    content: "§";
+    position: absolute;
+    left: 0;
+    color: var(--oxblood);
+    font-family: var(--mono);
+    font-size: 14px;
+    top: 11px;
+  }
+  ol.notebook { counter-reset: nb; }
+  ol.notebook li { counter-increment: nb; }
+  ol.notebook li::before {
+    content: counter(nb, decimal-leading-zero);
+    position: absolute;
+    left: 0;
+    color: var(--oxblood);
+    font-family: var(--mono);
+    font-size: 11px;
+    top: 12px;
+    letter-spacing: 0.08em;
+  }
+
+  .pull {
+    border-left: 3px solid var(--oxblood);
+    padding: 14px 0 14px 22px;
+    margin: 28px 0;
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 22px;
+    line-height: 1.4;
+    color: var(--ink-soft);
+  }
+
+  .aside {
+    background: var(--cream);
+    border: 1px solid var(--hairline);
+    padding: 18px 22px;
+    margin: 24px 0;
+    font-size: 16px;
+  }
+  .aside .aside-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--oxblood);
+    margin-bottom: 8px;
+  }
+  .aside p { font-size: 16px; margin-bottom: 10px; line-height: 1.55; }
+  .aside p:last-child { margin-bottom: 0; }
+
+  .duo {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+    border: 1px solid var(--hairline);
+    margin: 28px 0;
+  }
+  .duo > div { padding: 20px 22px; }
+  .duo > div:first-child {
+    border-right: 1px solid var(--hairline);
+    background: var(--cream);
+  }
+  .duo h5 {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--oxblood);
+    margin-bottom: 10px;
+  }
+  .duo p { font-size: 16px; line-height: 1.55; margin-bottom: 10px; }
+  .duo p:last-child { margin-bottom: 0; }
+
+  .breaks {
+    margin: 20px 0 28px;
+    border-top: 1px solid var(--hairline);
+    border-bottom: 1px solid var(--hairline);
+  }
+  .breaks .row {
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    gap: 22px;
+    padding: 12px 0;
+    border-bottom: 1px dotted var(--hairline-soft);
+  }
+  .breaks .row:last-child { border-bottom: none; }
+  .breaks .row .name {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--oxblood);
+    letter-spacing: 0.04em;
+    padding-top: 2px;
+  }
+  .breaks .row .desc {
+    font-size: 16px;
+    line-height: 1.5;
+    color: var(--ink-soft);
+  }
+
+  code {
+    font-family: var(--mono);
+    font-size: 0.88em;
+    background: var(--gold-tint);
+    color: var(--ink);
+    padding: 1px 5px;
+    border-radius: 2px;
+  }
+
+  .subpage-toc {
+    background: var(--cream);
+    border: 1px solid var(--hairline);
+    border-left: 3px solid var(--sepia);
+    padding: 18px 22px;
+    margin-bottom: 36px;
+  }
+  .subpage-toc h4 {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--sepia);
+    margin-bottom: 10px;
+  }
+  .subpage-toc ul {
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 18px;
+  }
+  .subpage-toc li {
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.02em;
+    color: var(--ink-muted);
+  }
+  .subpage-toc a {
+    color: var(--ink-muted);
+    text-decoration: none;
+    border-bottom: 1px dotted var(--hairline);
+    padding-bottom: 1px;
+    transition: color 0.15s;
+    cursor: pointer;
+  }
+  .subpage-toc a:hover { color: var(--oxblood); border-color: var(--oxblood); }
+
+  .pager {
+    margin-top: 56px;
+    padding-top: 28px;
+    border-top: 3px double var(--oxblood);
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 22px;
+  }
+  .pager-link {
+    background: transparent;
+    border: 1px solid var(--hairline);
+    padding: 18px 22px;
+    cursor: pointer;
+    font-family: var(--serif);
+    text-align: left;
+    transition: border-color 0.18s, background 0.18s;
+  }
+  .pager-link:hover { border-color: var(--oxblood); background: var(--cream); }
+  .pager-link.next { text-align: right; }
+  .pager-link .ptype {
+    display: block;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--oxblood);
+    margin-bottom: 6px;
+  }
+  .pager-link .ptitle {
+    font-family: var(--serif);
+    font-size: 20px;
+    font-style: italic;
+    color: var(--ink);
+  }
+
+  .colophon {
+    margin-top: 56px;
+    padding-top: 20px;
+    border-top: 1px solid var(--hairline);
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    text-align: center;
+  }
+
+  /* =============== DIAGRAM INTERACTIONS =============== */
+  .band-group { cursor: pointer; }
+  .band-bg { transition: filter 0.2s; }
+  .band-group:hover > .band-bg {
+    filter: brightness(1.04) drop-shadow(0 2px 6px rgba(107,31,44,0.18));
+  }
+  .band-group:hover > .band-label-tag rect { fill: var(--oxblood); }
+  .band-group:hover > .band-label-tag text { fill: var(--parchment); }
+
+  .component-group { cursor: help; user-select: none; }
+  .component-group rect.comp-bg { transition: fill 0.12s, stroke 0.12s; }
+  .component-group:hover rect.comp-bg {
+    fill: var(--oxblood) !important;
+    stroke: var(--oxblood-deep, #4A1B1B) !important;
+  }
+  .component-group:hover text {
+    fill: var(--parchment) !important;
+  }
+
+  /* The model band has different default colors, so the hover state inverts */
+  .model-band .component-group:hover rect.comp-bg {
+    fill: var(--parchment) !important;
+    stroke: var(--parchment) !important;
+  }
+  .model-band .component-group:hover text {
+    fill: var(--oxblood) !important;
+  }
+
+  /* =============== SUB-PAGE DIAGRAMS =============== */
+  .diagram-frame {
+    background: var(--cream);
+    border: 1px solid var(--hairline);
+    padding: 22px 24px;
+    margin: 12px 0 36px;
+  }
+  .diagram-frame svg { width: 100%; height: auto; display: block; }
+  .diagram-frame .frame-caption {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--sepia);
+    margin-top: 14px;
+    text-align: center;
+  }
+
+  .subpage-diagram .sp-component { cursor: pointer; user-select: none; }
+  .subpage-diagram .sp-component .sp-bg { transition: fill 0.14s, stroke 0.14s; }
+  .subpage-diagram .sp-component:hover .sp-bg {
+    fill: var(--oxblood) !important;
+    stroke: var(--oxblood) !important;
+  }
+  .subpage-diagram .sp-component:hover text {
+    fill: var(--parchment) !important;
+  }
+  /* The MODEL block in the production diagram is already oxblood by default */
+  .subpage-diagram .sp-component.is-model .sp-bg { fill: var(--oxblood); stroke: var(--oxblood); }
+  .subpage-diagram .sp-component.is-model text { fill: var(--parchment); }
+  .subpage-diagram .sp-component.is-model:hover .sp-bg {
+    fill: var(--oxblood-faded) !important;
+    stroke: var(--oxblood-faded) !important;
+  }
+
+  /* Responsive */
+  @media (max-width: 720px) {
+    .wrap { padding: 32px 18px 64px; }
+    body { font-size: 17px; }
+    h1.title { font-size: 38px; }
+    h2 { font-size: 30px; }
+    .dek { font-size: 18px; }
+    .duo { grid-template-columns: 1fr; }
+    .duo > div:first-child { border-right: none; border-bottom: 1px solid var(--hairline); }
+    .breaks .row { grid-template-columns: 1fr; gap: 4px; }
+    .breaks .row .name { font-size: 11px; }
+    .pager { grid-template-columns: 1fr; }
+    .pager-link.next { text-align: left; }
+    .hamburger { top: 16px; right: 16px; }
+    .tooltip { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- =============== HAMBURGER + DRAWER =============== -->
+<button class="hamburger" id="hamburger" aria-label="Open navigation">
+  <span></span><span></span><span></span>
+</button>
+<div class="drawer-overlay" id="overlay"></div>
+<aside class="drawer" id="drawer">
+  <h3>Field Notes · Index</h3>
+  <ul class="drawer-nav">
+    <li><button data-page="page-map">The map</button></li>
+    <li><button data-page="page-production">The production harness</button></li>
+    <li><button data-page="page-agent">The agent harness</button></li>
+    <li><button data-page="page-model">The model</button></li>
+  </ul>
+</aside>
+
+<!-- =============== TOOLTIP =============== -->
+<div class="tooltip" id="tooltip" role="tooltip" aria-hidden="true">
+  <span class="tt-title"></span>
+  <span class="tt-body"></span>
+</div>
+
+<div class="wrap">
+
+  <!-- =============== MASTHEAD =============== -->
+  <header class="masthead">
+    <div class="eyebrow">
+      <span>The Curiosity Loop · Field Notes</span>
+      <span class="right">Volume II · The Harness</span>
+    </div>
+    <h1 class="title">The <em>Harness</em></h1>
+    <p class="dek">Field notes on what wraps a model. A nested map of the machinery that turns a stateless next-token predictor into something that books a flight, writes a memo, or runs an agent.</p>
+  </header>
+
+  <!-- =============== PAGE: MAP =============== -->
+  <article class="page active" id="page-map">
+    <div class="map-instruction">
+      Hover any element for details<br>
+      <span class="key">Click a band</span> to enter ·
+      <span class="key">Double-click a component</span> to jump to its exact section
+    </div>
+
+    <div class="cross-section diagram-frame">
+      <svg viewBox="0 0 800 560" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Architectural cross-section of the harness">
+        <defs>
+          <pattern id="dots-production" x="0" y="0" width="14" height="14" patternUnits="userSpaceOnUse">
+            <circle cx="2" cy="2" r="0.6" fill="#8B6F47" opacity="0.25"/>
+          </pattern>
+          <pattern id="dots-agent" x="0" y="0" width="12" height="12" patternUnits="userSpaceOnUse">
+            <circle cx="2" cy="2" r="0.7" fill="#8B6F47" opacity="0.32"/>
+          </pattern>
+          <pattern id="hatch-model" x="0" y="0" width="10" height="10" patternUnits="userSpaceOnUse">
+            <line x1="0" y1="10" x2="10" y2="0" stroke="#F4ECDC" stroke-width="0.4" opacity="0.18"/>
+          </pattern>
+
+          <linearGradient id="grad-production" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#F0E5CC"/>
+            <stop offset="100%" stop-color="#E5DAB8"/>
+          </linearGradient>
+          <linearGradient id="grad-agent" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#ECDDB8"/>
+            <stop offset="100%" stop-color="#E0CFA0"/>
+          </linearGradient>
+          <linearGradient id="grad-model" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#7A2D2D"/>
+            <stop offset="100%" stop-color="#5A1A1A"/>
+          </linearGradient>
+        </defs>
+
+        <!-- ============ PRODUCTION HARNESS BAND ============ -->
+        <g class="band-group" data-tooltip="band-production" data-page="page-production">
+          <rect class="band-bg" x="20" y="20" width="760" height="200" fill="url(#grad-production)" stroke="#8B6F47" stroke-width="1"/>
+          <rect x="20" y="20" width="760" height="200" fill="url(#dots-production)" style="pointer-events:none"/>
+
+          <g class="band-label-tag">
+            <rect x="20" y="20" width="36" height="200" fill="#8B6F47"/>
+            <text x="38" y="120" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10" letter-spacing="3" fill="#FAF4E4" transform="rotate(-90 38 120)">§ 01 · PRODUCTION HARNESS</text>
+          </g>
+
+          <text x="76" y="56" font-family="EB Garamond, serif" font-size="24" font-style="italic" fill="#2A2520" style="pointer-events:none">The platform</text>
+          <text x="76" y="78" font-family="IBM Plex Mono, monospace" font-size="10" letter-spacing="1.5" fill="#5C534A" style="pointer-events:none">what the model service ships around the model</text>
+
+          <!-- Components -->
+          <g class="component-group" data-tooltip="comp-ingress" data-page="page-production" data-anchor="ph-ingress">
+            <rect class="comp-bg" x="76" y="100" width="92" height="26" fill="#FAF4E4" stroke="#C9BFA5"/>
+            <text x="122" y="117" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" fill="#2A2520" style="pointer-events:none">ingress</text>
+          </g>
+          <g class="component-group" data-tooltip="comp-input-classifiers" data-page="page-production" data-anchor="ph-input">
+            <rect class="comp-bg" x="180" y="100" width="130" height="26" fill="#FAF4E4" stroke="#C9BFA5"/>
+            <text x="245" y="117" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" fill="#2A2520" style="pointer-events:none">input classifiers</text>
+          </g>
+          <g class="component-group" data-tooltip="comp-context-assembly" data-page="page-production" data-anchor="ph-assembly">
+            <rect class="comp-bg" x="322" y="100" width="148" height="26" fill="#FAF4E4" stroke="#C9BFA5"/>
+            <text x="396" y="117" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" fill="#2A2520" style="pointer-events:none">context assembly</text>
+          </g>
+          <g class="component-group" data-tooltip="comp-sampling" data-page="page-production" data-anchor="ph-sampling">
+            <rect class="comp-bg" x="482" y="100" width="108" height="26" fill="#FAF4E4" stroke="#C9BFA5"/>
+            <text x="536" y="117" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" fill="#2A2520" style="pointer-events:none">sampling</text>
+          </g>
+          <g class="component-group" data-tooltip="comp-tool-loop" data-page="page-production" data-anchor="ph-toolloop">
+            <rect class="comp-bg" x="602" y="100" width="156" height="26" fill="#FAF4E4" stroke="#C9BFA5"/>
+            <text x="680" y="117" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" fill="#2A2520" style="pointer-events:none">tool execution loop</text>
+          </g>
+
+          <g class="component-group" data-tooltip="comp-output-classifiers" data-page="page-production" data-anchor="ph-output">
+            <rect class="comp-bg" x="76" y="140" width="146" height="26" fill="#FAF4E4" stroke="#C9BFA5"/>
+            <text x="149" y="157" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" fill="#2A2520" style="pointer-events:none">output classifiers</text>
+          </g>
+          <g class="component-group" data-tooltip="comp-streaming" data-page="page-production" data-anchor="ph-streaming">
+            <rect class="comp-bg" x="234" y="140" width="106" height="26" fill="#FAF4E4" stroke="#C9BFA5"/>
+            <text x="287" y="157" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" fill="#2A2520" style="pointer-events:none">streaming</text>
+          </g>
+          <g class="component-group" data-tooltip="comp-observability" data-page="page-production" data-anchor="ph-obs">
+            <rect class="comp-bg" x="352" y="140" width="128" height="26" fill="#FAF4E4" stroke="#C9BFA5"/>
+            <text x="416" y="157" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" fill="#2A2520" style="pointer-events:none">observability</text>
+          </g>
+
+          <text x="760" y="200" text-anchor="end" font-family="IBM Plex Mono, monospace" font-size="9" letter-spacing="2" fill="#8B6F47" style="pointer-events:none">SURFACE · DEPTH 0</text>
+        </g>
+
+        <!-- ============ AGENT HARNESS BAND ============ -->
+        <g class="band-group" data-tooltip="band-agent" data-page="page-agent">
+          <rect class="band-bg" x="20" y="220" width="760" height="180" fill="url(#grad-agent)" stroke="#8B6F47" stroke-width="1"/>
+          <rect x="20" y="220" width="760" height="180" fill="url(#dots-agent)" style="pointer-events:none"/>
+
+          <g class="band-label-tag">
+            <rect x="20" y="220" width="36" height="180" fill="#8B6F47"/>
+            <text x="38" y="310" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10" letter-spacing="3" fill="#FAF4E4" transform="rotate(-90 38 310)">§ 02 · AGENT HARNESS</text>
+          </g>
+
+          <text x="76" y="256" font-family="EB Garamond, serif" font-size="24" font-style="italic" fill="#2A2520" style="pointer-events:none">What you build</text>
+          <text x="76" y="278" font-family="IBM Plex Mono, monospace" font-size="10" letter-spacing="1.5" fill="#5C534A" style="pointer-events:none">orchestration when one model call is not enough</text>
+
+          <g class="component-group" data-tooltip="comp-state" data-page="page-agent" data-anchor="ah-state">
+            <rect class="comp-bg" x="76" y="300" width="80" height="26" fill="#FAF4E4" stroke="#C9BFA5"/>
+            <text x="116" y="317" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" fill="#2A2520" style="pointer-events:none">state</text>
+          </g>
+          <g class="component-group" data-tooltip="comp-planner" data-page="page-agent" data-anchor="ah-planner">
+            <rect class="comp-bg" x="168" y="300" width="92" height="26" fill="#FAF4E4" stroke="#C9BFA5"/>
+            <text x="214" y="317" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" fill="#2A2520" style="pointer-events:none">planner</text>
+          </g>
+          <g class="component-group" data-tooltip="comp-tools" data-page="page-agent" data-anchor="ah-tools">
+            <rect class="comp-bg" x="272" y="300" width="78" height="26" fill="#FAF4E4" stroke="#C9BFA5"/>
+            <text x="311" y="317" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" fill="#2A2520" style="pointer-events:none">tools</text>
+          </g>
+          <g class="component-group" data-tooltip="comp-memory" data-page="page-agent" data-anchor="ah-memory">
+            <rect class="comp-bg" x="362" y="300" width="92" height="26" fill="#FAF4E4" stroke="#C9BFA5"/>
+            <text x="408" y="317" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" fill="#2A2520" style="pointer-events:none">memory</text>
+          </g>
+          <g class="component-group" data-tooltip="comp-gates" data-page="page-agent" data-anchor="ah-gates">
+            <rect class="comp-bg" x="466" y="300" width="132" height="26" fill="#FAF4E4" stroke="#C9BFA5"/>
+            <text x="532" y="317" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" fill="#2A2520" style="pointer-events:none">quality gates</text>
+          </g>
+
+          <g class="component-group" data-tooltip="comp-control" data-page="page-agent" data-anchor="ah-control">
+            <rect class="comp-bg" x="76" y="340" width="124" height="26" fill="#FAF4E4" stroke="#C9BFA5"/>
+            <text x="138" y="357" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" fill="#2A2520" style="pointer-events:none">control flow</text>
+          </g>
+          <g class="component-group" data-tooltip="comp-output-comp" data-page="page-agent" data-anchor="ah-output">
+            <rect class="comp-bg" x="212" y="340" width="170" height="26" fill="#FAF4E4" stroke="#C9BFA5"/>
+            <text x="297" y="357" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" fill="#2A2520" style="pointer-events:none">output composition</text>
+          </g>
+          <g class="component-group" data-tooltip="comp-subagents" data-page="page-agent" data-anchor="ah-subagents">
+            <rect class="comp-bg" x="394" y="340" width="156" height="26" fill="#FAF4E4" stroke="#C9BFA5"/>
+            <text x="472" y="357" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" fill="#2A2520" style="pointer-events:none">sub-agent delegation</text>
+          </g>
+
+          <text x="760" y="380" text-anchor="end" font-family="IBM Plex Mono, monospace" font-size="9" letter-spacing="2" fill="#8B6F47" style="pointer-events:none">DEPTH 1 · ORCHESTRATION</text>
+        </g>
+
+        <!-- ============ MODEL BAND ============ -->
+        <g class="band-group model-band" data-tooltip="band-model" data-page="page-model">
+          <rect class="band-bg" x="20" y="400" width="760" height="140" fill="url(#grad-model)" stroke="#4A1B1B" stroke-width="1"/>
+          <rect x="20" y="400" width="760" height="140" fill="url(#hatch-model)" style="pointer-events:none"/>
+
+          <g class="band-label-tag">
+            <rect x="20" y="400" width="36" height="140" fill="#4A1B1B"/>
+            <text x="38" y="470" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10" letter-spacing="3" fill="#F4ECDC" transform="rotate(-90 38 470)">§ 03 · THE MODEL</text>
+          </g>
+
+          <text x="76" y="436" font-family="EB Garamond, serif" font-size="24" font-style="italic" fill="#F4ECDC" style="pointer-events:none">The bedrock</text>
+          <text x="76" y="458" font-family="IBM Plex Mono, monospace" font-size="10" letter-spacing="1.5" fill="#E8D0CC" style="pointer-events:none">a stateless function from tokens to probabilities</text>
+
+          <g class="component-group" data-tooltip="comp-tokeniser" data-page="page-model" data-anchor="m-tokeniser">
+            <rect class="comp-bg" x="76" y="480" width="100" height="26" fill="rgba(244,236,220,0.08)" stroke="#A55260"/>
+            <text x="126" y="497" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" fill="#F4ECDC" style="pointer-events:none">tokeniser</text>
+          </g>
+          <g class="component-group" data-tooltip="comp-embedding" data-page="page-model" data-anchor="m-embedding">
+            <rect class="comp-bg" x="188" y="480" width="108" height="26" fill="rgba(244,236,220,0.08)" stroke="#A55260"/>
+            <text x="242" y="497" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" fill="#F4ECDC" style="pointer-events:none">embedding</text>
+          </g>
+          <g class="component-group" data-tooltip="comp-attention" data-page="page-model" data-anchor="m-attention">
+            <rect class="comp-bg" x="308" y="480" width="100" height="26" fill="rgba(244,236,220,0.08)" stroke="#A55260"/>
+            <text x="358" y="497" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" fill="#F4ECDC" style="pointer-events:none">attention</text>
+          </g>
+          <g class="component-group" data-tooltip="comp-ffn" data-page="page-model" data-anchor="m-ffn">
+            <rect class="comp-bg" x="420" y="480" width="122" height="26" fill="rgba(244,236,220,0.08)" stroke="#A55260"/>
+            <text x="481" y="497" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" fill="#F4ECDC" style="pointer-events:none">feed-forward</text>
+          </g>
+          <g class="component-group" data-tooltip="comp-sampling-head" data-page="page-model" data-anchor="m-sampling">
+            <rect class="comp-bg" x="554" y="480" width="124" height="26" fill="rgba(244,236,220,0.08)" stroke="#A55260"/>
+            <text x="616" y="497" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" fill="#F4ECDC" style="pointer-events:none">sampling head</text>
+          </g>
+
+          <text x="760" y="528" text-anchor="end" font-family="IBM Plex Mono, monospace" font-size="9" letter-spacing="2" fill="#E8D0CC" style="pointer-events:none">DEPTH 2 · BEDROCK</text>
+        </g>
+      </svg>
+    </div>
+
+    <div class="map-legend">
+      <h4>How to read this</h4>
+      <p>The model sits at the bottom. It is a single function. Token IDs in, probabilities out. Nothing more. Above it sit two layers of harness, stacked like geological strata. The middle band, the <strong>agent harness</strong>, is what a developer builds when one call to the model is not enough. The top band, the <strong>production harness</strong>, is what the model service ships around the model to serve it to the world safely and at scale.</p>
+      <p>Click any band to descend into it. Double-click any component to jump to its exact section. Or use the index in the hamburger menu, top right.</p>
+    </div>
+  </article>
+
+  <!-- =============== PAGE: PRODUCTION HARNESS =============== -->
+  <article class="page" id="page-production">
+    <div class="breadcrumb">
+      <a data-page="page-map">The map</a>
+      <span class="sep">›</span>
+      <span class="current">The production harness</span>
+    </div>
+
+    <div class="section-num">§ 01 · The Surface Layer</div>
+    <h2>The <em>production</em> harness</h2>
+    <p class="lede">What the model service ships around the model. Its job is to accept one HTTP request and return one stream of tokens, safely and quickly.</p>
+
+    <div class="diagram-frame subpage-diagram">
+      <svg viewBox="0 0 820 320" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Production harness request flow pipeline">
+        <defs>
+          <marker id="arr-sepia" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#8B6F47"/>
+          </marker>
+          <marker id="arr-oxblood" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#6B1F2C"/>
+          </marker>
+        </defs>
+
+        <!-- Heading inside the diagram -->
+        <text x="20" y="28" font-family="IBM Plex Mono, monospace" font-size="10" letter-spacing="2.4" fill="#6B1F2C">REQUEST FLOW · LEFT TO RIGHT</text>
+
+        <!-- Request entry label -->
+        <text x="20" y="138" font-family="EB Garamond, serif" font-size="13" font-style="italic" fill="#8B6F47">request</text>
+        <text x="20" y="155" font-family="EB Garamond, serif" font-size="13" font-style="italic" fill="#8B6F47">in →</text>
+
+        <!-- Response exit label -->
+        <text x="800" y="138" text-anchor="end" font-family="EB Garamond, serif" font-size="13" font-style="italic" fill="#8B6F47">→ tokens</text>
+        <text x="800" y="155" text-anchor="end" font-family="EB Garamond, serif" font-size="13" font-style="italic" fill="#8B6F47">out</text>
+
+        <!-- Connecting flow lines between components -->
+        <line x1="148" y1="150" x2="158" y2="150" stroke="#8B6F47" stroke-width="1.4" marker-end="url(#arr-sepia)"/>
+        <line x1="286" y1="150" x2="296" y2="150" stroke="#8B6F47" stroke-width="1.4" marker-end="url(#arr-sepia)"/>
+        <line x1="422" y1="150" x2="432" y2="150" stroke="#8B6F47" stroke-width="1.4" marker-end="url(#arr-sepia)"/>
+        <line x1="510" y1="150" x2="520" y2="150" stroke="#8B6F47" stroke-width="1.4" marker-end="url(#arr-sepia)"/>
+        <line x1="608" y1="150" x2="618" y2="150" stroke="#8B6F47" stroke-width="1.4" marker-end="url(#arr-sepia)"/>
+        <line x1="746" y1="150" x2="756" y2="150" stroke="#8B6F47" stroke-width="1.4" marker-end="url(#arr-sepia)"/>
+
+        <!-- Components in main row -->
+        <g class="sp-component" data-tooltip="comp-ingress" data-anchor="ph-ingress">
+          <rect class="sp-bg" x="60" y="130" width="88" height="40" fill="#FAF4E4" stroke="#C9BFA5"/>
+          <text x="104" y="155" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" fill="#2A2520" style="pointer-events:none">ingress</text>
+        </g>
+        <g class="sp-component" data-tooltip="comp-input-classifiers" data-anchor="ph-input">
+          <rect class="sp-bg" x="158" y="130" width="128" height="40" fill="#FAF4E4" stroke="#C9BFA5"/>
+          <text x="222" y="155" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" fill="#2A2520" style="pointer-events:none">input classifiers</text>
+        </g>
+        <g class="sp-component" data-tooltip="comp-context-assembly" data-anchor="ph-assembly">
+          <rect class="sp-bg" x="296" y="130" width="126" height="40" fill="#FAF4E4" stroke="#C9BFA5"/>
+          <text x="359" y="155" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" fill="#2A2520" style="pointer-events:none">context assembly</text>
+        </g>
+        <!-- MODEL block, taller and oxblood -->
+        <g class="sp-component is-model" data-tooltip="band-model" data-anchor="" data-page="page-model">
+          <rect class="sp-bg" x="432" y="116" width="78" height="68" rx="2"/>
+          <text x="471" y="148" text-anchor="middle" font-family="EB Garamond, serif" font-size="14" font-style="italic" fill="#F4ECDC" style="pointer-events:none">the</text>
+          <text x="471" y="166" text-anchor="middle" font-family="EB Garamond, serif" font-size="14" font-style="italic" fill="#F4ECDC" style="pointer-events:none">model</text>
+        </g>
+        <g class="sp-component" data-tooltip="comp-sampling" data-anchor="ph-sampling">
+          <rect class="sp-bg" x="520" y="130" width="88" height="40" fill="#FAF4E4" stroke="#C9BFA5"/>
+          <text x="564" y="155" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" fill="#2A2520" style="pointer-events:none">sampling</text>
+        </g>
+        <g class="sp-component" data-tooltip="comp-output-classifiers" data-anchor="ph-output">
+          <rect class="sp-bg" x="618" y="130" width="128" height="40" fill="#FAF4E4" stroke="#C9BFA5"/>
+          <text x="682" y="155" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" fill="#2A2520" style="pointer-events:none">output classifiers</text>
+        </g>
+        <g class="sp-component" data-tooltip="comp-streaming" data-anchor="ph-streaming">
+          <rect class="sp-bg" x="756" y="130" width="44" height="40" fill="#FAF4E4" stroke="#C9BFA5"/>
+          <text x="778" y="155" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" fill="#2A2520" style="pointer-events:none">stream</text>
+        </g>
+
+        <!-- Tool execution loop callout (curved arrows down from model, up from model) -->
+        <g class="sp-component" data-tooltip="comp-tool-loop" data-anchor="ph-toolloop">
+          <rect class="sp-bg" x="396" y="220" width="150" height="36" fill="#FAF4E4" stroke="#C9BFA5"/>
+          <text x="471" y="243" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" fill="#2A2520" style="pointer-events:none">tool execution loop</text>
+        </g>
+        <!-- Arrow down from model to tool loop -->
+        <path d="M 460 184 Q 444 200, 444 218" fill="none" stroke="#6B1F2C" stroke-width="1.4" marker-end="url(#arr-oxblood)" style="pointer-events:none"/>
+        <!-- Arrow back up from tool loop to model -->
+        <path d="M 498 220 Q 498 200, 482 184" fill="none" stroke="#6B1F2C" stroke-width="1.4" marker-end="url(#arr-oxblood)" style="pointer-events:none"/>
+        <!-- Annotation -->
+        <text x="555" y="232" font-family="EB Garamond, serif" font-size="12" font-style="italic" fill="#8B6F47" style="pointer-events:none">dispatch · return ·</text>
+        <text x="555" y="248" font-family="EB Garamond, serif" font-size="12" font-style="italic" fill="#8B6F47" style="pointer-events:none">loop until done</text>
+
+        <!-- Observability footer band -->
+        <g class="sp-component" data-tooltip="comp-observability" data-anchor="ph-obs">
+          <rect class="sp-bg" x="20" y="280" width="780" height="30" fill="#FAF4E4" stroke="#C9BFA5" stroke-dasharray="3 3"/>
+          <text x="410" y="299" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" fill="#2A2520" style="pointer-events:none">observability · logs · traces · billing · evals · audits</text>
+        </g>
+      </svg>
+      <div class="frame-caption">Click any component to jump to its section · Click the model to descend into volume III</div>
+    </div>
+
+    <p class="dropcap">The production harness is the layer most developers never write. It is built by the platform that hosts the model. From the outside it looks like a thin pipe: send a request, get a response. From the inside it is eight or nine distinct components, each doing a specialised job, each capable of being upgraded or swapped without touching the model itself.</p>
+
+    <h3 class="subhead" id="ph-ingress">Ingress</h3>
+    <p>The front door. Authenticates the caller, applies rate limits, routes the request to the correct model and the correct datacentre. Looks boring. Becomes interesting at scale, where a slow ingress can dominate the latency of every request even if the model is fast.</p>
+    <p>Ingress is also where pricing tiers express themselves. Different keys get different priority queues. Different keys get different versions of the model. Different keys get different size limits on the request payload.</p>
+
+    <h3 class="subhead" id="ph-input">Input classifiers</h3>
+    <p>Before the model sees the user's message, a separate set of small models or rule systems checks it. They look for prompt injection attempts, content that violates policy, requests that should be refused on principle, and signals about what kind of request this actually is. They run fast because they have to. They cost almost nothing relative to running the main model.</p>
+    <p>The trade-off is latency. A classifier that adds two hundred milliseconds to every request is a real product cost. Platforms work hard to make them as small and as parallel as possible.</p>
+
+    <h3 class="subhead" id="ph-assembly">Context assembly</h3>
+    <p class="lede">The model only ever sees one document. Everything else is a fight to make that document the right document.</p>
+    <p>Context assembly is the harness deciding what goes into the prompt before a single token of generation happens. The output is one ordered sequence of tokens, ready for the inference engine. This is the highest-leverage component in the entire stack.</p>
+
+    <h4 class="label">What gets assembled, in roughly the order it appears</h4>
+    <ul class="notebook">
+      <li><strong>System prompt.</strong> Instructions, role, behaviour rules, format requirements. Sets the lens through which everything else is read.</li>
+      <li><strong>Safety rules.</strong> Often injected by the platform, invisible to the developer.</li>
+      <li><strong>Tool definitions.</strong> Schemas describing what tools exist, their arguments, their returns.</li>
+      <li><strong>Memories.</strong> Long-term facts about the user, retrieved from a separate store.</li>
+      <li><strong>Retrieved knowledge.</strong> Chunks fetched by semantic search from a vector store, when applicable.</li>
+      <li><strong>Conversation history.</strong> Prior turns of the current session, often summarised.</li>
+      <li><strong>Current user message.</strong> The thing being responded to. Goes last because of recency.</li>
+    </ul>
+
+    <h4 class="label">Three principles</h4>
+    <p><strong>Order matters more than people think.</strong> The model attends to every token, but positional encoding and recency dynamics mean tokens at the start and end behave differently from tokens in the middle. The middle of a long prompt is a graveyard for instructions you wanted the model to notice.</p>
+    <p><strong>Tokens cost money and context.</strong> Every assembled token costs compute and eats into a finite window. Assembly decisions are budget decisions, not just relevance decisions.</p>
+    <p><strong>Assembly is not concatenation.</strong> Real harnesses compress, summarise, deduplicate, and reorder. Two products on the same model can produce wildly different outputs because their assembly logic does different work.</p>
+
+    <h4 class="label">What breaks</h4>
+    <div class="breaks">
+      <div class="row"><div class="name">Context overflow</div><div class="desc">Window exceeded. The oldest content gets truncated silently. The model loses the thread.</div></div>
+      <div class="row"><div class="name">Wrong order</div><div class="desc">System prompt buried in the middle of a long context. The model effectively ignores it.</div></div>
+      <div class="row"><div class="name">Stale memory</div><div class="desc">Retrieved facts are no longer true. The model states them confidently anyway.</div></div>
+      <div class="row"><div class="name">Tool pollution</div><div class="desc">Too many tool schemas defined. The model picks the wrong one or hallucinates parameters.</div></div>
+      <div class="row"><div class="name">Retrieval noise</div><div class="desc">Chunks that look topically relevant but actively mislead.</div></div>
+      <div class="row"><div class="name">Prompt leakage</div><div class="desc">The model can be coaxed into revealing or paraphrasing its system prompt.</div></div>
+    </div>
+
+    <h3 class="subhead" id="ph-sampling">Sampling</h3>
+    <p>The model outputs a probability distribution over the vocabulary. Sampling is how the harness turns that distribution into a single chosen token. The levers here are familiar but worth listing.</p>
+    <ul class="notebook">
+      <li><strong>Temperature.</strong> Scales the logits before the softmax. Lower temperature concentrates probability on the top candidates; higher temperature flattens it. Temperature zero is deterministic.</li>
+      <li><strong>Top-k.</strong> Only sample from the k most likely tokens. Everything else is discarded.</li>
+      <li><strong>Top-p (nucleus).</strong> Sample only from the smallest set of tokens whose cumulative probability exceeds p. Adapts to the shape of the distribution.</li>
+      <li><strong>Stop sequences.</strong> Strings that, if emitted, cause generation to halt.</li>
+      <li><strong>Repetition penalties.</strong> Down-weight tokens that have appeared recently.</li>
+    </ul>
+    <p>Sampling is where the same model can feel cautious, creative, or unhinged depending on which parameter the harness chose. The model itself does not change.</p>
+
+    <h3 class="subhead" id="ph-toolloop">Tool execution loop</h3>
+    <p class="lede">The model cannot do anything. The tool loop is how the harness lets it.</p>
+    <p>A model emits tokens. If some of those tokens encode a structured tool call, something has to notice and act. That noticing-and-acting is the tool loop. It is the central pattern of agentic AI.</p>
+
+    <h4 class="label">The mechanics</h4>
+    <ol class="notebook">
+      <li><strong>Tool definitions arrive in the context.</strong> The model is told which tools exist and how to call them.</li>
+      <li><strong>The model emits tokens that look like a tool call.</strong> Usually a structured JSON block or a special tagged format. This is just text. The model has no idea what a tool is. It has learned a pattern.</li>
+      <li><strong>A parser detects the call.</strong> The harness watches the output stream. When it sees a tool-call shape, it stops generation.</li>
+      <li><strong>The harness dispatches.</strong> It calls the actual code or API the schema described. The model does not call the tool. The harness does, on the model's behalf.</li>
+      <li><strong>The result is appended to the context.</strong> The tool's return value becomes new tokens in the conversation history.</li>
+      <li><strong>The model is run again.</strong> Same model, new context. The next token is conditioned on whatever the tool returned.</li>
+      <li><strong>The loop continues</strong> until the model emits an ordinary text response with no tool call, or hits a stop signal, or a guard trips.</li>
+    </ol>
+
+    <div class="pull">"Tool use is not the model picking up a hammer. It is the model writing the word 'hammer' and the harness fetching one."</div>
+
+    <h4 class="label">What breaks</h4>
+    <div class="breaks">
+      <div class="row"><div class="name">Loop divergence</div><div class="desc">The agent keeps calling tools forever. No exit condition was specified or the model failed to detect one.</div></div>
+      <div class="row"><div class="name">Schema mismatch</div><div class="desc">The model emits a tool call with the wrong shape. The parser fails or the tool errors out. Often visible as confidently wrong JSON.</div></div>
+      <div class="row"><div class="name">Result drowning</div><div class="desc">A tool returns thousands of tokens. The context fills. Earlier context gets evicted. The agent loses the original task.</div></div>
+      <div class="row"><div class="name">Mid-loop drift</div><div class="desc">Each tool result subtly shifts what the model thinks the task is. By turn five, it is solving a different problem.</div></div>
+      <div class="row"><div class="name">Silent failures</div><div class="desc">Tool fails, but the error is swallowed. The model continues as if it succeeded.</div></div>
+    </div>
+
+    <h3 class="subhead" id="ph-output">Output classifiers</h3>
+    <p>After the model generates tokens, another set of classifiers checks the output. Same idea as input classifiers, opposite direction. They look for policy violations the model failed to refuse, leaked secrets, leaked system prompts, or content the platform has committed not to produce. If they trip, the output gets blocked, replaced, or rewritten before the user sees it.</p>
+    <p>Two thin classifiers do work that, if removed, would force the main model to be both producer and police. Specialisation lets each do its job better.</p>
+
+    <h3 class="subhead" id="ph-streaming">Streaming</h3>
+    <p>The model generates tokens autoregressively, one after the next. The harness has a choice: wait for the full response and send it as one block, or send each token as it is generated. Streaming sends each token over a persistent connection, typically using server-sent events, so the user starts reading before the model is done writing.</p>
+    <p>This is more than user-experience polish. Streaming is also a control point. Tool calls can be detected mid-stream and trigger the loop earlier. Output classifiers can interrupt generation when a violation appears. The streaming layer is both a delivery mechanism and a place to intervene.</p>
+
+    <h3 class="subhead" id="ph-obs">Observability</h3>
+    <p>Logs, traces, billing meters, replay artifacts. Every token in and every token out, recorded for debugging, billing, evals, and audits. Looks like infrastructure plumbing. Becomes the lifeblood of any team trying to improve a system, because without it you cannot tell whether a change helped, hurt, or made no difference.</p>
+    <p>Observability is also where the most sensitive privacy and retention decisions live. What gets logged, for how long, who can see it, and whether it can be used for training are all observability questions.</p>
+
+    <div class="pager">
+      <button class="pager-link prev" data-page="page-map">
+        <span class="ptype">← The map</span>
+        <span class="ptitle">Back to the cross-section</span>
+      </button>
+      <button class="pager-link next" data-page="page-agent">
+        <span class="ptype">Next · § 02 →</span>
+        <span class="ptitle">The agent harness</span>
+      </button>
+    </div>
+  </article>
+
+  <!-- =============== PAGE: AGENT HARNESS =============== -->
+  <article class="page" id="page-agent">
+    <div class="breadcrumb">
+      <a data-page="page-map">The map</a>
+      <span class="sep">›</span>
+      <span class="current">The agent harness</span>
+    </div>
+
+    <div class="section-num">§ 02 · The Orchestration Layer</div>
+    <h2>The <em>agent</em> harness</h2>
+    <p class="lede">What you build when one call to the model is not enough. Lives inside the tool loop of the production harness, and bends one model into something that plans, acts, and revises.</p>
+
+    <div class="diagram-frame subpage-diagram">
+      <svg viewBox="0 0 820 460" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Agent harness orchestration loop">
+        <defs>
+          <marker id="arr-sepia-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#8B6F47"/>
+          </marker>
+          <marker id="arr-oxblood-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#6B1F2C"/>
+          </marker>
+        </defs>
+
+        <text x="20" y="28" font-family="IBM Plex Mono, monospace" font-size="10" letter-spacing="2.4" fill="#6B1F2C">ORCHESTRATION LOOP · CONTINUE OR EXIT</text>
+
+        <!-- Central loop: 4 nodes in a rough rectangle, arrows clockwise -->
+        <!-- State (top) -->
+        <g class="sp-component" data-tooltip="comp-state" data-anchor="ah-state">
+          <rect class="sp-bg" x="346" y="80" width="128" height="44" fill="#FAF4E4" stroke="#C9BFA5"/>
+          <text x="410" y="107" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" fill="#2A2520" style="pointer-events:none">state</text>
+        </g>
+
+        <!-- Planner (right) -->
+        <g class="sp-component" data-tooltip="comp-planner" data-anchor="ah-planner">
+          <rect class="sp-bg" x="590" y="180" width="128" height="44" fill="#FAF4E4" stroke="#C9BFA5"/>
+          <text x="654" y="207" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" fill="#2A2520" style="pointer-events:none">planner</text>
+        </g>
+
+        <!-- Tools (bottom) -->
+        <g class="sp-component" data-tooltip="comp-tools" data-anchor="ah-tools">
+          <rect class="sp-bg" x="346" y="280" width="128" height="44" fill="#FAF4E4" stroke="#C9BFA5"/>
+          <text x="410" y="307" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" fill="#2A2520" style="pointer-events:none">tools</text>
+        </g>
+
+        <!-- Quality gates (left) -->
+        <g class="sp-component" data-tooltip="comp-gates" data-anchor="ah-gates">
+          <rect class="sp-bg" x="102" y="180" width="128" height="44" fill="#FAF4E4" stroke="#C9BFA5"/>
+          <text x="166" y="207" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" fill="#2A2520" style="pointer-events:none">quality gates</text>
+        </g>
+
+        <!-- Arrows clockwise (oxblood, the load-bearing cycle) -->
+        <path d="M 474 102 Q 590 102, 654 178" fill="none" stroke="#6B1F2C" stroke-width="1.5" marker-end="url(#arr-oxblood-a)" style="pointer-events:none"/>
+        <path d="M 654 224 Q 654 280, 474 302" fill="none" stroke="#6B1F2C" stroke-width="1.5" marker-end="url(#arr-oxblood-a)" style="pointer-events:none"/>
+        <path d="M 346 302 Q 230 302, 166 226" fill="none" stroke="#6B1F2C" stroke-width="1.5" marker-end="url(#arr-oxblood-a)" style="pointer-events:none"/>
+        <path d="M 166 180 Q 166 102, 344 102" fill="none" stroke="#6B1F2C" stroke-width="1.5" marker-end="url(#arr-oxblood-a)" style="pointer-events:none"/>
+
+        <!-- Cycle annotation in the middle -->
+        <text x="410" y="200" text-anchor="middle" font-family="EB Garamond, serif" font-size="14" font-style="italic" fill="#8B6F47" style="pointer-events:none">the run</text>
+        <text x="410" y="220" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="9" letter-spacing="2" fill="#A55260" style="pointer-events:none">↻ cycle</text>
+
+        <!-- ============ SIDE ELEMENTS ============ -->
+        <!-- Memory feeds State (top-left) -->
+        <g class="sp-component" data-tooltip="comp-memory" data-anchor="ah-memory">
+          <rect class="sp-bg" x="20" y="80" width="120" height="44" fill="#FAF4E4" stroke="#C9BFA5" stroke-dasharray="3 2"/>
+          <text x="80" y="107" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" fill="#2A2520" style="pointer-events:none">memory</text>
+        </g>
+        <path d="M 140 102 L 344 102" fill="none" stroke="#8B6F47" stroke-width="1.2" stroke-dasharray="3 2" marker-end="url(#arr-sepia-a)" style="pointer-events:none"/>
+        <text x="242" y="94" text-anchor="middle" font-family="EB Garamond, serif" font-size="11" font-style="italic" fill="#8B6F47" style="pointer-events:none">retrieved into</text>
+
+        <!-- Sub-agents feed Tools (bottom-right) -->
+        <g class="sp-component" data-tooltip="comp-subagents" data-anchor="ah-subagents">
+          <rect class="sp-bg" x="592" y="280" width="180" height="44" fill="#FAF4E4" stroke="#C9BFA5" stroke-dasharray="3 2"/>
+          <text x="682" y="307" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" fill="#2A2520" style="pointer-events:none">sub-agent delegation</text>
+        </g>
+        <path d="M 592 302 L 476 302" fill="none" stroke="#8B6F47" stroke-width="1.2" stroke-dasharray="3 2" marker-end="url(#arr-sepia-a)" style="pointer-events:none"/>
+        <text x="534" y="295" text-anchor="middle" font-family="EB Garamond, serif" font-size="11" font-style="italic" fill="#8B6F47" style="pointer-events:none">as tools</text>
+
+        <!-- Control flow + Output composition at the bottom -->
+        <!-- Decision arrow from Gates downward to Control Flow -->
+        <path d="M 166 224 L 166 358" fill="none" stroke="#6B1F2C" stroke-width="1.5" marker-end="url(#arr-oxblood-a)" style="pointer-events:none"/>
+        <text x="176" y="294" font-family="EB Garamond, serif" font-size="11" font-style="italic" fill="#8B6F47" style="pointer-events:none">verdict</text>
+
+        <g class="sp-component" data-tooltip="comp-control" data-anchor="ah-control">
+          <rect class="sp-bg" x="102" y="360" width="128" height="44" fill="#FAF4E4" stroke="#C9BFA5"/>
+          <text x="166" y="387" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" fill="#2A2520" style="pointer-events:none">control flow</text>
+        </g>
+
+        <!-- Continue path back up to State -->
+        <path d="M 102 382 Q 40 382, 40 200 Q 40 60, 346 60 L 410 60 L 410 78" fill="none" stroke="#6B1F2C" stroke-width="1.2" stroke-dasharray="4 3" marker-end="url(#arr-oxblood-a)" style="pointer-events:none"/>
+        <text x="44" y="172" font-family="EB Garamond, serif" font-size="11" font-style="italic" fill="#8B6F47" style="pointer-events:none">continue</text>
+
+        <!-- Exit path to Output Composition -->
+        <path d="M 230 382 L 590 382" fill="none" stroke="#6B1F2C" stroke-width="1.2" marker-end="url(#arr-oxblood-a)" style="pointer-events:none"/>
+        <text x="380" y="376" font-family="EB Garamond, serif" font-size="11" font-style="italic" fill="#8B6F47" style="pointer-events:none">exit · done</text>
+
+        <g class="sp-component" data-tooltip="comp-output-comp" data-anchor="ah-output">
+          <rect class="sp-bg" x="592" y="360" width="180" height="44" fill="#FAF4E4" stroke="#C9BFA5"/>
+          <text x="682" y="387" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" fill="#2A2520" style="pointer-events:none">output composition</text>
+        </g>
+
+        <!-- Final tokens out -->
+        <text x="690" y="430" font-family="EB Garamond, serif" font-size="13" font-style="italic" fill="#8B6F47" style="pointer-events:none">→ answer to user</text>
+      </svg>
+      <div class="frame-caption">Click any component to jump to its section</div>
+    </div>
+
+    <p class="dropcap">If the production harness is the platform's job, the agent harness is the developer's. It is where you decide how a multi-step task gets carried out: who plans, what state is carried between steps, which tools the agent has access to, what gets remembered, how quality is checked, and when the work is considered done. This is the layer where most of the visible design choices in modern AI products are made.</p>
+
+    <h3 class="subhead" id="ah-state">State</h3>
+    <p>State is the harness's working memory for the current task. A typed object, often a dictionary, that every step of the agent reads from and writes to. It is recreated for each new task and discarded when the task ends. Not memory in the long-term sense. More like a scratchpad pinned to the wall while the work happens.</p>
+    <p>Good state design is invisible. Bad state design shows up as fields the agent reads but no longer trusts, or as fields that get clobbered by parallel steps. The hardest part is deciding what to put in state versus what to recompute or re-fetch.</p>
+
+    <h3 class="subhead" id="ah-planner">Planner</h3>
+    <p class="lede">Something has to decide what step happens next. Where that something lives changes the character of the whole system.</p>
+
+    <h4 class="label">Pattern one · the model is the planner</h4>
+    <p>The classic reasoning-and-acting pattern. The model itself, on each turn, decides whether to emit a tool call or a final answer. No separate planning step. The prompt encourages the model to think out loud, then act. Cheap, simple, surprisingly capable. Fails when the task requires planning many steps ahead, because the model has no place to put a plan. It can only emit one token at a time.</p>
+
+    <h4 class="label">Pattern two · a graph is the planner</h4>
+    <p>The developer writes an explicit graph of nodes and edges. Each node does one thing. The edges encode the logic. The model is consulted at certain nodes for narrow decisions, but the topology of the workflow is hard-coded. Predictable, debuggable, deployable. Constrained to the topologies the developer foresaw. New kinds of tasks need a new graph.</p>
+
+    <h4 class="label">Pattern three · a separate planner model</h4>
+    <p>One model writes the plan. A different model executes each step. The planner emits something close to a script. The executor follows it. Strong on multi-step tasks. Expensive because every step pays for two model calls. Brittle when the executor disagrees with the plan or when the plan goes stale partway through.</p>
+
+    <div class="aside">
+      <div class="aside-label">Why this choice changes the harness</div>
+      <p>If the model is the planner, most of the harness is the tool loop and context management. If a graph is the planner, most of the harness is the graph runtime and state object. If a separate planner exists, most of the harness is the orchestration between two models. The choice of planner is the choice of which problems the harness is built to solve.</p>
+    </div>
+
+    <h4 class="label">What breaks</h4>
+    <div class="breaks">
+      <div class="row"><div class="name">Goal drift</div><div class="desc">The planner forgets the original goal after a few steps because it is no longer near the end of the context.</div></div>
+      <div class="row"><div class="name">Plan staleness</div><div class="desc">A separate planner writes a plan based on assumptions that turn out to be wrong. The executor follows it anyway.</div></div>
+      <div class="row"><div class="name">Graph rigidity</div><div class="desc">A new variant of the task does not fit the existing graph. The system fails on inputs it could in principle handle.</div></div>
+      <div class="row"><div class="name">Reasoning collapse</div><div class="desc">The model planner emits a confident but incoherent next step. With no critic, it gets executed.</div></div>
+    </div>
+
+    <h3 class="subhead" id="ah-tools">Tools</h3>
+    <p>Tools are the agent's hands. They can be APIs, code execution, retrieval functions, file readers, other agents. As far as the model is concerned, every tool is the same shape: a function that takes a JSON blob and returns text. As far as the harness is concerned, each tool is a piece of real-world machinery with its own error modes.</p>
+    <p>Two design decisions matter most: how many tools to expose at once, and how clearly the schemas describe them. Most production agents settle around ten to twenty tools per call. More than that and the model starts confusing them. Schema clarity does more work than people expect; the descriptions are part of the prompt, and the model reasons from them.</p>
+
+    <h3 class="subhead" id="ah-memory">Memory</h3>
+    <p>Three flavours, often conflated.</p>
+
+    <h4 class="label">One · working memory</h4>
+    <p>The current context window. Everything the model can actually see right now. Working memory exists only for the duration of a single inference call. The harness rebuilds it each time, which is why context assembly is the lever it is.</p>
+
+    <h4 class="label">Two · episodic memory</h4>
+    <p>What happened in the past, recorded so the harness can recall it. Conversation history is the simplest form. Summarised conversation history is denser. Distilled facts (the user prefers concise replies; the user lives in Bangalore) are densest. Episodic memory is rebuilt into working memory at the start of each new conversation.</p>
+
+    <h4 class="label">Three · semantic memory</h4>
+    <p>Knowledge stored as embeddings in a vector database, retrievable by semantic similarity at query time. This is what retrieval-augmented generation operates on. Semantic memory can be enormous, because none of it lives in the prompt until it is queried in.</p>
+
+    <div class="duo">
+      <div>
+        <h5>The Analogy</h5>
+        <p>Working memory is the page in front of you right now. Episodic memory is your journal of past pages. Semantic memory is the library down the street. All three are needed to write the next sentence well, but only one is open at a time.</p>
+      </div>
+      <div>
+        <h5>The Precise Version</h5>
+        <p>Working memory is the active context window, capped by the model's window size. Episodic memory is durable storage of prior interactions, in summarised or distilled form. Semantic memory is content addressable by vector similarity rather than by recency, with no inherent size limit.</p>
+      </div>
+    </div>
+
+    <h4 class="label">What breaks</h4>
+    <div class="breaks">
+      <div class="row"><div class="name">Memory leakage</div><div class="desc">Facts from one user's episodic memory end up retrieved into another user's context. A data isolation bug, usually fatal for trust.</div></div>
+      <div class="row"><div class="name">Stale summaries</div><div class="desc">Episodic memory was summarised days ago. The summary no longer reflects what was actually said.</div></div>
+      <div class="row"><div class="name">Retrieval mismatch</div><div class="desc">The semantic store returns chunks that are similar by embedding but not actually useful for the question.</div></div>
+      <div class="row"><div class="name">State pollution</div><div class="desc">The agent's whiteboard accumulates fields it no longer needs, making it slower to reason about and easier to confuse.</div></div>
+    </div>
+
+    <h3 class="subhead" id="ah-gates">Quality gates</h3>
+    <p>If the model is the producer, something else has to be the editor. Quality gates are the editor. Without gates, an agent is as good as its worst draft. With gates, an agent can be substantially better than its average.</p>
+    <ul class="notebook">
+      <li><strong>Maker and checker.</strong> One model call produces a draft. A second call, with a different prompt, checks it against the requirements. If the check fails, the draft is sent back for revision.</li>
+      <li><strong>Critique and revise.</strong> Same model, two passes. The second pass is told to find what is wrong with the first and rewrite it. Cheaper than maker-checker and often nearly as good.</li>
+      <li><strong>Best of n.</strong> The model produces several candidates. A judging step picks the best. Useful when generation is cheap and quality varies.</li>
+      <li><strong>Hard validators.</strong> Non-model code that checks structural properties. Does this JSON parse. Does this SQL run. Does this number fall in range. Cheap, fast, catches the obvious.</li>
+      <li><strong>Human in the loop.</strong> A person reviews before the agent acts on something irreversible. The most expensive gate and the most reliable one.</li>
+    </ul>
+
+    <div class="aside">
+      <div class="aside-label">Why gates feel expensive but are not</div>
+      <p>A gate adds a model call. That looks expensive in unit economics. But the alternative is that the agent ships a wrong answer that costs more downstream than two model calls ever would. The right question is not whether to gate but where the gate has the highest leverage.</p>
+    </div>
+
+    <h3 class="subhead" id="ah-control">Control flow</h3>
+    <p>When to loop, when to stop, when to escalate, when to fail. Control flow is the rules that govern how the agent moves between its components. It is usually the least glamorous part of the design and the most consequential. An agent without explicit control flow is an agent whose runtime behaviour is unpredictable.</p>
+    <p>The most important rule is the stop rule. An agent that does not know when it is done will either stop too early and ship a partial answer or never stop at all. Stop rules are most often based on either a maximum number of steps, a confidence check by a separate gate, or a structural signal in the agent's own output.</p>
+
+    <h3 class="subhead" id="ah-output">Output composition</h3>
+    <p>Everything that happened during the run has to become one final answer for the user. Output composition is the step that decides what the user actually sees. Sometimes it is trivial: the last model call's response is the answer. More often it is non-trivial: stitching together tool results, citations, reasoning traces, and rendered artefacts into one coherent message.</p>
+    <p>Composition is also where formatting decisions live. Tables versus prose. Citations inline or at the end. Length caps. Markdown versus structured payload. The model produced the substance. The harness produces the form.</p>
+
+    <h3 class="subhead" id="ah-subagents">Sub-agent delegation</h3>
+    <p>The cleanest scaling pattern for complex tasks is to call other agents as if they were tools. A research sub-agent, a writing sub-agent, a critic sub-agent, each with their own narrow prompt and tool set, each invoked by a parent agent that coordinates the work.</p>
+    <p>Sub-agents add expressive power but multiply the failure modes. A bug in a sub-agent's prompt can cascade through the parent without obvious warning. The hierarchy needs its own observability story, because debugging one model call inside many is hard, and debugging one model call inside many running in parallel is harder still.</p>
+
+    <div class="pager">
+      <button class="pager-link prev" data-page="page-production">
+        <span class="ptype">← § 01</span>
+        <span class="ptitle">The production harness</span>
+      </button>
+      <button class="pager-link next" data-page="page-model">
+        <span class="ptype">Next · § 03 →</span>
+        <span class="ptitle">The model</span>
+      </button>
+    </div>
+  </article>
+
+  <!-- =============== PAGE: THE MODEL =============== -->
+  <article class="page" id="page-model">
+    <div class="breadcrumb">
+      <a data-page="page-map">The map</a>
+      <span class="sep">›</span>
+      <span class="current">The model</span>
+    </div>
+
+    <div class="section-num">§ 03 · The Bedrock</div>
+    <h2>The <em>model</em></h2>
+    <p class="lede">A pure function. Given a sequence of token IDs, it returns a probability distribution over the next token. Nothing more.</p>
+
+    <div class="diagram-frame subpage-diagram">
+      <svg viewBox="0 0 540 580" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Model architecture as a vertical stack">
+        <defs>
+          <marker id="arr-sepia-m" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#8B6F47"/>
+          </marker>
+        </defs>
+
+        <text x="20" y="28" font-family="IBM Plex Mono, monospace" font-size="10" letter-spacing="2.4" fill="#6B1F2C">VERTICAL STACK · BOTTOM TO TOP</text>
+
+        <!-- Token IDs in, at the bottom -->
+        <text x="270" y="558" text-anchor="middle" font-family="EB Garamond, serif" font-size="13" font-style="italic" fill="#8B6F47" style="pointer-events:none">raw text in ↑</text>
+
+        <!-- TOKENISER (bottom-most) -->
+        <g class="sp-component" data-tooltip="comp-tokeniser" data-anchor="m-tokeniser">
+          <rect class="sp-bg" x="120" y="486" width="300" height="48" fill="#FAF4E4" stroke="#C9BFA5"/>
+          <text x="270" y="515" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="12" fill="#2A2520" style="pointer-events:none">tokeniser</text>
+        </g>
+        <text x="430" y="515" font-family="EB Garamond, serif" font-size="11" font-style="italic" fill="#8B6F47" style="pointer-events:none">text → ids</text>
+        <line x1="270" y1="486" x2="270" y2="476" stroke="#8B6F47" stroke-width="1.2" marker-end="url(#arr-sepia-m)" style="pointer-events:none"/>
+
+        <!-- EMBEDDING -->
+        <g class="sp-component" data-tooltip="comp-embedding" data-anchor="m-embedding">
+          <rect class="sp-bg" x="120" y="412" width="300" height="48" fill="#FAF4E4" stroke="#C9BFA5"/>
+          <text x="270" y="441" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="12" fill="#2A2520" style="pointer-events:none">embedding</text>
+        </g>
+        <text x="430" y="441" font-family="EB Garamond, serif" font-size="11" font-style="italic" fill="#8B6F47" style="pointer-events:none">ids → vectors</text>
+        <line x1="270" y1="412" x2="270" y2="402" stroke="#8B6F47" stroke-width="1.2" marker-end="url(#arr-sepia-m)" style="pointer-events:none"/>
+
+        <!-- Transformer block (Attention + FFN) – grouped, repeated N times -->
+        <rect x="100" y="190" width="340" height="200" fill="none" stroke="#A55260" stroke-width="1" stroke-dasharray="4 3"/>
+        <text x="430" y="206" font-family="IBM Plex Mono, monospace" font-size="10" letter-spacing="2" fill="#A55260" style="pointer-events:none">× N</text>
+        <text x="115" y="206" font-family="EB Garamond, serif" font-size="11" font-style="italic" fill="#8B6F47" style="pointer-events:none">transformer block</text>
+
+        <!-- ATTENTION inside the block -->
+        <g class="sp-component" data-tooltip="comp-attention" data-anchor="m-attention">
+          <rect class="sp-bg" x="120" y="330" width="300" height="48" fill="#FAF4E4" stroke="#C9BFA5"/>
+          <text x="270" y="359" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="12" fill="#2A2520" style="pointer-events:none">attention</text>
+        </g>
+        <text x="270" y="395" text-anchor="middle" font-family="EB Garamond, serif" font-size="10" font-style="italic" fill="#8B6F47" style="pointer-events:none">mixes information across tokens</text>
+        <line x1="270" y1="330" x2="270" y2="306" stroke="#8B6F47" stroke-width="1.2" marker-end="url(#arr-sepia-m)" style="pointer-events:none"/>
+
+        <!-- FEED-FORWARD inside the block -->
+        <g class="sp-component" data-tooltip="comp-ffn" data-anchor="m-ffn">
+          <rect class="sp-bg" x="120" y="232" width="300" height="48" fill="#FAF4E4" stroke="#C9BFA5"/>
+          <text x="270" y="261" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="12" fill="#2A2520" style="pointer-events:none">feed-forward</text>
+        </g>
+        <text x="270" y="296" text-anchor="middle" font-family="EB Garamond, serif" font-size="10" font-style="italic" fill="#8B6F47" style="pointer-events:none">expands and contracts each token</text>
+        <line x1="270" y1="232" x2="270" y2="172" stroke="#8B6F47" stroke-width="1.2" marker-end="url(#arr-sepia-m)" style="pointer-events:none"/>
+
+        <!-- SAMPLING HEAD (top) -->
+        <g class="sp-component" data-tooltip="comp-sampling-head" data-anchor="m-sampling">
+          <rect class="sp-bg" x="120" y="100" width="300" height="48" fill="#FAF4E4" stroke="#C9BFA5"/>
+          <text x="270" y="129" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="12" fill="#2A2520" style="pointer-events:none">sampling head</text>
+        </g>
+        <text x="430" y="129" font-family="EB Garamond, serif" font-size="11" font-style="italic" fill="#8B6F47" style="pointer-events:none">→ logits</text>
+
+        <!-- Final output arrow -->
+        <line x1="270" y1="100" x2="270" y2="74" stroke="#6B1F2C" stroke-width="1.6" marker-end="url(#arr-sepia-m)" style="pointer-events:none"/>
+        <text x="270" y="62" text-anchor="middle" font-family="EB Garamond, serif" font-size="13" font-style="italic" fill="#6B1F2C" style="pointer-events:none">↑ probability distribution over the next token</text>
+      </svg>
+      <div class="frame-caption">Click any layer to jump to its section · bottom is input, top is output</div>
+    </div>
+
+    <p class="dropcap">The model is the bedrock. Everything else in this document is the harness sitting on top of it. The model itself does not remember the previous call. It cannot look anything up. It cannot decide to stop talking, ask a clarifying question, or pick up a tool. It can only emit probabilities. Every loop, every tool call, every multi-turn conversation, every flicker of agentic behaviour happens outside it.</p>
+
+    <p>This page is a quick reference. The full mental model of the model itself lives in Volume I.</p>
+
+    <div class="duo">
+      <div>
+        <h5>The Analogy</h5>
+        <p>A brilliant savant locked in a windowless room. You slide a sheet of paper under the door. They read what is on it, write a continuation, and slide it back. They cannot stand up. They cannot look anything up. They have no memory of yesterday's paper. They cannot ask you to clarify. They can only continue text.</p>
+      </div>
+      <div>
+        <h5>The Precise Version</h5>
+        <p>The model is a deterministic function from a sequence of token IDs to a vector of logits over the vocabulary. It is stateless across calls, inert with respect to the world, single-shot per invocation, and disconnected from any external resource.</p>
+      </div>
+    </div>
+
+    <h3 class="subhead" id="m-tokeniser">Tokeniser</h3>
+    <p>Raw text gets chopped into token IDs from a fixed vocabulary, typically thirty-two thousand to one hundred and twenty-eight thousand tokens. The algorithm is usually byte-pair encoding, which builds the vocabulary by repeatedly merging the most common pairs in a training corpus until the desired size is reached. The tokeniser is not a neural network. It is a deterministic lookup.</p>
+
+    <h3 class="subhead" id="m-embedding">Embedding</h3>
+    <p>Each token ID is converted into a dense vector by a simple table lookup. Row n of a large learned matrix gives you the vector for token n. At this point each token's vector knows nothing about its neighbours. It only knows what the token means in isolation, as learned during pretraining.</p>
+
+    <h3 class="subhead" id="m-attention">Attention</h3>
+    <p>Attention is what lets each token's representation be informed by every other token in the sequence. Each token projects its vector into three roles: a query, a key, and a value. Queries are matched against keys, the matches are scored and softmaxed, and the resulting weights pull in a mixture of values. The mechanism runs in parallel across many heads, each learning to attend to different relational patterns. This is the engine of context.</p>
+
+    <h3 class="subhead" id="m-ffn">Feed-forward</h3>
+    <p>After attention has mixed information across tokens, each token's vector is run independently through a feed-forward network. The network expands the vector into a much wider intermediate space, applies a non-linearity, and contracts it back. This is where most of the model's parameters live, and where most of the world knowledge is stored.</p>
+
+    <h3 class="subhead" id="m-sampling">Sampling head</h3>
+    <p>At the top of the stack, the final token's vector is projected against the embedding matrix, producing one logit per vocabulary entry. Softmaxed, this becomes a probability distribution over what the next token might be. The harness then picks one, using temperature, top-k, top-p, and the other sampling levers.</p>
+
+    <div class="pull">"The model produced a probability distribution. Everything between that distribution and the user seeing a wrong answer is the harness."</div>
+
+    <div class="aside">
+      <div class="aside-label">Companion volumes</div>
+      <p><strong>Volume I · The Model.</strong> The full mental model of the box. Tokeniser, embedding, positional encoding, attention, feed-forward, sampling, in depth.</p>
+      <p><strong>Volume II · The Harness.</strong> This document. What wraps the model.</p>
+      <p><strong>Volume III · The Manipulation.</strong> Forthcoming. How the box came to know what it knows. Pretraining, supervised fine-tuning, reinforcement learning from human feedback, direct preference optimisation.</p>
+    </div>
+
+    <div class="pager">
+      <button class="pager-link prev" data-page="page-agent">
+        <span class="ptype">← § 02</span>
+        <span class="ptitle">The agent harness</span>
+      </button>
+      <button class="pager-link next" data-page="page-map">
+        <span class="ptype">↑ Return →</span>
+        <span class="ptitle">The map</span>
+      </button>
+    </div>
+
+    <div class="colophon">
+      The Curiosity Loop · Field Notes · Volume II<br/>
+      Composed in the Curator's Notebook
+    </div>
+  </article>
+
+</div>
+
+<script>
+  // ============ TOOLTIP CONTENT ============
+  const tooltipData = {
+    // Bands
+    'band-production': {
+      title: '§ 01 · Production Harness',
+      body: 'The platform layer that wraps the model and serves it to the world. Authentication, safety screening, context assembly, sampling, the tool loop, and streaming all live here. Click to descend.'
+    },
+    'band-agent': {
+      title: '§ 02 · Agent Harness',
+      body: 'The orchestration layer a developer builds when one model call is not enough. State, planner, tools, memory, quality gates. Sits inside the production harness, around the model.'
+    },
+    'band-model': {
+      title: '§ 03 · The Model',
+      body: 'A pure function from token IDs to a probability distribution over the next token. Stateless, inert, single-shot. Everything else in this map is the harness around it.'
+    },
+
+    // Production harness components
+    'comp-ingress': {
+      title: 'Ingress',
+      body: 'The front door. Authenticates the caller, applies rate limits, routes the request to the correct model. Looks boring; becomes critical at scale, where a slow ingress can dominate the latency of every request.'
+    },
+    'comp-input-classifiers': {
+      title: 'Input classifiers',
+      body: 'Small fast models that screen the request before the main model runs. Look for prompt injection, policy violations, and signals about request type. Cheap relative to inference, but a real latency cost.'
+    },
+    'comp-context-assembly': {
+      title: 'Context assembly',
+      body: 'The harness deciding what tokens to put in front of the model: system prompt, safety rules, tool defs, memories, retrieved knowledge, history, user message. The highest-leverage step in the whole stack.'
+    },
+    'comp-sampling': {
+      title: 'Sampling',
+      body: 'How the harness turns the model\u2019s probability distribution into a chosen token. Temperature, top-k, top-p, stop sequences. Same model can feel cautious or unhinged depending on the levers set here.'
+    },
+    'comp-tool-loop': {
+      title: 'Tool execution loop',
+      body: 'The pattern that lets a model which can only emit text actually do things. A parser detects tool-call tokens, the harness dispatches, the result is appended to context, the model runs again. The central loop of agentic AI.'
+    },
+    'comp-output-classifiers': {
+      title: 'Output classifiers',
+      body: 'Small models that screen the generated output before the user sees it. Catch policy violations the main model failed to refuse, leaked secrets, leaked system prompts. The mirror of input classifiers.'
+    },
+    'comp-streaming': {
+      title: 'Streaming',
+      body: 'Sends tokens to the client as they are generated, over a persistent connection. Not just UX polish; also a control point where tool calls and policy violations can be detected mid-stream.'
+    },
+    'comp-observability': {
+      title: 'Observability',
+      body: 'Logs, traces, billing meters, replay artifacts. Plumbing that becomes the lifeblood of any team trying to improve a system. Also where the most sensitive retention and privacy decisions live.'
+    },
+
+    // Agent harness components
+    'comp-state': {
+      title: 'State',
+      body: 'The shared whiteboard for the current task. A typed object every step reads and writes. Recreated per task, discarded when the task ends. Not long-term memory; more like a scratchpad pinned to the wall.'
+    },
+    'comp-planner': {
+      title: 'Planner',
+      body: 'Decides what step happens next. Three patterns: the model itself plans, a hard-coded graph plans, or a separate planner model writes a script. The choice of planner is the choice of which problems the harness solves well.'
+    },
+    'comp-tools': {
+      title: 'Tools',
+      body: 'The agent\u2019s hands. APIs, code execution, retrieval, sub-agents. To the model, every tool is the same shape: a function from JSON to text. To the harness, each is real-world machinery with its own failure modes.'
+    },
+    'comp-memory': {
+      title: 'Memory',
+      body: 'Three flavours, often conflated. Working memory is the current context window. Episodic memory is the summarised past. Semantic memory is a vector store, retrievable by similarity. All three feed context assembly.'
+    },
+    'comp-gates': {
+      title: 'Quality gates',
+      body: 'Editors for the model\u2019s output. Maker-checker, critique-and-revise, best-of-n, hard validators, human in the loop. Without gates, an agent is as good as its worst draft. With them, it can be better than its average.'
+    },
+    'comp-control': {
+      title: 'Control flow',
+      body: 'When to loop, when to stop, when to escalate, when to fail. The rules governing how the agent moves between its components. Usually the least glamorous and most consequential part of the design.'
+    },
+    'comp-output-comp': {
+      title: 'Output composition',
+      body: 'Stitches everything the run produced into one final answer for the user. Tool results, citations, reasoning traces, rendered artefacts. The model produces substance; the harness produces form.'
+    },
+    'comp-subagents': {
+      title: 'Sub-agent delegation',
+      body: 'Calling other agents as if they were tools. Research sub-agent, writing sub-agent, critic sub-agent. Expressive power up. Failure modes multiplied. Needs its own observability story.'
+    },
+
+    // Model components
+    'comp-tokeniser': {
+      title: 'Tokeniser',
+      body: 'Chops raw text into integer token IDs from a fixed vocabulary. Usually byte-pair encoding. A deterministic lookup, not a neural network. The vocabulary is fixed at training time.'
+    },
+    'comp-embedding': {
+      title: 'Embedding',
+      body: 'Converts each token ID into a dense vector via table lookup. At this point each token\u2019s vector knows only what the token means in isolation, before any context.'
+    },
+    'comp-attention': {
+      title: 'Attention',
+      body: 'Lets each token\u2019s representation be informed by every other token. Q, K, V projections, multi-head, parallel across many learned relational patterns. The engine of context.'
+    },
+    'comp-ffn': {
+      title: 'Feed-forward',
+      body: 'After attention has mixed information across tokens, each vector is expanded into a wider space, non-linearised, then contracted back. Where most of the model\u2019s parameters and world knowledge live.'
+    },
+    'comp-sampling-head': {
+      title: 'Sampling head',
+      body: 'The final vector is projected against the vocabulary and softmaxed into a probability distribution over the next token. The harness then picks one, using temperature, top-k, top-p.'
+    }
+  };
+
+  // ============ NAVIGATION ============
+  const pages = document.querySelectorAll('.page');
+  const drawerNavButtons = document.querySelectorAll('.drawer-nav button');
+
+  function showPage(pageId, anchorId) {
+    pages.forEach(p => p.classList.remove('active'));
+    const target = document.getElementById(pageId);
+    if (target) target.classList.add('active');
+
+    drawerNavButtons.forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.page === pageId);
+    });
+
+    closeDrawer();
+    hideTooltip();
+
+    // Scroll handling
+    if (anchorId) {
+      requestAnimationFrame(() => {
+        const anchor = document.getElementById(anchorId);
+        if (anchor) {
+          anchor.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          anchor.classList.add('flash');
+          setTimeout(() => anchor.classList.remove('flash'), 1400);
+        }
+      });
+    } else {
+      window.scrollTo({ top: 0, behavior: 'instant' });
+    }
+  }
+
+  // Generic [data-page] handler (for breadcrumb links, drawer, pager links)
+  document.querySelectorAll('[data-page]:not(.band-group):not(.component-group)').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      const pageId = btn.dataset.page;
+      if (pageId) showPage(pageId);
+    });
+  });
+
+  // In-page TOC anchor jumps (within the same sub-page)
+  document.querySelectorAll('[data-anchor-jump]').forEach(a => {
+    a.addEventListener('click', (e) => {
+      e.preventDefault();
+      const anchorId = a.dataset.anchorJump;
+      const anchor = document.getElementById(anchorId);
+      if (anchor) {
+        anchor.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        anchor.classList.add('flash');
+        setTimeout(() => anchor.classList.remove('flash'), 1400);
+      }
+    });
+  });
+
+  // ============ HAMBURGER DRAWER ============
+  const hamburger = document.getElementById('hamburger');
+  const drawer = document.getElementById('drawer');
+  const overlay = document.getElementById('overlay');
+
+  function openDrawer() {
+    hamburger.classList.add('open');
+    drawer.classList.add('open');
+    overlay.classList.add('open');
+  }
+  function closeDrawer() {
+    hamburger.classList.remove('open');
+    drawer.classList.remove('open');
+    overlay.classList.remove('open');
+  }
+  hamburger.addEventListener('click', () => {
+    drawer.classList.contains('open') ? closeDrawer() : openDrawer();
+  });
+  overlay.addEventListener('click', closeDrawer);
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') { closeDrawer(); hideTooltip(); }
+  });
+
+  drawerNavButtons.forEach(btn => {
+    if (btn.dataset.page === 'page-map') btn.classList.add('active');
+  });
+
+  // ============ TOOLTIP ============
+  const tooltip = document.getElementById('tooltip');
+  const ttTitle = tooltip.querySelector('.tt-title');
+  const ttBody = tooltip.querySelector('.tt-body');
+
+  const hasHover = window.matchMedia('(hover: hover)').matches;
+
+  function showTooltip(key, x, y) {
+    const data = tooltipData[key];
+    if (!data) return;
+    ttTitle.textContent = data.title;
+    ttBody.textContent = data.body;
+    tooltip.classList.add('visible');
+    tooltip.setAttribute('aria-hidden', 'false');
+    positionTooltip(x, y);
+  }
+  function positionTooltip(x, y) {
+    const offset = 18;
+    const ttRect = tooltip.getBoundingClientRect();
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    let left = x + offset;
+    let top = y + offset;
+    if (left + ttRect.width > vw - 12) left = x - ttRect.width - offset;
+    if (top + ttRect.height > vh - 12) top = y - ttRect.height - offset;
+    if (left < 12) left = 12;
+    if (top < 12) top = 12;
+    tooltip.style.left = left + 'px';
+    tooltip.style.top = top + 'px';
+  }
+  function hideTooltip() {
+    tooltip.classList.remove('visible');
+    tooltip.setAttribute('aria-hidden', 'true');
+  }
+
+  // Bind hover via event delegation on every diagram container (map + sub-pages).
+  // Walk up parentNode manually (works on both HTML and SVG nodes) and use
+  // getAttribute (more reliable than dataset on SVG).
+  document.querySelectorAll('.diagram-frame').forEach(container => {
+    let lastTooltipKey = null;
+
+    container.addEventListener('mousemove', (e) => {
+      let el = e.target;
+      while (el && el !== container && !(el.getAttribute && el.getAttribute('data-tooltip'))) {
+        el = el.parentNode;
+      }
+
+      if (el && el.getAttribute && el.getAttribute('data-tooltip')) {
+        const key = el.getAttribute('data-tooltip');
+        if (key !== lastTooltipKey) {
+          showTooltip(key, e.clientX, e.clientY);
+          lastTooltipKey = key;
+        } else {
+          positionTooltip(e.clientX, e.clientY);
+        }
+      } else if (lastTooltipKey) {
+        hideTooltip();
+        lastTooltipKey = null;
+      }
+    });
+
+    container.addEventListener('mouseleave', () => {
+      hideTooltip();
+      lastTooltipKey = null;
+    });
+  });
+
+  // ============ BAND CLICKS (single click navigates) ============
+  document.querySelectorAll('.band-group').forEach(band => {
+    band.addEventListener('click', (e) => {
+      // If the click was on a child component, don't trigger band navigation
+      if (e.target.closest('.component-group')) return;
+      const pageId = band.dataset.page;
+      if (pageId) showPage(pageId);
+    });
+  });
+
+  // ============ COMPONENT CLICKS ============
+  // Desktop (hover-capable): single click does nothing; double-click navigates to anchor
+  // Touch (no hover): single tap navigates to anchor immediately
+  document.querySelectorAll('.component-group').forEach(comp => {
+    comp.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (!hasHover) {
+        const pageId = comp.dataset.page;
+        const anchorId = comp.dataset.anchor;
+        if (pageId) showPage(pageId, anchorId);
+      }
+      // On desktop, single click is intentionally a no-op so the band's click doesn't fire
+      // and the user reads the tooltip. Double-click does the actual navigation.
+    });
+    comp.addEventListener('dblclick', (e) => {
+      e.stopPropagation();
+      if (hasHover) {
+        const pageId = comp.dataset.page;
+        const anchorId = comp.dataset.anchor;
+        if (pageId) showPage(pageId, anchorId);
+      }
+    });
+  });
+
+  // ============ SUB-PAGE DIAGRAM CLICKS ============
+  // Single click on a sub-page diagram component scrolls to the matching section.
+  // If the component carries data-page (e.g. the MODEL block in production diagram),
+  // navigate to that page instead.
+  document.querySelectorAll('.sp-component').forEach(comp => {
+    comp.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const pageId = comp.getAttribute('data-page');
+      const anchorId = comp.getAttribute('data-anchor');
+      if (pageId) {
+        showPage(pageId, anchorId || null);
+      } else if (anchorId) {
+        const anchor = document.getElementById(anchorId);
+        if (anchor) {
+          anchor.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          anchor.classList.add('flash');
+          setTimeout(() => anchor.classList.remove('flash'), 1400);
+        }
+      }
+    });
+  });
+</script>
+</body>
+</html>
