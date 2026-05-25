@@ -425,6 +425,8 @@
   // First-visit keyboard shortcut hint
   function showShortcutHint() {
     if (localStorage.getItem('shortcut-hint-dismissed')) return;
+    // Skip on touch devices — ⌘K means nothing without a keyboard.
+    if (window.matchMedia && window.matchMedia('(pointer: coarse)').matches) return;
     var hint = document.createElement('div');
     hint.className = 'shortcut-hint-toast';
     var isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
