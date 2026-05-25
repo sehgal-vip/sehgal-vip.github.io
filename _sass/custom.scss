@@ -2437,6 +2437,14 @@ strong, b {
   }
 }
 
+// Hide keyboard affordances on touch devices (no physical keyboard)
+@media (pointer: coarse) {
+  .command-palette-footer,
+  .command-shortcut {
+    display: none;
+  }
+}
+
 .command-palette-empty {
   padding: 3rem 2rem;
   text-align: center;

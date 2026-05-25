@@ -259,6 +259,14 @@ hide_sidebar: true
   .map-instruction .key {
     color: var(--oxblood);
   }
+  .map-instruction-touch,
+  .legend-touch { display: none; }
+  @media (hover: none) {
+    .map-instruction-desktop,
+    .legend-desktop { display: none; }
+    .map-instruction-touch { display: block; }
+    .legend-touch { display: block; }
+  }
 
   .cross-section {
     background: var(--cream);
@@ -711,10 +719,14 @@ hide_sidebar: true
 
   <!-- =============== PAGE: MAP =============== -->
   <article class="page active" id="page-map">
-    <div class="map-instruction">
+    <div class="map-instruction map-instruction-desktop">
       Hover any element for details<br>
       <span class="key">Click a band</span> to enter ·
       <span class="key">Double-click a component</span> to jump to its exact section
+    </div>
+    <div class="map-instruction map-instruction-touch">
+      <span class="key">Tap a band</span> to enter ·
+      <span class="key">Tap a component</span> to jump to its exact section
     </div>
 
     <div class="cross-section diagram-frame">
@@ -887,7 +899,8 @@ hide_sidebar: true
     <div class="map-legend">
       <h4>How to read this</h4>
       <p>The model sits at the bottom. It is a single function. Token IDs in, probabilities out. Nothing more. Above it sit two layers of harness, stacked like geological strata. The middle band, the <strong>agent harness</strong>, is what a developer builds when one call to the model is not enough. The top band, the <strong>production harness</strong>, is what the model service ships around the model to serve it to the world safely and at scale.</p>
-      <p>Click any band to descend into it. Double-click any component to jump to its exact section. Or use the index in the hamburger menu, top right.</p>
+      <p class="legend-desktop">Click any band to descend into it. Double-click any component to jump to its exact section. Or use the index in the hamburger menu, top right.</p>
+      <p class="legend-touch">Tap any band to descend into it. Tap any component to jump to its exact section. Or use the index in the hamburger menu, top right.</p>
     </div>
   </article>
 
