@@ -1660,18 +1660,19 @@ strong, b {
     }
   }
   
-  // Tables
-  table {
+  // Tables (prose tables in blog posts only — exclude the structured
+  // .data-table component used on Reading / Projects pages).
+  table:not(.data-table) {
     width: 100%;
     margin: 1.5em 0;
     border-collapse: collapse;
-    
+
     th, td {
       padding: 0.75rem;
       text-align: left;
       border-bottom: 1px solid var(--border-color);
     }
-    
+
     th {
       font-weight: 600;
       background: var(--bg-secondary);
@@ -3275,7 +3276,7 @@ strong, b {
       &.title-cell {
         font-size: 1rem;
         font-weight: 500;
-        margin-bottom: 0.125rem;
+        margin-bottom: 0.35rem;
         line-height: 1.35;
 
         a {
@@ -3295,22 +3296,21 @@ strong, b {
         color: var(--text-subtle);
       }
 
+      // Drop the desktop colored-dot pseudo on mobile — it looks like a
+      // dash when the cell is display: inline.
+      &.year-cell::before {
+        display: none;
+      }
+
       &.author-cell {
         &::after {
           content: ' · ';
         }
       }
 
-      &.year-cell {
-        &::after {
-          content: '';
-          display: block;
-          margin-bottom: 0.3rem;
-        }
-      }
-
       &.desc-cell {
         display: block;
+        margin-top: 0.6rem;
         font-size: 0.8125rem;
         line-height: 1.5;
         color: var(--text-muted);
