@@ -117,6 +117,17 @@ def extract_items(db_path):
         if len(authors) > 3:
             author_str += ' et al.'
 
+        # Get collection names (Zotero subfolders) as semicolon-joined tags.
+        # Leaf name only; nested paths are not included.
+        cursor.execute('''
+            SELECT c.collectionName
+            FROM collectionItems ci
+            JOIN collections c ON ci.collectionID = c.collectionID
+            WHERE ci.itemID = ?
+            ORDER BY c.collectionName
+        ''', (item_id,))
+        tags_str = '; '.join(r['collectionName'] for r in cursor.fetchall())
+
         # Parse year from date
         date = row['date'] or ''
         year = ''
@@ -139,7 +150,8 @@ def extract_items(db_path):
                 'author': author_str,
                 'description': (row['abstract'] or '')[:200],
                 'year': year,
-                'url': url
+                'url': url,
+                'tags': tags_str,
             })
 
     conn.close()
@@ -153,7 +165,7 @@ def write_csv(items, category, output_dir):
     filtered.sort(key=lambda x: (x['year'] or '0'), reverse=True)
 
     with open(filepath, 'w', newline='', encoding='utf-8') as f:
-        writer = csv.DictWriter(f, fieldnames=['title', 'author', 'description', 'year', 'url'])
+        writer = csv.DictWriter(f, fieldnames=['title', 'author', 'description', 'year', 'url', 'tags'])
         writer.writeheader()
         for item in filtered:
             writer.writerow({
@@ -161,7 +173,8 @@ def write_csv(items, category, output_dir):
                 'author': item['author'],
                 'description': item['description'],
                 'year': item['year'],
-                'url': item['url']
+                'url': item['url'],
+                'tags': item.get('tags', ''),
             })
 
     print(f'Wrote {len(filtered)} items to {filepath}')
