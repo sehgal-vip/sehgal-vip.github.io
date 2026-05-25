@@ -268,6 +268,112 @@ hide_sidebar: true
     .legend-touch { display: block; }
   }
 
+  /* =============== MOBILE BAND NAVIGATION =============== */
+  .mobile-band-nav { display: none; }
+
+  @media (max-width: 768px) {
+    .cross-section { display: none; }
+    .mobile-band-nav {
+      display: block;
+      margin: 0 0 36px;
+    }
+    .mobile-band {
+      margin-bottom: 18px;
+      background: var(--cream);
+      border: 1px solid var(--hairline);
+    }
+    .mobile-band-model {
+      background: var(--oxblood);
+      color: var(--cream);
+      border-color: var(--oxblood);
+    }
+    .mobile-band-header {
+      width: 100%;
+      min-height: 56px;
+      padding: 14px 16px;
+      background: var(--parchment-deep);
+      border: 0;
+      border-bottom: 1px solid var(--hairline);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-family: var(--serif);
+      font-size: 17px;
+      color: var(--ink);
+      text-align: left;
+      transition: background 0.12s;
+    }
+    .mobile-band-header:hover,
+    .mobile-band-header:active {
+      background: var(--parchment-darker);
+    }
+    .mobile-band-model .mobile-band-header {
+      background: var(--oxblood);
+      color: var(--cream);
+      border-bottom-color: var(--oxblood-faded);
+    }
+    .mobile-band-model .mobile-band-header:active {
+      background: var(--oxblood-faded);
+    }
+    .mobile-band-tag {
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 0.18em;
+      color: var(--sepia);
+      flex-shrink: 0;
+    }
+    .mobile-band-model .mobile-band-tag {
+      color: var(--gold-tint);
+    }
+    .mobile-band-title {
+      font-style: italic;
+      flex: 1;
+    }
+    .mobile-band-arrow {
+      font-family: var(--mono);
+      color: var(--oxblood);
+      font-size: 18px;
+    }
+    .mobile-band-model .mobile-band-arrow {
+      color: var(--cream);
+    }
+    .mobile-band-chips {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+    .mobile-band-chips li + li {
+      border-top: 1px solid var(--hairline-soft);
+    }
+    .mobile-band-model .mobile-band-chips li + li {
+      border-top-color: var(--oxblood-faded);
+    }
+    .mobile-chip {
+      display: flex;
+      align-items: center;
+      min-height: 48px;
+      padding: 12px 18px 12px 28px;
+      font-family: var(--mono);
+      font-size: 14px;
+      color: var(--ink);
+      text-decoration: none;
+      cursor: pointer;
+      transition: background 0.12s;
+    }
+    .mobile-chip:hover,
+    .mobile-chip:active {
+      background: var(--parchment-deep);
+      color: var(--oxblood);
+    }
+    .mobile-band-model .mobile-chip {
+      color: var(--cream);
+    }
+    .mobile-band-model .mobile-chip:active {
+      background: var(--oxblood-faded);
+    }
+  }
+
   .cross-section {
     background: var(--cream);
     border: 1px solid var(--hairline);
@@ -895,6 +1001,58 @@ hide_sidebar: true
         </g>
       </svg>
     </div>
+
+    <nav class="mobile-band-nav" aria-label="Harness map navigation">
+      <section class="mobile-band mobile-band-production">
+        <button type="button" class="mobile-band-header" data-page="page-production">
+          <span class="mobile-band-tag">§ 01</span>
+          <span class="mobile-band-title">Production Harness</span>
+          <span class="mobile-band-arrow" aria-hidden="true">→</span>
+        </button>
+        <ul class="mobile-band-chips">
+          <li><a class="mobile-chip" data-page="page-production" data-anchor="ph-ingress" href="#ph-ingress">Ingress</a></li>
+          <li><a class="mobile-chip" data-page="page-production" data-anchor="ph-input" href="#ph-input">Input classifiers</a></li>
+          <li><a class="mobile-chip" data-page="page-production" data-anchor="ph-assembly" href="#ph-assembly">Context assembly</a></li>
+          <li><a class="mobile-chip" data-page="page-production" data-anchor="ph-sampling" href="#ph-sampling">Sampling</a></li>
+          <li><a class="mobile-chip" data-page="page-production" data-anchor="ph-toolloop" href="#ph-toolloop">Tool loop</a></li>
+          <li><a class="mobile-chip" data-page="page-production" data-anchor="ph-output" href="#ph-output">Output classifiers</a></li>
+          <li><a class="mobile-chip" data-page="page-production" data-anchor="ph-streaming" href="#ph-streaming">Streaming</a></li>
+        </ul>
+      </section>
+
+      <section class="mobile-band mobile-band-agent">
+        <button type="button" class="mobile-band-header" data-page="page-agent">
+          <span class="mobile-band-tag">§ 02</span>
+          <span class="mobile-band-title">Agent Harness</span>
+          <span class="mobile-band-arrow" aria-hidden="true">→</span>
+        </button>
+        <ul class="mobile-band-chips">
+          <li><a class="mobile-chip" data-page="page-agent" data-anchor="ah-state" href="#ah-state">State</a></li>
+          <li><a class="mobile-chip" data-page="page-agent" data-anchor="ah-planner" href="#ah-planner">Planner</a></li>
+          <li><a class="mobile-chip" data-page="page-agent" data-anchor="ah-tools" href="#ah-tools">Tools</a></li>
+          <li><a class="mobile-chip" data-page="page-agent" data-anchor="ah-memory" href="#ah-memory">Memory</a></li>
+          <li><a class="mobile-chip" data-page="page-agent" data-anchor="ah-gates" href="#ah-gates">Quality gates</a></li>
+          <li><a class="mobile-chip" data-page="page-agent" data-anchor="ah-control" href="#ah-control">Control flow</a></li>
+          <li><a class="mobile-chip" data-page="page-agent" data-anchor="ah-output" href="#ah-output">Output composition</a></li>
+          <li><a class="mobile-chip" data-page="page-agent" data-anchor="ah-subagents" href="#ah-subagents">Sub-agent delegation</a></li>
+        </ul>
+      </section>
+
+      <section class="mobile-band mobile-band-model">
+        <button type="button" class="mobile-band-header" data-page="page-model">
+          <span class="mobile-band-tag">§ 03</span>
+          <span class="mobile-band-title">The Model</span>
+          <span class="mobile-band-arrow" aria-hidden="true">→</span>
+        </button>
+        <ul class="mobile-band-chips">
+          <li><a class="mobile-chip" data-page="page-model" data-anchor="m-tokeniser" href="#m-tokeniser">Tokeniser</a></li>
+          <li><a class="mobile-chip" data-page="page-model" data-anchor="m-embedding" href="#m-embedding">Embedding</a></li>
+          <li><a class="mobile-chip" data-page="page-model" data-anchor="m-attention" href="#m-attention">Attention</a></li>
+          <li><a class="mobile-chip" data-page="page-model" data-anchor="m-ffn" href="#m-ffn">Feed-forward</a></li>
+          <li><a class="mobile-chip" data-page="page-model" data-anchor="m-sampling" href="#m-sampling">Sampling head</a></li>
+        </ul>
+      </section>
+    </nav>
 
     <div class="map-legend">
       <h4>How to read this</h4>
@@ -1755,6 +1913,17 @@ hide_sidebar: true
           setTimeout(() => anchor.classList.remove('flash'), 1400);
         }
       }
+    });
+  });
+
+  // Mobile band navigation: always navigate on click, regardless of pointer type.
+  document.querySelectorAll('.mobile-band-header, .mobile-chip').forEach(el => {
+    el.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const pageId = el.dataset.page;
+      const anchorId = el.dataset.anchor;
+      if (pageId) showPage(pageId, anchorId || null);
     });
   });
 </script>
