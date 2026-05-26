@@ -255,16 +255,40 @@ document.addEventListener('DOMContentLoaded', function() {
   // Initial filter application
   applyFilters();
 
-  // Make entire row clickable (only the title was a link before).
+  // Row click. Desktop: navigate to the link (whole row is the tap area).
+  // Mobile (<=768px): toggle inline expansion to reveal the description
+  // and an "Open →" affordance. CSS suppresses pointer-events on the
+  // title link on mobile so taps route to the row.
+  const isMobile = () => window.matchMedia('(max-width: 768px)').matches;
   document.querySelectorAll('.data-table tbody tr').forEach(function(row) {
     const link = row.querySelector('a');
     if (!link) return;
     row.style.cursor = 'pointer';
+
+    // Inject mobile-only "Open →" link into the description cell.
+    const descCell = row.querySelector('td.desc-cell');
+    if (descCell && !descCell.querySelector('.open-paper-link')) {
+      const open = document.createElement('a');
+      open.className = 'open-paper-link';
+      open.href = link.href;
+      open.textContent = 'Open →';
+      if (link.target === '_blank') {
+        open.target = '_blank';
+        open.rel = 'noopener noreferrer';
+      }
+      open.addEventListener('click', function(e) { e.stopPropagation(); });
+      descCell.appendChild(open);
+    }
+
     row.addEventListener('click', function(e) {
-      // Don't steal clicks from the anchor or from selectable text.
-      if (e.target.closest('a')) return;
+      if (e.target.closest('.open-paper-link')) return;
       if (window.getSelection && String(window.getSelection()).length > 0) return;
-      // Open new tab if the anchor would have, matching original behavior.
+      if (isMobile()) {
+        row.classList.toggle('is-expanded');
+        return;
+      }
+      // Desktop behavior: whole row navigates to the link.
+      if (e.target.closest('a')) return;
       if (link.target === '_blank') {
         window.open(link.href, '_blank', 'noopener,noreferrer');
       } else {

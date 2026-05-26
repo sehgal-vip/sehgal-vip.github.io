@@ -1074,5 +1074,36 @@ document.addEventListener('DOMContentLoaded', function() {
       });
     });
   })();
+
+  // Mobile-only row expansion. Tap a row to reveal author + description
+  // + "Open paper" link inline. CSS suppresses pointer-events on the
+  // title anchor at <=768px so the click routes to the row.
+  (function() {
+    const isMobile = () => window.matchMedia('(max-width: 768px)').matches;
+    document.querySelectorAll('.data-table tbody tr').forEach(function(row) {
+      const titleLink = row.querySelector('td.title-cell a');
+      const descCell = row.querySelector('td.desc-cell');
+
+      if (titleLink && descCell && !descCell.querySelector('.open-paper-link')) {
+        const open = document.createElement('a');
+        open.className = 'open-paper-link';
+        open.href = titleLink.href;
+        open.textContent = 'Open paper →';
+        if (titleLink.target === '_blank') {
+          open.target = '_blank';
+          open.rel = 'noopener noreferrer';
+        }
+        open.addEventListener('click', function(e) { e.stopPropagation(); });
+        descCell.appendChild(open);
+      }
+
+      row.addEventListener('click', function(e) {
+        if (!isMobile()) return;
+        if (e.target.closest('.open-paper-link')) return;
+        if (window.getSelection && String(window.getSelection()).length > 0) return;
+        row.classList.toggle('is-expanded');
+      });
+    });
+  })();
 });
 </script>
