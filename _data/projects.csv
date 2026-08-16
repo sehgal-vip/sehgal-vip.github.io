@@ -1,13 +1,12 @@
-title,description,year,url
-"How LLMs Work","From tokens to next token: a visual walkthrough of the LLM stack",2026,/llm-mental-model/
-"Model Harness Mental Model","Field notes on what wraps a model",2026,/projects/harness-mental-model/
-"Quire","Split, merge, rotate, reorder, and more — client-side in the browser",2026,/projects/quire/
-"JSONL Reader","Read, parse, and visualize JSONL files with streaming support for 1M+ lines",2026,/projects/jsonlreader/
-"Format And Beautify","Client-side code formatter, beautifier, and minifier for 18 languages with themes",2026,/projects/CodeFormatBeautify/
-"Mermaid Editor","Live Mermaid diagram editor and visualizer with templates, themes, and PNG/SVG export",2026,/projects/Online-Mermaid/
-"Text Editor","Convert between Markdown, HTML, Plain Text & RTF in the browser",2026,/projects/texteditor/
-"Personal Blog","This Jekyll-powered blog with command palette, dark mode, and GitHub Pages hosting",2024,https://vipulsehgal.com
-"AI Writing Assistant","Chrome extension for contextual writing suggestions using GPT-4",2024,
-"Product Analytics Dashboard","Real-time metrics visualization for product teams built with React and D3",2024,
-"Hindi Codenames","Multiplayer word game in Hindi - built with Next.js and WebSockets",2023,
-"Reading List Tracker","Simple app to track books, papers, and articles with progress indicators",2023,
+title,description,year,url,tier
+"How LLMs Work","From tokens to next token — the full stack, with 14 interactive widgets",2026,/llm-mental-model/,explainer
+"Model Harness Mental Model","Field notes on what wraps a model — production harness, agent harness, bedrock",2026,/projects/harness-mental-model/,explainer
+"Quire","Split, merge, rotate & reorder PDFs",2026,/projects/quire/,tool
+"JSONL Reader","Read, parse & visualize JSONL with streaming support for 1M+ lines",2026,/projects/jsonlreader/,tool
+"Format And Beautify","Code formatter, beautifier & minifier for 18 languages",2026,/projects/CodeFormatBeautify/,tool
+"Mermaid Editor","Live Mermaid diagram editor with templates, themes & PNG/SVG export",2026,/projects/Online-Mermaid/,tool
+"Text Editor","Convert between Markdown, HTML, plain text & RTF",2026,/projects/texteditor/,tool
+"AI Writing Assistant","Chrome extension for contextual writing suggestions using GPT-4",2024,,archive
+"Product Analytics Dashboard","Real-time metrics visualization for product teams built with React and D3",2024,,archive
+"Hindi Codenames","Multiplayer word game in Hindi - built with Next.js and WebSockets",2023,,archive
+"Reading List Tracker","Simple app to track books, papers, and articles with progress indicators",2023,,archive

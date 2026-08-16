@@ -3255,6 +3255,183 @@ strong, b {
   }
 }
 
+// Projects page — three tiers with honest affordances: featured explainer
+// cards ("Explore"), a compact tools grid ("Launch"), and a muted archive
+// line for past work with nothing to link to.
+.projects-page {
+  .tier-label {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--text-subtle);
+    margin: 2.25rem 0 1rem;
+
+    &::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border-color);
+    }
+
+    &:first-child { margin-top: 0.5rem; }
+  }
+
+  .vol-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1rem;
+  }
+
+  .vol-card {
+    display: block;
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    overflow: hidden;
+    background: var(--card-bg);
+    text-decoration: none;
+    transition: border-color var(--transition-fast), transform var(--transition-fast);
+
+    &:hover {
+      border-color: var(--color-primary);
+      transform: translateY(-2px);
+    }
+  }
+
+  .vol-head {
+    height: 5.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border-color);
+  }
+
+  .vol-motif-tokens {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--color-primary);
+
+    .tok {
+      border: 1px solid var(--color-primary);
+      border-radius: 5px;
+      padding: 0.15rem 0.5rem;
+      opacity: 0.85;
+    }
+
+    .tok-next { background: color-mix(in srgb, var(--color-primary) 18%, transparent); }
+
+    .tok-arrow { opacity: 0.6; }
+  }
+
+  .vol-motif-bands {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    width: 60%;
+
+    .band {
+      height: 0.8rem;
+      border-radius: 3px;
+      border: 1px solid var(--color-primary);
+    }
+
+    .band-1 { background: color-mix(in srgb, var(--color-primary) 10%, transparent); }
+    .band-2 { background: color-mix(in srgb, var(--color-primary) 22%, transparent); width: 82%; margin: 0 auto; }
+    .band-3 { background: color-mix(in srgb, var(--color-primary) 42%, transparent); width: 58%; margin: 0 auto; }
+  }
+
+  .vol-body { padding: 1rem 1.25rem 1.1rem; }
+
+  .vol-title {
+    font-family: var(--font-display);
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--text-color);
+    margin: 0 0 0.35rem;
+
+    small {
+      font-family: var(--font-mono);
+      font-size: 0.65rem;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      color: var(--text-subtle);
+      margin-left: 0.5rem;
+      vertical-align: 0.15rem;
+    }
+  }
+
+  .vol-desc {
+    font-size: 0.875rem;
+    line-height: 1.55;
+    color: var(--text-muted);
+    margin: 0 0 0.7rem;
+  }
+
+  .vol-go,
+  .tool-go {
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--link-color);
+  }
+
+  .tools-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    gap: 0.75rem;
+  }
+
+  .tool-card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    padding: 0.85rem 1rem;
+    background: var(--card-bg);
+    text-decoration: none;
+    transition: border-color var(--transition-fast), transform var(--transition-fast);
+
+    &:hover {
+      border-color: var(--color-primary);
+      transform: translateY(-1px);
+    }
+  }
+
+  .tool-name {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-color);
+  }
+
+  .tool-desc {
+    font-size: 0.78rem;
+    line-height: 1.45;
+    color: var(--text-subtle);
+    margin-bottom: 0.35rem;
+  }
+
+  .tool-go { font-size: 0.78rem; }
+
+  .archive-line {
+    font-size: 0.85rem;
+    line-height: 2.1;
+    color: var(--text-subtle);
+    margin: 0;
+
+    .archive-item { white-space: nowrap; }
+
+    .archive-year { color: var(--text-subtle); opacity: 0.75; }
+  }
+}
+
 // Essay index (/blog) — a reading order, not an archive. One featured
 // "Start here" entry, then full-width rows with complete descriptions.
 .essay-index {
