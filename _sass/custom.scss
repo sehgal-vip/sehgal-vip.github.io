@@ -1390,15 +1390,25 @@ strong, b {
   animation: drawLine 0.6s ease forwards;
 }
 
-// Scroll Reveal
+// Scroll Reveal — kept quick: a fast scroll used to land on a blank
+// viewport while sections finished a 0.8s fade that only started once
+// they were 50px inside the viewport.
 .scroll-reveal {
   opacity: 0;
-  transform: translateY(30px);
-  transition: opacity 0.8s ease, transform 0.8s ease;
+  transform: translateY(20px);
+  transition: opacity 0.45s ease, transform 0.45s ease;
 
   &.revealed {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scroll-reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
   }
 }
 
@@ -3491,8 +3501,11 @@ strong, b {
     margin: 0 0 0.4rem;
     text-wrap: balance;
 
+    // The page layout's .post-content rule underlines content links;
+    // display titles carry the affordance through the card hover instead.
     a {
       color: var(--text-color);
+      text-decoration: none;
 
       &:hover { color: var(--link-color); }
     }
@@ -3779,7 +3792,13 @@ strong, b {
       text-overflow: ellipsis;
       color: var(--text-color);
 
-      a { color: inherit; }
+      // The legacy .title-cell a rule sets inline-block, which clips
+      // without an ellipsis; the ellipsis needs inline flow inside the
+      // overflow-hidden cell.
+      a {
+        color: inherit;
+        display: inline;
+      }
     }
 
     &.year-cell {

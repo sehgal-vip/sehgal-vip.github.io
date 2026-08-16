@@ -378,8 +378,11 @@
         }
       });
     }, {
-      threshold: 0.1,
-      rootMargin: '0px 0px -50px 0px'
+      // Fire as soon as any part of the element is visible — the old
+      // -50px bottom margin + 0.1 threshold let fast scrolls land on
+      // still-invisible sections.
+      threshold: 0.01,
+      rootMargin: '0px 0px 0px 0px'
     });
 
     revealElements.forEach(el => observer.observe(el));
