@@ -365,7 +365,11 @@
   }
 
   /**
-   * Calculate fuzzy match score
+   * Calculate fuzzy match score.
+   *
+   * Titles, shortcuts, categories and tags get fuzzy matching; the post's
+   * full text (lazily loaded from /search.json) only matches as an exact
+   * substring — fuzzy-walking kilobytes of prose would match everything.
    */
   function fuzzyScore(query, item) {
     const searchText = [
@@ -399,8 +403,18 @@
       }
     }
 
-    // Only count as match if all query chars were found
-    if (queryIndex < query.length) {
+    // Full-text match: description, body text, and URL slug from the
+    // search index, exact substring only.
+    const deepText = [item.searchDescription, item.searchContent, item.url]
+      .filter(Boolean).join(' ').toLowerCase();
+    const deepHit = deepText.length > 0 && query.length >= 3 && deepText.includes(query);
+    if (deepHit) {
+      score += 40;
+    }
+
+    // Only count as a match if all query chars were found in the metadata
+    // — or the full text contains the query verbatim.
+    if (queryIndex < query.length && !deepHit) {
       return 0;
     }
 
@@ -684,9 +698,39 @@
   /**
    * Open the command palette
    */
+  // Lazily enrich posts with full text from the search index the first
+  // time the palette opens, so queries like "backpack" find the essay
+  // whose body (not title) carries the term.
+  let searchIndexRequested = false;
+
+  function loadSearchIndex() {
+    if (searchIndexRequested || !window.fetch) return;
+    searchIndexRequested = true;
+
+    fetch('/search.json')
+      .then(r => (r.ok ? r.json() : []))
+      .then(index => {
+        if (!Array.isArray(index)) return;
+        const byUrl = new Map(index.map(entry => [entry.url, entry]));
+        posts.forEach(post => {
+          const entry = byUrl.get(post.url);
+          if (!entry) return;
+          post.searchDescription = [entry.description, entry.excerpt].filter(Boolean).join(' ');
+          post.searchContent = entry.content || '';
+        });
+        // Re-run the current query so open results pick up the new text.
+        if (isOpen && input) {
+          filterResults(input.value.trim().toLowerCase());
+          render();
+        }
+      })
+      .catch(() => { /* palette still works on titles/tags */ });
+  }
+
   function open() {
     if (isOpen) return;
     isOpen = true;
+    loadSearchIndex();
 
     // Reset state
     input.value = '';

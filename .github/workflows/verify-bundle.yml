@@ -1,0 +1,39 @@
+name: Verify JS bundle
+
+# main.bundle.min.js is a committed build artifact. This check fails the
+# push if someone edits a source file under assets/js/ without running
+# `npm run build:js`, so the deployed bundle can never silently drift
+# from its sources.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'assets/js/**'
+      - 'package.json'
+  pull_request:
+    paths:
+      - 'assets/js/**'
+      - 'package.json'
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Rebuild bundle
+        run: npm run build:js
+
+      - name: Compare against committed bundle
+        run: |
+          if ! git diff --quiet -- assets/js/main.bundle.min.js; then
+            echo "::error::main.bundle.min.js is stale — run 'npm run build:js' and commit the result."
+            git diff --stat -- assets/js/main.bundle.min.js
+            exit 1
+          fi
+          echo "Bundle matches sources."
