@@ -11,6 +11,13 @@
   --color-secondary-hover: #003A75;
   --color-accent: #E2725B;       // Terracotta - Pottery
 
+  // Link gold — same family as --color-primary, darkened to 6.4:1 on the
+  // marble background (the primary gold measures 2.3:1, failing WCAG AA).
+  // Decorative gold fills keep --color-primary; anything read as text
+  // at body size uses this.
+  --link-color: #8A6414;
+  --link-color-hover: #6E4F0D;
+
   // Light theme (Helios - Sunlit Stone)
   --bg-color: #F5F7FA;           // Marble White
   --bg-secondary: #EBEEF2;
@@ -89,6 +96,10 @@
   --modal-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
   --kbd-bg: #323F4B;
   --kbd-color: #E1E7EF;
+
+  // Torchlight gold already clears 8.5:1 on the dark ground.
+  --link-color: #D4AF37;
+  --link-color-hover: #E5C04A;
 }
 
 // =============================================================================
@@ -283,12 +294,12 @@ p {
 }
 
 a {
-  color: var(--color-primary);
+  color: var(--link-color);
   text-decoration: none;
   transition: color var(--transition-fast);
-  
+
   &:hover {
-    color: var(--color-primary-hover);
+    color: var(--link-color-hover);
   }
   
   &:focus {
@@ -1681,12 +1692,19 @@ strong, b {
   
   a {
     text-decoration: underline;
-    text-decoration-color: rgba(255, 107, 53, 0.3);
+    text-decoration-color: color-mix(in srgb, var(--link-color) 35%, transparent);
     text-underline-offset: 2px;
 
     &:hover {
-      text-decoration-color: var(--color-primary);
+      text-decoration-color: var(--link-color);
     }
+  }
+
+  // Reading measure — cap running text at ~68 characters per line
+  // (the full article column runs ~88, past comfortable scanning).
+  // Headings, images, code blocks, and rules keep the full column.
+  p, ul, ol, blockquote {
+    max-width: 68ch;
   }
 }
 
@@ -3353,6 +3371,22 @@ strong, b {
 
     // Expanded state: reveal metadata + description + Open link.
     tr.is-expanded {
+      // The title is the one thing the collapsed row cuts off — let it
+      // wrap fully once the row is open.
+      td.title-cell {
+        max-width: 100%;
+        white-space: normal;
+        overflow: visible;
+        padding-right: 3rem;
+      }
+
+      // Pin the year to the first line instead of the row's vertical
+      // center, where it lands on top of the description text.
+      td.year-cell {
+        top: 0.85rem;
+        transform: none;
+      }
+
       td.author-cell {
         display: block;
         margin-top: 0.5rem;
