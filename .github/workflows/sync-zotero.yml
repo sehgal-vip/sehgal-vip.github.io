@@ -32,9 +32,22 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add _data/reading_*.csv
-          if git diff --staged --quiet; then
-            echo "No changes to commit"
+          git add _data/reading_*.csv _data/reading_meta.yml
+          # Only the meta timestamp changing means no real library change —
+          # skip the commit so history stays content-only.
+          if git diff --staged --quiet -- _data/reading_*.csv; then
+            git reset -q
+            echo "No library changes to commit"
+            # Keep-alive: GitHub disables scheduled workflows after 60 days
+            # without repo activity. If the last commit is older than 45
+            # days, push an empty commit so the cron survives quiet spells.
+            last_commit=$(git log -1 --format=%ct)
+            age_days=$(( ( $(date +%s) - last_commit ) / 86400 ))
+            if [ "$age_days" -gt 45 ]; then
+              git commit --allow-empty -m "Keep scheduled sync alive [automated]"
+              git push
+              echo "Pushed keep-alive commit (last activity ${age_days}d ago)"
+            fi
           else
             git commit -m "Sync Zotero library [automated]"
             git push
