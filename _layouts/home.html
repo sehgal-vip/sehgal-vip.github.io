@@ -64,8 +64,12 @@ hide_breadcrumbs: true
           <span class="post-card-readtime">{{ latest_post.date | date: "%b %d, %Y" }}</span>
         </div>
         <h3 class="post-card-title">{{ latest_post.title }}</h3>
-        {% if latest_post.excerpt %}
-          <p class="post-card-excerpt">{{ latest_post.excerpt | strip_html | truncate: 150 }}</p>
+        {% comment %} The hand-written description is the essay's real
+        pitch; the auto-excerpt truncation reduced it to a fragment. {% endcomment %}
+        {% if latest_post.description %}
+          <p class="post-card-excerpt">{{ latest_post.description | truncate: 220 }}</p>
+        {% elsif latest_post.excerpt %}
+          <p class="post-card-excerpt">{{ latest_post.excerpt | strip_html | truncate: 220 }}</p>
         {% endif %}
       </a>
     {% endfor %}

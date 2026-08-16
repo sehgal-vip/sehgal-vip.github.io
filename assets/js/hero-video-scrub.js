@@ -36,10 +36,16 @@
   const videoEndPoint = scrollDistance * 0.7;
   const heroHeight = window.innerHeight;
 
-  // Spacer for scroll space. Original scrub runway: scrub 0→videoEndPoint,
-  // then the hero fades + translates up over heroHeight worth of scroll.
+  // The hero fades out over 60% of a viewport (was a full viewport, which
+  // left a stretch of near-black with the content still below the fold).
+  // The spacer matches, so "Latest writing" arrives exactly as the fade
+  // completes — total runway ≈ 0.95 viewports.
+  const fadeDistance = heroHeight * 0.6;
+
+  // Spacer for scroll space: scrub 0→videoEndPoint, then fade + translate
+  // over fadeDistance worth of scroll.
   const spacer = document.createElement('div');
-  spacer.style.cssText = 'height:' + (videoEndPoint + heroHeight) + 'px;';
+  spacer.style.cssText = 'height:' + (videoEndPoint + fadeDistance) + 'px;';
   heroSection.after(spacer);
 
   // Safety: if the video hasn't reached playable state within 1.5s, tear down
@@ -105,13 +111,13 @@
     }
 
     // Post-scrub phase: after the video finishes scrubbing at videoEndPoint,
-    // the hero stays visible and fades out linearly across the next heroHeight
-    // of scroll — so opacity hits 0 exactly when the about-section reaches
-    // the top of the viewport. No dead scroll runway.
+    // the hero fades out linearly across fadeDistance of scroll — opacity
+    // hits 0 exactly when the flow content reaches the top of the
+    // viewport. No dead scroll runway.
     const scrollBeyond = scrollY - videoEndPoint;
     const fadeT = scrollBeyond <= 0
       ? 0
-      : Math.min(scrollBeyond / heroHeight, 1);
+      : Math.min(scrollBeyond / fadeDistance, 1);
 
     // HERO TRANSFORM
     if (scrollBeyond <= 0) {
@@ -121,7 +127,7 @@
       heroSection.style.transform = 'translateY(' + (-scrollBeyond) + 'px)';
       heroSection.style.visibility = 'visible';
     } else {
-      heroSection.style.transform = 'translateY(' + (-heroHeight) + 'px)';
+      heroSection.style.transform = 'translateY(' + (-fadeDistance) + 'px)';
       heroSection.style.visibility = 'hidden';
     }
 
