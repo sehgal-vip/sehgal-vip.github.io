@@ -6,6 +6,7 @@ author: Vipul Sehgal
 categories: [Economics, Technology]
 tags: [scarcity, theory-of-constraints, ai, infrastructure, bottlenecks]
 description: "It sprints to the new bottleneck and pays the first person waiting there. On value migration, Theory of Constraints, and where AI scarcity lives."
+featured: true
 comments: true
 ---
 

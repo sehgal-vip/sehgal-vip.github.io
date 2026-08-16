@@ -1,225 +1,65 @@
 ---
 layout: page
-title: Blog
-description: All articles and posts
+title: Essays
+description: AI, product, and first-principles thinking — through analogies that shouldn't work, but do
 permalink: /blog/
 ---
 
-<div class="reading-list">
-  {% if site.posts.size > 0 %}
-  {% assign posts_by_year_temp = site.posts | group_by_exp: "post", "post.date | date: '%Y'" %}
-  {% assign posts_years = posts_by_year_temp | map: "name" | sort | reverse %}
-  {% assign posts_by_category_temp = site.posts | where_exp: "post", "post.categories.size > 0" | group_by_exp: "post", "post.categories[0]" %}
-  {% assign posts_categories = posts_by_category_temp | map: "name" | sort %}
-  <section data-section="posts">
-    <div class="section-filters" aria-label="Filter posts">
-      <div class="filter-group">
-        <button class="filter-toggle" data-filter="year" data-section="posts">
-          <span class="filter-label">Year</span>
-          <span class="filter-selected-count"></span>
-          <svg class="filter-chevron" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="6 9 12 15 18 9"></polyline>
-          </svg>
-        </button>
-        <div class="filter-dropdown filter-year" data-section="posts">
-          <label class="filter-option">
-            <input type="checkbox" value="all" checked>
-            <span>All</span>
-          </label>
-          {% for y in posts_years %}
-          <label class="filter-option">
-            <input type="checkbox" value="{{ y }}">
-            <span>{{ y }}</span>
-          </label>
-          {% endfor %}
-        </div>
-      </div>
-      {% if posts_categories.size > 0 %}
-      <div class="filter-group">
-        <button class="filter-toggle" data-filter="category" data-section="posts">
-          <span class="filter-label">Category</span>
-          <span class="filter-selected-count"></span>
-          <svg class="filter-chevron" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="6 9 12 15 18 9"></polyline>
-          </svg>
-        </button>
-        <div class="filter-dropdown filter-category" data-section="posts">
-          <label class="filter-option">
-            <input type="checkbox" value="all" checked>
-            <span>All</span>
-          </label>
-          {% for c in posts_categories %}
-          <label class="filter-option">
-            <input type="checkbox" value="{{ c }}">
-            <span>{{ c }}</span>
-          </label>
-          {% endfor %}
-        </div>
-      </div>
-      {% endif %}
+{% comment %}
+Essay index, not a blog archive: one hand-picked "Start here" entry
+(frontmatter `featured: true`, falling back to the newest post), then
+every essay full-width with its complete description. No pagination —
+the whole body of work should read as a collection until it outgrows
+one screen (~15 posts; revisit then).
+{% endcomment %}
+
+{% assign featured = site.posts | where: "featured", true | first %}
+{% unless featured %}{% assign featured = site.posts.first %}{% endunless %}
+
+<div class="essay-index">
+
+  <article class="essay-featured">
+    <div class="essay-badge-row">
+      <span class="essay-badge">Start here</span>
     </div>
-    
-    {% assign posts_sorted = site.posts | sort: "date" | reverse %}
-    <table class="data-table">
-      <thead>
-        <tr>
-          <th>Title</th>
-          <th>Date</th>
-          <th>Read</th>
-          <th>Category</th>
-          <th>Excerpt</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for post in posts_sorted %}
-        <tr data-year="{{ post.date | date: '%Y' }}" data-category="{% if post.categories.size > 0 %}{{ post.categories[0] }}{% endif %}">
-          <td class="title-cell" data-label="Title">
-            <a href="{{ post.url | relative_url }}">{{ post.title }}</a>
-          </td>
-          <td class="year-cell" data-label="Date">{{ post.date | date: "%b %d, %Y" }}</td>
-          {% assign words = post.content | strip_html | number_of_words %}
-          {% assign read_time = words | divided_by: 200 | plus: 1 %}
-          <td class="year-cell" data-label="Read">{{ read_time }} min</td>
-          <td class="author-cell" data-label="Category">{% if post.categories.size > 0 %}{{ post.categories[0] }}{% else %}—{% endif %}</td>
-          <td class="desc-cell" data-label="Excerpt">{% if post.excerpt %}{{ post.excerpt | strip_html | truncate: 100 }}{% else %}—{% endif %}</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </section>
-  {% else %}
-  <div class="text-center" style="padding: 4rem 0;">
-    <p style="color: var(--text-muted); font-size: 1.125rem;">No posts yet.</p>
-    <p style="color: var(--text-muted);">
-      Create your first post in the <code>_posts</code> folder with the format:<br>
-      <code>YYYY-MM-DD-your-post-title.md</code>
+    <h2 class="essay-title"><a href="{{ featured.url | relative_url }}">{{ featured.title }}</a></h2>
+    {% if featured.description %}
+    <p class="essay-desc">{{ featured.description }}</p>
+    {% elsif featured.excerpt %}
+    <p class="essay-desc">{{ featured.excerpt | strip_html | truncate: 220 }}</p>
+    {% endif %}
+    <p class="essay-meta">
+      <time datetime="{{ featured.date | date_to_xmlschema }}">{{ featured.date | date: "%b %Y" }}</time>
+      <span aria-hidden="true">·</span>
+      {% assign words = featured.content | strip_html | number_of_words %}
+      {{ words | divided_by: 200 | at_least: 1 }} min
+      {% if featured.categories.size > 0 %}
+      <span aria-hidden="true">·</span>
+      {{ featured.categories | first }}
+      {% endif %}
     </p>
-  </div>
-  {% endif %}
+  </article>
+
+  {% for post in site.posts %}
+  {% if post.url == featured.url %}{% continue %}{% endif %}
+  <article class="essay-row">
+    <h2 class="essay-title"><a href="{{ post.url | relative_url }}">{{ post.title }}</a></h2>
+    {% if post.description %}
+    <p class="essay-desc">{{ post.description }}</p>
+    {% elsif post.excerpt %}
+    <p class="essay-desc">{{ post.excerpt | strip_html | truncate: 220 }}</p>
+    {% endif %}
+    <p class="essay-meta">
+      <time datetime="{{ post.date | date_to_xmlschema }}">{{ post.date | date: "%b %Y" }}</time>
+      <span aria-hidden="true">·</span>
+      {% assign words = post.content | strip_html | number_of_words %}
+      {{ words | divided_by: 200 | at_least: 1 }} min
+      {% if post.categories.size > 0 %}
+      <span aria-hidden="true">·</span>
+      {{ post.categories | first }}
+      {% endif %}
+    </p>
+  </article>
+  {% endfor %}
+
 </div>
-
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-  // Collapsible filter dropdowns
-  const filterToggles = document.querySelectorAll('.filter-toggle');
-  const filterDropdowns = document.querySelectorAll('.filter-dropdown');
-  
-  // Toggle dropdown visibility
-  filterToggles.forEach(toggle => {
-    toggle.addEventListener('click', function(e) {
-      e.stopPropagation();
-      const dropdown = this.nextElementSibling;
-      const isOpen = dropdown.classList.contains('open');
-      
-      // Close all dropdowns
-      filterDropdowns.forEach(d => d.classList.remove('open'));
-      filterToggles.forEach(t => t.classList.remove('active'));
-      
-      // Open clicked dropdown if it was closed
-      if (!isOpen) {
-        dropdown.classList.add('open');
-        this.classList.add('active');
-      }
-    });
-  });
-  
-  // Close dropdowns when clicking outside
-  document.addEventListener('click', function(e) {
-    if (!e.target.closest('.filter-group')) {
-      filterDropdowns.forEach(d => d.classList.remove('open'));
-      filterToggles.forEach(t => t.classList.remove('active'));
-    }
-  });
-  
-  // Filter functionality
-  const applyFilters = () => {
-    const sections = document.querySelectorAll('.collapsible-section');
-    
-    sections.forEach(section => {
-      const sectionName = section.getAttribute('data-section');
-      const table = section.querySelector('.data-table');
-      if (!table) return;
-      
-      const rows = table.querySelectorAll('tbody tr');
-      const yearCheckboxes = section.querySelectorAll('.filter-year input[type="checkbox"]:checked');
-      const categoryCheckboxes = section.querySelectorAll('.filter-category input[type="checkbox"]:checked');
-      
-      const selectedYears = Array.from(yearCheckboxes).map(cb => cb.value).filter(v => v !== 'all');
-      const selectedCategories = categoryCheckboxes.length > 0 ? Array.from(categoryCheckboxes).map(cb => cb.value).filter(v => v !== 'all') : [];
-      
-      const showAllYears = yearCheckboxes.length > 0 && Array.from(yearCheckboxes).some(cb => cb.value === 'all');
-      const showAllCategories = categoryCheckboxes.length === 0 || (categoryCheckboxes.length > 0 && Array.from(categoryCheckboxes).some(cb => cb.value === 'all'));
-      
-      rows.forEach(row => {
-        const year = row.getAttribute('data-year');
-        const category = row.getAttribute('data-category') || '';
-        
-        const yearMatch = showAllYears || selectedYears.length === 0 || selectedYears.includes(year);
-        const categoryMatch = showAllCategories || selectedCategories.length === 0 || (category && selectedCategories.includes(category));
-        
-        row.style.display = (yearMatch && categoryMatch) ? '' : 'none';
-      });
-      
-      // Update selected count badges
-      const yearToggle = section.querySelector('.filter-toggle[data-filter="year"]');
-      const categoryToggle = section.querySelector('.filter-toggle[data-filter="category"]');
-      
-      if (yearToggle) {
-        const count = showAllYears ? 0 : selectedYears.length;
-        const countBadge = yearToggle.querySelector('.filter-selected-count');
-        if (countBadge) {
-          countBadge.textContent = count > 0 ? `(${count})` : '';
-        }
-      }
-      
-      if (categoryToggle) {
-        const count = showAllCategories ? 0 : selectedCategories.length;
-        const countBadge = categoryToggle.querySelector('.filter-selected-count');
-        if (countBadge) {
-          countBadge.textContent = count > 0 ? `(${count})` : '';
-        }
-      }
-
-      // Empty state messaging
-      const visibleRows = Array.from(rows).filter(r => r.style.display !== 'none');
-      let emptyState = section.querySelector('.filter-empty-state');
-      if (visibleRows.length === 0) {
-        if (!emptyState) {
-          emptyState = document.createElement('div');
-          emptyState.className = 'filter-empty-state';
-          emptyState.innerHTML = '<p>No results match your filters.</p><button class="clear-filters-btn" onclick="this.closest(\'.collapsible-section\').querySelectorAll(\'.filter-dropdown input[value=all]\').forEach(function(cb){cb.checked=true;cb.dispatchEvent(new Event(\'change\',{bubbles:true}))})">Clear filters</button>';
-          table.parentNode.insertBefore(emptyState, table.nextSibling);
-        }
-        emptyState.style.display = '';
-      } else if (emptyState) {
-        emptyState.style.display = 'none';
-      }
-    });
-  };
-  
-  // Handle checkbox changes
-  document.addEventListener('change', function(e) {
-    if (e.target.type === 'checkbox' && e.target.closest('.filter-dropdown')) {
-      const checkbox = e.target;
-      const dropdown = checkbox.closest('.filter-dropdown');
-      
-      // Handle "All" checkbox
-      if (checkbox.value === 'all' && checkbox.checked) {
-        dropdown.querySelectorAll('input[type="checkbox"]:not([value="all"])').forEach(cb => {
-          cb.checked = false;
-        });
-      } else if (checkbox.value !== 'all' && checkbox.checked) {
-        const allCheckbox = dropdown.querySelector('input[value="all"]');
-        if (allCheckbox) {
-          allCheckbox.checked = false;
-        }
-      }
-      
-      applyFilters();
-    }
-  });
-  
-  // Initial filter application
-  applyFilters();
-});
-</script>

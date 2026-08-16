@@ -3255,6 +3255,129 @@ strong, b {
   }
 }
 
+// Essay index (/blog) — a reading order, not an archive. One featured
+// "Start here" entry, then full-width rows with complete descriptions.
+.essay-index {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  margin-top: 0.5rem;
+
+  .essay-title {
+    font-family: var(--font-display);
+    font-size: 1.35rem;
+    font-weight: 600;
+    line-height: 1.25;
+    margin: 0 0 0.4rem;
+    text-wrap: balance;
+
+    a {
+      color: var(--text-color);
+
+      &:hover { color: var(--link-color); }
+    }
+  }
+
+  .essay-desc {
+    margin: 0 0 0.6rem;
+    font-size: 0.95rem;
+    line-height: 1.6;
+    color: var(--text-muted);
+    max-width: 62ch;
+  }
+
+  .essay-meta {
+    margin: 0;
+    font-size: 0.8rem;
+    color: var(--text-subtle);
+
+    span[aria-hidden] { margin: 0 0.35rem; }
+  }
+}
+
+.essay-row {
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 1.15rem 1.5rem;
+  background: var(--card-bg);
+  transition: border-color var(--transition-fast), transform var(--transition-fast);
+
+  &:hover {
+    border-color: var(--color-primary);
+    transform: translateY(-1px);
+  }
+}
+
+.essay-featured {
+  @extend .essay-row;
+  border-color: var(--color-primary);
+  background: var(--bg-secondary);
+  padding: 1.4rem 1.6rem;
+
+  .essay-title { font-size: 1.6rem; }
+
+  .essay-badge-row { margin-bottom: 0.7rem; }
+
+  .essay-badge {
+    display: inline-block;
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #141414;
+    background: var(--color-primary);
+    border-radius: 4px;
+    padding: 0.2rem 0.6rem;
+  }
+}
+
+// Previous / next essay pager at the foot of each post.
+.post-pager {
+  display: flex;
+  gap: 1rem;
+  margin: 3rem 0 1rem;
+  border-top: 1px solid var(--border-color);
+  padding-top: 1.5rem;
+
+  .pager-link {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    padding: 0.9rem 1.1rem;
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    text-decoration: none;
+    transition: border-color var(--transition-fast);
+
+    &:hover { border-color: var(--color-primary); }
+  }
+
+  .pager-next { text-align: right; }
+
+  .pager-label {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-subtle);
+  }
+
+  .pager-title {
+    font-weight: 500;
+    font-size: 0.95rem;
+    color: var(--text-color);
+    line-height: 1.35;
+  }
+
+  @media (max-width: 600px) {
+    flex-direction: column;
+
+    .pager-next { text-align: left; }
+  }
+}
+
 // Reading stats strip — the library's vitals plus proof the Zotero
 // pipeline is alive ("Synced n days ago").
 .reading-stats {

@@ -138,6 +138,24 @@ layout: default
   {% endif %}
   {% endif %}
   
+  <!-- Previous / next essay — no essay is a dead end -->
+  {% if page.previous or page.next %}
+  <nav class="post-pager" aria-label="More essays">
+    {% if page.previous %}
+    <a class="pager-link pager-prev" href="{{ page.previous.url | relative_url }}">
+      <span class="pager-label">&larr; Older</span>
+      <span class="pager-title">{{ page.previous.title }}</span>
+    </a>
+    {% endif %}
+    {% if page.next %}
+    <a class="pager-link pager-next" href="{{ page.next.url | relative_url }}">
+      <span class="pager-label">Newer &rarr;</span>
+      <span class="pager-title">{{ page.next.title }}</span>
+    </a>
+    {% endif %}
+  </nav>
+  {% endif %}
+
   <!-- Comments -->
   {% if site.comments_enabled != false and page.comments != false and site.giscus.repo_id != "[ENTER REPO ID FROM GISCUS.APP]" %}
   {% include comments.html %}
