@@ -3255,164 +3255,286 @@ strong, b {
   }
 }
 
-// Responsive tables — tabular scan list on mobile.
-// arxiv-sanity / Hacker News pattern: title-led 44px rows, year right-
-// aligned, chevron disclosure. Tap row to expand inline (author + desc +
-// Open link). No card chrome.
+// Reading stats strip — the library's vitals plus proof the Zotero
+// pipeline is alive ("Synced n days ago").
+.reading-stats {
+  display: flex;
+  align-items: stretch;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin: 0 0 1.25rem;
+
+  .stat {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 0.55rem 1.1rem;
+    min-width: 5.25rem;
+  }
+
+  .stat-n {
+    display: block;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--text-color);
+    font-variant-numeric: tabular-nums;
+    line-height: 1.2;
+  }
+
+  .stat-l {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-subtle);
+  }
+
+  .stat-sync {
+    margin-left: auto;
+    align-self: center;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.8rem;
+    color: var(--text-subtle);
+
+    @media (max-width: 768px) {
+      margin-left: 0;
+      flex-basis: 100%;
+    }
+  }
+
+  .sync-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #4FBF8B;
+    flex: none;
+
+    @media (prefers-reduced-motion: no-preference) {
+      animation: sync-pulse 2.4s ease infinite;
+    }
+  }
+}
+
+@keyframes sync-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+
+// Topic chips — built from the Zotero collection tags already in the CSVs.
+.topic-chips {
+  display: flex;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+  margin: 0 0 1.5rem;
+
+  .topic-chip {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    padding: 0.3rem 0.85rem;
+    border-radius: 999px;
+    border: 1px solid var(--border-color);
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: color var(--transition-fast), border-color var(--transition-fast), background var(--transition-fast);
+
+    &:hover {
+      border-color: var(--color-primary);
+      color: var(--text-color);
+    }
+
+    &.is-active {
+      background: var(--color-primary);
+      border-color: var(--color-primary);
+      color: #141414;
+      font-weight: 600;
+    }
+  }
+}
+
+// Reading rows — one anatomy at every width (arxiv-sanity pattern):
+// title-led rows, author meta line, year right-aligned, chevron
+// disclosure. Click/tap a row to expand the description inline.
+// Scoped to .data-table--rows so legacy .data-table pages are untouched.
 .open-paper-link { display: none; }
 
-@media (max-width: 768px) {
-  .data-table {
+.reading-list .data-table--rows {
+  display: block;
+  background: transparent;
+  border: 0;
+  border-top: 1px solid var(--border-color);
+  border-radius: 0;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+
+  thead { display: none; }
+
+  tbody, tr, td {
     display: block;
-    background: transparent;
+    width: 100% !important;
+  }
+
+  tr {
+    position: relative;
+    padding: 0.7rem 1.75rem 0.7rem 0.875rem;
+    margin: 0;
     border: 0;
-    border-top: 1px solid var(--border-color);
+    border-bottom: 1px solid var(--border-color);
     border-radius: 0;
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
+    background: transparent;
+    box-shadow: none;
+    min-height: 44px;
+    cursor: pointer;
+    transition: background-color 0.12s;
 
-    thead { display: none; }
-
-    tbody, tr, td {
-      display: block;
-      width: 100% !important;
+    &:hover,
+    &:active {
+      background: var(--bg-secondary);
     }
 
-    tr {
-      position: relative;
-      padding: 0.6rem 1.75rem 0.6rem 0.875rem;
-      margin: 0;
-      border: 0;
-      border-bottom: 1px solid var(--border-color);
-      border-radius: 0;
-      background: transparent;
-      box-shadow: none;
-      min-height: 44px;
-      cursor: pointer;
-      transition: background-color 0.12s;
+    // Chevron disclosure on the right edge.
+    &::after {
+      content: '';
+      position: absolute;
+      right: 0.875rem;
+      top: 1.25rem;
+      width: 6px;
+      height: 6px;
+      border-right: 1.5px solid var(--text-subtle);
+      border-bottom: 1.5px solid var(--text-subtle);
+      transform: rotate(-45deg);
+      transition: transform 0.15s;
+    }
 
-      &:hover,
-      &:active {
-        background: var(--bg-secondary);
-      }
+    &.is-expanded {
+      background: var(--bg-secondary);
 
-      // Chevron disclosure on the right edge.
       &::after {
-        content: '';
-        position: absolute;
-        right: 0.875rem;
-        top: 50%;
-        width: 6px;
-        height: 6px;
-        border-right: 1.5px solid var(--text-subtle);
-        border-bottom: 1.5px solid var(--text-subtle);
-        transform: translateY(-70%) rotate(-45deg);
-        transition: transform 0.15s;
-      }
-
-      &.is-expanded {
-        background: var(--bg-secondary);
-
-        &::after {
-          transform: translateY(-30%) rotate(45deg);
-        }
+        transform: translateY(3px) rotate(45deg);
       }
     }
+  }
 
-    td {
-      padding: 0;
-      border: 0;
+  td {
+    padding: 0;
+    border: 0;
 
-      &:empty { display: none; }
+    &:empty { display: none; }
 
-      &.title-cell {
-        display: inline-block;
-        max-width: calc(100% - 3.5rem);
-        margin: 0;
-        font-size: 0.9375rem;
-        font-weight: 500;
-        line-height: 1.3;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: middle;
-        color: var(--text-color);
+    &.title-cell {
+      display: block;
+      max-width: calc(100% - 3.5rem);
+      margin: 0;
+      font-size: 0.9375rem;
+      font-weight: 500;
+      line-height: 1.35;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      color: var(--text-color);
 
-        // The wrapping <a> stays in markup so desktop keeps its link
-        // behavior. On mobile we route taps to the row (which toggles
-        // expansion) by disabling pointer-events on the link.
-        a {
-          color: inherit;
-          pointer-events: none;
-        }
-      }
-
-      &.year-cell {
-        position: absolute;
-        right: 2rem;
-        top: 50%;
-        width: auto !important;
-        transform: translateY(-50%);
-        margin: 0;
-        font-family: var(--font-mono);
-        font-size: 0.75rem;
-        color: var(--text-subtle);
-        text-align: right;
-        white-space: nowrap;
-
-        // Drop the desktop colored-dot pseudo on mobile.
-        &::before { display: none; }
-      }
-
-      // Hidden until the row is expanded.
-      &.author-cell,
-      &.desc-cell { display: none; }
+      a { color: inherit; }
     }
 
-    // Expanded state: reveal metadata + description + Open link.
-    tr.is-expanded {
-      // The title is the one thing the collapsed row cuts off — let it
-      // wrap fully once the row is open.
-      td.title-cell {
-        max-width: 100%;
-        white-space: normal;
-        overflow: visible;
-        padding-right: 3rem;
-      }
+    &.year-cell {
+      position: absolute;
+      right: 2rem;
+      top: 0.85rem;
+      width: auto !important;
+      margin: 0;
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: var(--text-subtle);
+      text-align: right;
+      white-space: nowrap;
 
-      // Pin the year to the first line instead of the row's vertical
-      // center, where it lands on top of the description text.
-      td.year-cell {
-        top: 0.85rem;
-        transform: none;
-      }
-
-      td.author-cell {
-        display: block;
-        margin-top: 0.5rem;
-        font-size: 0.75rem;
-        color: var(--text-subtle);
-      }
-
-      td.desc-cell {
-        display: block;
-        margin-top: 0.35rem;
-        font-size: 0.8125rem;
-        line-height: 1.45;
-        color: var(--text-muted);
-      }
-
-      .open-paper-link {
-        display: inline-block;
-        margin-top: 0.6rem;
-        font-size: 0.8125rem;
-        font-weight: 500;
-        color: var(--color-primary);
-        text-decoration: none;
-
-        &:hover { text-decoration: underline; }
-      }
+      // Drop the legacy table colored-dot pseudo.
+      &::before { display: none; }
     }
+
+    // Author meta line stays visible even when collapsed.
+    &.author-cell {
+      display: block;
+      margin-top: 0.15rem;
+      font-size: 0.75rem;
+      font-weight: 400;
+      color: var(--text-subtle);
+    }
+
+    // Description hidden until the row is expanded.
+    &.desc-cell { display: none; }
+  }
+
+  // Recently-added marker (set by JS from data-added, last 30 days).
+  tr.is-new td.year-cell::before {
+    content: '';
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--color-primary);
+    margin-right: 0.4rem;
+    vertical-align: middle;
+  }
+
+  // Expanded state: reveal the full title + description + Open link.
+  tr.is-expanded {
+    // The title is the one thing the collapsed row cuts off — let it
+    // wrap fully once the row is open.
+    td.title-cell {
+      max-width: 100%;
+      white-space: normal;
+      overflow: visible;
+      padding-right: 3rem;
+    }
+
+    td.desc-cell {
+      display: block;
+      margin-top: 0.45rem;
+      font-size: 0.8125rem;
+      line-height: 1.5;
+      color: var(--text-muted);
+      max-width: 62ch;
+    }
+
+    .open-paper-link {
+      display: inline-block;
+      margin-top: 0.6rem;
+      font-size: 0.8125rem;
+      font-weight: 500;
+      color: var(--link-color);
+      text-decoration: none;
+
+      &:hover { text-decoration: underline; }
+    }
+  }
+}
+
+// Roomier rows on desktop.
+@media (min-width: 769px) {
+  .reading-list .data-table--rows {
+    tr {
+      padding: 0.8rem 2.5rem 0.8rem 1rem;
+
+      &::after { right: 1.1rem; }
+    }
+
+    td.title-cell { font-size: 1rem; }
+    td.author-cell { font-size: 0.8rem; }
+    td.year-cell { right: 2.4rem; top: 1rem; }
+
+    tr.is-expanded td.desc-cell { font-size: 0.875rem; }
+  }
+}
+
+@media (max-width: 768px) {
+  // Route taps to the row (which toggles expansion) instead of the
+  // title link; the injected "Open paper" link covers navigation.
+  .reading-list .data-table--rows td.title-cell a {
+    pointer-events: none;
   }
 
   // Compact filters on mobile: full width, 2-column inline chips.

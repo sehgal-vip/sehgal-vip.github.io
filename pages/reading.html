@@ -8,6 +8,59 @@ permalink: /reading/
 <div class="reading-layout">
 
 <div class="reading-list">
+
+  <!-- Library vitals + sync status -->
+  <div class="reading-stats">
+    {% if site.data.reading_papers.size > 0 %}
+    <div class="stat"><span class="stat-n">{{ site.data.reading_papers.size }}</span><span class="stat-l">Papers</span></div>
+    {% endif %}
+    {% if site.data.reading_books.size > 0 %}
+    <div class="stat"><span class="stat-n">{{ site.data.reading_books.size }}</span><span class="stat-l">Books</span></div>
+    {% endif %}
+    {% if site.data.reading_articles.size > 0 %}
+    <div class="stat"><span class="stat-n">{{ site.data.reading_articles.size }}</span><span class="stat-l">Articles</span></div>
+    {% endif %}
+    {% if site.data.reading_others.size > 0 %}
+    <div class="stat"><span class="stat-n">{{ site.data.reading_others.size }}</span><span class="stat-l">Others</span></div>
+    {% endif %}
+    {% if site.data.reading_meta.last_synced %}
+    <div class="stat-sync">
+      <span class="sync-dot" aria-hidden="true"></span>
+      <span id="reading-sync-label" data-last-synced="{{ site.data.reading_meta.last_synced }}">Synced from Zotero</span>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Topic chips from Zotero collection tags. Tags that just mirror the
+       section names (Papers, Books, ...) are filtered out as noise. -->
+  {% assign all_reading_items = "" | split: "" %}
+  {% if site.data.reading_papers %}{% assign all_reading_items = all_reading_items | concat: site.data.reading_papers %}{% endif %}
+  {% if site.data.reading_books %}{% assign all_reading_items = all_reading_items | concat: site.data.reading_books %}{% endif %}
+  {% if site.data.reading_articles %}{% assign all_reading_items = all_reading_items | concat: site.data.reading_articles %}{% endif %}
+  {% if site.data.reading_others %}{% assign all_reading_items = all_reading_items | concat: site.data.reading_others %}{% endif %}
+  {% assign tag_blob = "" %}
+  {% for item in all_reading_items %}
+    {% if item.tags and item.tags != "" %}{% assign tag_blob = tag_blob | append: item.tags | append: "; " %}{% endif %}
+  {% endfor %}
+  {% assign structural = "papers|books|articles|others" | split: "|" %}
+  {% assign candidates = tag_blob | split: "; " | uniq | sort %}
+  {% assign topic_blob = "" %}
+  {% for t in candidates %}
+    {% assign t_norm = t | strip | downcase %}
+    {% unless t_norm == "" or structural contains t_norm %}
+      {% assign topic_blob = topic_blob | append: t | append: "||" %}
+    {% endunless %}
+  {% endfor %}
+  {% assign topic_tags = topic_blob | split: "||" | uniq %}
+  {% if topic_tags.size > 0 %}
+  <div class="topic-chips" role="group" aria-label="Filter by topic">
+    <button type="button" class="topic-chip is-active" data-topic="all">All topics</button>
+    {% for t in topic_tags %}
+    <button type="button" class="topic-chip" data-topic="{{ t | strip }}">{{ t | strip }}</button>
+    {% endfor %}
+  </div>
+  {% endif %}
+
   <!-- Papers Section -->
   {% if site.data.reading_papers.size > 0 %}
   {% assign papers_by_year_temp = site.data.reading_papers | group_by: "year" %}
@@ -17,12 +70,12 @@ permalink: /reading/
   <section id="papers" class="collapsible-section" data-section="papers">
     <div class="section-head">
     <h2 class="section-title section-toggle" role="button" tabindex="0" aria-expanded="true">
-      Papers ({{ site.data.reading_papers.size }})
+      Papers (<span class="section-count" data-total="{{ site.data.reading_papers.size }}">{{ site.data.reading_papers.size }}</span>)
       <svg class="toggle-chevron" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
     </h2>
     <div class="section-filters" aria-label="Filter papers">
       <div class="filter-group">
-        <button class="filter-toggle" data-filter="year" data-section="papers">
+        <button class="filter-toggle" data-filter="year" data-section="papers" aria-label="Filter papers by year">
           <span class="filter-label">Year</span>
           <span class="filter-selected-count"></span>
           <svg class="filter-chevron" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -43,7 +96,7 @@ permalink: /reading/
         </div>
       </div>
       <div class="filter-group">
-        <button class="filter-toggle" data-filter="author" data-section="papers">
+        <button class="filter-toggle" data-filter="author" data-section="papers" aria-label="Filter papers by author">
           <span class="filter-label">Author</span>
           <span class="filter-selected-count"></span>
           <svg class="filter-chevron" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -67,7 +120,7 @@ permalink: /reading/
     </div><!-- /.section-head -->
 
     {% assign papers_sorted = site.data.reading_papers | sort: "year" | reverse %}
-    <table class="data-table">
+    <table class="data-table data-table--rows">
       <thead>
         <tr>
           <th>Title</th>
@@ -78,7 +131,7 @@ permalink: /reading/
       </thead>
       <tbody>
         {% for item in papers_sorted %}
-        <tr data-year="{{ item.year }}" data-author="{{ item.author }}">
+        <tr data-year="{{ item.year }}" data-author="{{ item.author }}" data-tags="{{ item.tags }}" data-added="{{ item.added }}">
           <td class="title-cell" data-label="Title">
             {% if item.url and item.url != "" %}
             <a href="{{ item.url }}" target="_blank" rel="noopener noreferrer">{{ item.title }}</a>
@@ -117,12 +170,12 @@ permalink: /reading/
   <section id="books" class="collapsible-section collapsed" data-section="books">
     <div class="section-head">
     <h2 class="section-title section-toggle" role="button" tabindex="0" aria-expanded="false">
-      Books ({{ site.data.reading_books.size }})
+      Books (<span class="section-count" data-total="{{ site.data.reading_books.size }}">{{ site.data.reading_books.size }}</span>)
       <svg class="toggle-chevron" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
     </h2>
     <div class="section-filters" aria-label="Filter books">
       <div class="filter-group">
-        <button class="filter-toggle" data-filter="year" data-section="books">
+        <button class="filter-toggle" data-filter="year" data-section="books" aria-label="Filter books by year">
           <span class="filter-label">Year</span>
           <span class="filter-selected-count"></span>
           <svg class="filter-chevron" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -143,7 +196,7 @@ permalink: /reading/
         </div>
       </div>
       <div class="filter-group">
-        <button class="filter-toggle" data-filter="author" data-section="books">
+        <button class="filter-toggle" data-filter="author" data-section="books" aria-label="Filter books by author">
           <span class="filter-label">Author</span>
           <span class="filter-selected-count"></span>
           <svg class="filter-chevron" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -164,7 +217,7 @@ permalink: /reading/
         </div>
       </div>
       <div class="filter-group">
-        <button class="filter-toggle sort-toggle" data-section="books">
+        <button class="filter-toggle sort-toggle" data-section="books" aria-label="Sort books">
           <span class="filter-label">Sort</span>
           <svg class="filter-chevron" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="6 9 12 15 18 9"></polyline>
@@ -190,7 +243,7 @@ permalink: /reading/
     </div><!-- /.section-head -->
 
     {% assign books_sorted = site.data.reading_books | sort: "year" | reverse %}
-    <table class="data-table">
+    <table class="data-table data-table--rows">
       <thead>
         <tr>
           <th>Title</th>
@@ -201,7 +254,7 @@ permalink: /reading/
       </thead>
       <tbody>
         {% for item in books_sorted %}
-        <tr data-year="{{ item.year }}" data-author="{{ item.author }}">
+        <tr data-year="{{ item.year }}" data-author="{{ item.author }}" data-tags="{{ item.tags }}" data-added="{{ item.added }}">
           <td class="title-cell" data-label="Title">
             {% if item.url and item.url != "" %}
             <a href="{{ item.url }}" target="_blank" rel="noopener noreferrer">{{ item.title }}</a>
@@ -239,12 +292,13 @@ permalink: /reading/
   {% assign articles_authors = articles_by_author_temp | map: "name" | sort %}
   <section id="articles" class="collapsible-section" data-section="articles">
     <div class="section-head">
-    <h2 class="section-title">
-      Articles
+    <h2 class="section-title section-toggle" role="button" tabindex="0" aria-expanded="true">
+      Articles (<span class="section-count" data-total="{{ site.data.reading_articles.size }}">{{ site.data.reading_articles.size }}</span>)
+      <svg class="toggle-chevron" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
     </h2>
     <div class="section-filters" aria-label="Filter articles">
       <div class="filter-group">
-        <button class="filter-toggle" data-filter="year" data-section="articles">
+        <button class="filter-toggle" data-filter="year" data-section="articles" aria-label="Filter articles by year">
           <span class="filter-label">Year</span>
           <span class="filter-selected-count"></span>
           <svg class="filter-chevron" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -265,7 +319,7 @@ permalink: /reading/
         </div>
       </div>
       <div class="filter-group">
-        <button class="filter-toggle" data-filter="author" data-section="articles">
+        <button class="filter-toggle" data-filter="author" data-section="articles" aria-label="Filter articles by author">
           <span class="filter-label">Author</span>
           <span class="filter-selected-count"></span>
           <svg class="filter-chevron" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -289,7 +343,7 @@ permalink: /reading/
     </div><!-- /.section-head -->
 
     {% assign articles_sorted = site.data.reading_articles | sort: "year" | reverse %}
-    <table class="data-table">
+    <table class="data-table data-table--rows">
       <thead>
         <tr>
           <th>Title</th>
@@ -300,7 +354,7 @@ permalink: /reading/
       </thead>
       <tbody>
         {% for item in articles_sorted %}
-        <tr data-year="{{ item.year }}" data-author="{{ item.author }}">
+        <tr data-year="{{ item.year }}" data-author="{{ item.author }}" data-tags="{{ item.tags }}" data-added="{{ item.added }}">
           <td class="title-cell" data-label="Title">
             {% if item.url and item.url != "" %}
             <a href="{{ item.url }}" target="_blank" rel="noopener noreferrer">{{ item.title }}</a>
@@ -339,12 +393,12 @@ permalink: /reading/
   <section id="others" class="collapsible-section collapsed" data-section="others">
     <div class="section-head">
     <h2 class="section-title section-toggle" role="button" tabindex="0" aria-expanded="false">
-      Others ({{ site.data.reading_others.size }})
+      Others (<span class="section-count" data-total="{{ site.data.reading_others.size }}">{{ site.data.reading_others.size }}</span>)
       <svg class="toggle-chevron" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
     </h2>
     <div class="section-filters" aria-label="Filter others">
       <div class="filter-group">
-        <button class="filter-toggle" data-filter="year" data-section="others">
+        <button class="filter-toggle" data-filter="year" data-section="others" aria-label="Filter others by year">
           <span class="filter-label">Year</span>
           <span class="filter-selected-count"></span>
           <svg class="filter-chevron" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -365,7 +419,7 @@ permalink: /reading/
         </div>
       </div>
       <div class="filter-group">
-        <button class="filter-toggle" data-filter="author" data-section="others">
+        <button class="filter-toggle" data-filter="author" data-section="others" aria-label="Filter others by author">
           <span class="filter-label">Author</span>
           <span class="filter-selected-count"></span>
           <svg class="filter-chevron" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -386,7 +440,7 @@ permalink: /reading/
         </div>
       </div>
       <div class="filter-group">
-        <button class="filter-toggle sort-toggle" data-section="others">
+        <button class="filter-toggle sort-toggle" data-section="others" aria-label="Sort others">
           <span class="filter-label">Sort</span>
           <svg class="filter-chevron" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="6 9 12 15 18 9"></polyline>
@@ -412,7 +466,7 @@ permalink: /reading/
     </div><!-- /.section-head -->
 
     {% assign others_sorted = site.data.reading_others | sort: "year" | reverse %}
-    <table class="data-table">
+    <table class="data-table data-table--rows">
       <thead>
         <tr>
           <th>Title</th>
@@ -423,7 +477,7 @@ permalink: /reading/
       </thead>
       <tbody>
         {% for item in others_sorted %}
-        <tr data-year="{{ item.year }}" data-author="{{ item.author }}">
+        <tr data-year="{{ item.year }}" data-author="{{ item.author }}" data-tags="{{ item.tags }}" data-added="{{ item.added }}">
           <td class="title-cell" data-label="Title">
             {% if item.url and item.url != "" %}
             <a href="{{ item.url }}" target="_blank" rel="noopener noreferrer">{{ item.title }}</a>
@@ -605,6 +659,9 @@ document.addEventListener('DOMContentLoaded', function() {
   // Filtering per section
   const sections = document.querySelectorAll('.collapsible-section');
 
+  // Topic chip filter — one topic active at a time, across all sections.
+  let activeTopic = 'all';
+
   // Get visible rows that match current filters
   const getFilteredRows = (section) => {
     const yearDropdown = section.querySelector('.filter-year');
@@ -622,9 +679,11 @@ document.addEventListener('DOMContentLoaded', function() {
     rows.forEach(row => {
       const rowYear = row.getAttribute('data-year');
       const rowAuthor = row.getAttribute('data-author');
+      const rowTags = (row.getAttribute('data-tags') || '').split(';').map(t => t.trim());
       const matchYear = selectedYears.includes('all') || selectedYears.includes(rowYear);
       const matchAuthor = selectedAuthors.includes('all') || selectedAuthors.includes(rowAuthor);
-      if (matchYear && matchAuthor) {
+      const matchTopic = activeTopic === 'all' || rowTags.includes(activeTopic);
+      if (matchYear && matchAuthor && matchTopic) {
         filteredRows.push(row);
       }
     });
@@ -662,6 +721,15 @@ document.addEventListener('DOMContentLoaded', function() {
     // Hide table if no rows match
     if (table) {
       table.style.display = filteredRows.length > 0 ? '' : 'none';
+    }
+
+    // Live count in the section heading: "18" unfiltered, "2 of 18" filtered.
+    const countEl = section.querySelector('.section-count');
+    if (countEl) {
+      const total = countEl.dataset.total || '';
+      countEl.textContent = String(filteredRows.length) === String(total)
+        ? total
+        : filteredRows.length + ' of ' + total;
     }
 
     // Update pagination UI
@@ -1023,6 +1091,17 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   });
 
+  // Topic chip clicks — swap the active chip, reset pages, refilter.
+  document.querySelectorAll('.topic-chip').forEach(function(chip) {
+    chip.addEventListener('click', function() {
+      activeTopic = this.dataset.topic;
+      document.querySelectorAll('.topic-chip').forEach(c =>
+        c.classList.toggle('is-active', c === this));
+      Object.keys(paginationState).forEach(k => { paginationState[k].page = 1; });
+      applyFilters();
+    });
+  });
+
   // Initial filter and pagination application
   applyFilters();
 
@@ -1075,12 +1154,11 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   })();
 
-  // Mobile-only row expansion. Tap a row to reveal author + description
-  // + "Open paper" link inline. CSS suppresses pointer-events on the
-  // title anchor at <=768px so the click routes to the row.
+  // Row expansion at every width. Click/tap a row to reveal the full
+  // title + description + "Open paper" link inline. On desktop the title
+  // link still navigates; on mobile CSS routes taps to the row instead.
   (function() {
-    const isMobile = () => window.matchMedia('(max-width: 768px)').matches;
-    document.querySelectorAll('.data-table tbody tr').forEach(function(row) {
+    document.querySelectorAll('.data-table--rows tbody tr').forEach(function(row) {
       const titleLink = row.querySelector('td.title-cell a');
       const descCell = row.querySelector('td.desc-cell');
 
@@ -1098,12 +1176,42 @@ document.addEventListener('DOMContentLoaded', function() {
       }
 
       row.addEventListener('click', function(e) {
-        if (!isMobile()) return;
-        if (e.target.closest('.open-paper-link')) return;
-        if (window.getSelection && String(window.getSelection()).length > 0) return;
+        const link = e.target.closest('a');
+        if (link && e.target.closest('.open-paper-link')) return;
+        // Desktop title links keep navigating (mobile CSS disables them).
+        if (link && link.closest('td.title-cell')) return;
+        // Don't collapse under an in-row text selection — but a stale
+        // selection elsewhere on the page must not disable the row.
+        const sel = window.getSelection ? window.getSelection() : null;
+        if (sel && String(sel).length > 0 && sel.anchorNode && row.contains(sel.anchorNode)) return;
         row.classList.toggle('is-expanded');
       });
     });
+  })();
+
+  // Recently-added markers: gold dot on rows added in the last 30 days
+  // (data-added arrives from Zotero's dateAdded via the sync script).
+  (function() {
+    const cutoff = Date.now() - 30 * 24 * 60 * 60 * 1000;
+    document.querySelectorAll('.data-table--rows tbody tr[data-added]').forEach(function(row) {
+      const added = Date.parse(row.dataset.added);
+      if (!isNaN(added) && added >= cutoff) row.classList.add('is-new');
+    });
+  })();
+
+  // Relative "Synced n ago" label from the sync metadata timestamp.
+  (function() {
+    const label = document.getElementById('reading-sync-label');
+    if (!label || !label.dataset.lastSynced) return;
+    const then = Date.parse(label.dataset.lastSynced);
+    if (isNaN(then)) return;
+    const mins = Math.max(0, Math.round((Date.now() - then) / 60000));
+    let rel;
+    if (mins < 60) rel = 'just now';
+    else if (mins < 48 * 60) rel = Math.round(mins / 60) + ' hours ago';
+    else if (mins < 60 * 24 * 60) rel = Math.round(mins / (60 * 24)) + ' days ago';
+    else rel = 'on ' + new Date(then).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+    label.textContent = 'Synced from Zotero ' + rel;
   })();
 });
 </script>

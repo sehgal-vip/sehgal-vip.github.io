@@ -62,6 +62,7 @@ def extract_items(db_path):
     query = '''
     SELECT
         i.itemID,
+        i.dateAdded as dateAdded,
         it.typeName as itemType,
         (SELECT value FROM itemData id
          JOIN itemDataValues idv ON id.valueID = idv.valueID
@@ -152,6 +153,9 @@ def extract_items(db_path):
                 'year': year,
                 'url': url,
                 'tags': tags_str,
+                # Zotero stores UTC "YYYY-MM-DD HH:MM:SS" — normalize to ISO
+                # so the Reading page's recency marker can Date.parse it.
+                'added': (row['dateAdded'] or '').replace(' ', 'T') + ('Z' if row['dateAdded'] else ''),
             })
 
     conn.close()
@@ -197,7 +201,7 @@ def write_csv(items, category, output_dir):
     filtered.sort(key=lambda x: (x['year'] or '0'), reverse=True)
 
     with open(filepath, 'w', newline='', encoding='utf-8') as f:
-        writer = csv.DictWriter(f, fieldnames=['title', 'author', 'description', 'year', 'url', 'tags'])
+        writer = csv.DictWriter(f, fieldnames=['title', 'author', 'description', 'year', 'url', 'tags', 'added'])
         writer.writeheader()
         for item in filtered:
             writer.writerow({
@@ -207,6 +211,7 @@ def write_csv(items, category, output_dir):
                 'year': item['year'],
                 'url': item['url'],
                 'tags': item.get('tags', ''),
+                'added': item.get('added', ''),
             })
 
     print(f'Wrote {len(filtered)} items to {filepath}')
