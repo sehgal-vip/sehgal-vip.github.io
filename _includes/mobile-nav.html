@@ -34,4 +34,36 @@
       <kbd>⌘K</kbd>
     </button>
   </div>
+
+  <!-- Merged from the old sidebar drawer: taxonomy lives below the
+       primary nav, in the one menu the hamburger opens. -->
+  {% if site.categories.size > 0 %}
+  <div class="mobile-nav-section">
+    <h3 class="mobile-nav-title">Categories</h3>
+    <ul class="mobile-nav-sublist">
+      {% assign sorted_categories = site.categories | sort %}
+      {% for category in sorted_categories limit:8 %}
+      <li>
+        <a href="{{ '/categories/' | relative_url }}#{{ category[0] | slugify }}">
+          {{ category[0] }}
+          <span class="count">{{ category[1].size }}</span>
+        </a>
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+
+  {% if site.posts.size > 0 %}
+  <div class="mobile-nav-section">
+    <h3 class="mobile-nav-title">Recent Posts</h3>
+    <ul class="mobile-nav-sublist">
+      {% for post in site.posts limit:5 %}
+      <li>
+        <a href="{{ post.url | relative_url }}">{{ post.title | truncate: 40 }}</a>
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+  {% endif %}
 </nav>

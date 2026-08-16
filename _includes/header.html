@@ -51,12 +51,12 @@
         <!-- Theme toggle -->
         {% include theme-toggle.html %}
         
-        <!-- Mobile menu button (three dots to distinguish from the sidebar hamburger on mobile) -->
+        <!-- Mobile menu button — the single hamburger on mobile, opening
+             the merged panel (primary nav + categories + recent posts).
+             The desktop sidebar toggle is hidden at mobile widths. -->
         <button class="icon-btn mobile-menu-btn" aria-label="Open navigation menu" aria-expanded="false">
           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="5" r="1.25"></circle>
-            <circle cx="12" cy="12" r="1.25"></circle>
-            <circle cx="12" cy="19" r="1.25"></circle>
+            <path d="M4 6h16M4 12h16M4 18h16"></path>
           </svg>
         </button>
       </div>

@@ -429,10 +429,12 @@ strong, b {
 
 .header-inner > .sidebar-toggle-btn {
   flex-shrink: 0;
-  
+
+  // On mobile the merged menu behind .mobile-menu-btn is the single
+  // entry point — two menu icons in one header confused the hamburger's
+  // meaning (it opened taxonomy, not navigation).
   @media (max-width: 767px) {
-    flex-shrink: 0;
-    margin-right: 0;
+    display: none;
   }
 }
 
@@ -592,17 +594,58 @@ strong, b {
   right: 0;
   bottom: 0;
   background: var(--bg-color);
-  padding: 1.5rem;
+  padding: 1.5rem 1.5rem 3rem;
   transform: translateX(-100%);
   transition: transform var(--transition-speed);
   z-index: 999;
-  
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+
   &.is-open {
     transform: translateX(0);
   }
-  
+
   @media (min-width: 768px) {
     display: none;
+  }
+}
+
+// Taxonomy sections merged in from the old sidebar drawer.
+.mobile-nav-section {
+  margin-top: 2rem;
+}
+
+.mobile-nav-title {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  margin-bottom: 0.75rem;
+}
+
+.mobile-nav-sublist {
+  list-style: none;
+
+  li { margin-bottom: 0.15rem; }
+
+  a {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0;
+    font-size: 0.95rem;
+    color: var(--text-muted);
+
+    &:hover { color: var(--link-color); }
+
+    .count {
+      font-size: 0.75rem;
+      color: var(--text-subtle);
+      background: var(--bg-secondary);
+      border-radius: 999px;
+      padding: 0.1rem 0.55rem;
+    }
   }
 }
 
