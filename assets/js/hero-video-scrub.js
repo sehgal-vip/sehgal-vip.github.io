@@ -36,11 +36,14 @@
   const videoEndPoint = scrollDistance * 0.7;
   const heroHeight = window.innerHeight;
 
-  // The hero fades out over 60% of a viewport (was a full viewport, which
-  // left a stretch of near-black with the content still below the fold).
-  // The spacer matches, so "Latest writing" arrives exactly as the fade
-  // completes — total runway ≈ 0.95 viewports.
-  const fadeDistance = heroHeight * 0.6;
+  // GEOMETRY INVARIANT — do not shorten this. The hero translates up at
+  // exactly scroll speed, so flow content entering from the bottom meets
+  // the hero's bottom edge and never overlaps it. That requires one full
+  // viewport of post-scrub runway; the fade spans the same distance so
+  // opacity hits 0 exactly as content reaches the top. A 0.6-viewport
+  // "tighter" fade shipped briefly and made the about-section scroll up
+  // OVER the still-visible hero.
+  const fadeDistance = heroHeight;
 
   // Spacer for scroll space: scrub 0→videoEndPoint, then fade + translate
   // over fadeDistance worth of scroll.
