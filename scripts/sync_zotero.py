@@ -66,6 +66,20 @@ def download_sqlite(file_id, dest_path):
 API_BASE = 'https://api.zotero.org'
 
 
+def resolve_user_id():
+    """Return the numeric Zotero userID. If ZOTERO_USER_ID isn't numeric
+    (e.g. a username was entered), resolve it from the API key itself —
+    /keys/<key> reports which user the key belongs to."""
+    if ZOTERO_USER_ID.strip().isdigit():
+        return ZOTERO_USER_ID.strip()
+    response = requests.get(f'{API_BASE}/keys/{ZOTERO_API_KEY}',
+                            headers={'Zotero-API-Version': '3'}, timeout=30)
+    response.raise_for_status()
+    user_id = str(response.json()['userID'])
+    print(f'Resolved numeric userID {user_id} from the API key')
+    return user_id
+
+
 def _api_get(path, params):
     headers = {'Zotero-API-Key': ZOTERO_API_KEY, 'Zotero-API-Version': '3'}
     response = requests.get(f'{API_BASE}{path}', params=params, headers=headers, timeout=60)
@@ -73,12 +87,12 @@ def _api_get(path, params):
     return response
 
 
-def fetch_collection_names():
+def fetch_collection_names(user_id):
     """Map collection keys to names — collections become the tags column."""
     names = {}
     start = 0
     while True:
-        r = _api_get(f'/users/{ZOTERO_USER_ID}/collections',
+        r = _api_get(f'/users/{user_id}/collections',
                      {'format': 'json', 'limit': 100, 'start': start})
         batch = r.json()
         if not batch:
@@ -94,11 +108,12 @@ def fetch_collection_names():
 
 def fetch_items_api():
     """Fetch top-level items from the Zotero Web API (always current)."""
-    collections = fetch_collection_names()
+    user_id = resolve_user_id()
+    collections = fetch_collection_names(user_id)
     items = []
     start = 0
     while True:
-        r = _api_get(f'/users/{ZOTERO_USER_ID}/items/top',
+        r = _api_get(f'/users/{user_id}/items/top',
                      {'format': 'json', 'limit': 100, 'start': start})
         batch = r.json()
         if not batch:
@@ -371,7 +386,7 @@ def sync_from_drive():
 def main():
     output_dir = os.environ.get('OUTPUT_DIR', '_data')
 
-    if ZOTERO_USER_ID and ZOTERO_API_KEY:
+    if ZOTERO_API_KEY:
         print('Syncing from the Zotero Web API...')
         items = fetch_items_api()
     elif ZOTERO_SQLITE_ID:
