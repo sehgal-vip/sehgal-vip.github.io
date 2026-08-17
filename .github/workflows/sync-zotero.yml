@@ -24,6 +24,10 @@ jobs:
 
       - name: Sync Zotero
         env:
+          # Preferred: Zotero Web API — always current, no manual uploads.
+          ZOTERO_USER_ID: ${{ secrets.ZOTERO_USER_ID }}
+          ZOTERO_API_KEY: ${{ secrets.ZOTERO_API_KEY }}
+          # Legacy fallback: Google Drive sqlite snapshot.
           ZOTERO_SQLITE_ID: ${{ secrets.ZOTERO_SQLITE_ID }}
           OUTPUT_DIR: _data
         run: python scripts/sync_zotero.py

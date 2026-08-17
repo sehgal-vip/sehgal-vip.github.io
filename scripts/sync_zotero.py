@@ -1,5 +1,11 @@
 #!/usr/bin/env python3
-"""Sync Zotero SQLite database from Google Drive to Jekyll CSV files."""
+"""Sync the Zotero library to Jekyll CSV files.
+
+Preferred source: the Zotero Web API (always current — Zotero's own sync
+keeps it fresh), enabled by ZOTERO_USER_ID + ZOTERO_API_KEY.
+Legacy fallback: a zotero.sqlite snapshot on Google Drive (ZOTERO_SQLITE_ID),
+which only updates when someone manually re-uploads it.
+"""
 import os
 import re
 import csv
@@ -7,7 +13,11 @@ import sqlite3
 import tempfile
 import requests
 
-# Google Drive file ID for zotero.sqlite
+# Zotero Web API credentials (preferred source)
+ZOTERO_USER_ID = os.environ.get('ZOTERO_USER_ID', '')
+ZOTERO_API_KEY = os.environ.get('ZOTERO_API_KEY', '')
+
+# Google Drive file ID for zotero.sqlite (legacy fallback)
 ZOTERO_SQLITE_ID = os.environ.get('ZOTERO_SQLITE_ID', '')
 
 # Map Zotero item types to our categories
@@ -51,6 +61,93 @@ def download_sqlite(file_id, dest_path):
                 f.write(chunk)
 
     print(f'Downloaded {dest_path} ({os.path.getsize(dest_path)} bytes)')
+
+
+API_BASE = 'https://api.zotero.org'
+
+
+def _api_get(path, params):
+    headers = {'Zotero-API-Key': ZOTERO_API_KEY, 'Zotero-API-Version': '3'}
+    response = requests.get(f'{API_BASE}{path}', params=params, headers=headers, timeout=60)
+    response.raise_for_status()
+    return response
+
+
+def fetch_collection_names():
+    """Map collection keys to names — collections become the tags column."""
+    names = {}
+    start = 0
+    while True:
+        r = _api_get(f'/users/{ZOTERO_USER_ID}/collections',
+                     {'format': 'json', 'limit': 100, 'start': start})
+        batch = r.json()
+        if not batch:
+            break
+        for coll in batch:
+            names[coll['key']] = coll['data']['name']
+        start += len(batch)
+        total = int(r.headers.get('Total-Results', 0) or 0)
+        if total and start >= total:
+            break
+    return names
+
+
+def fetch_items_api():
+    """Fetch top-level items from the Zotero Web API (always current)."""
+    collections = fetch_collection_names()
+    items = []
+    start = 0
+    while True:
+        r = _api_get(f'/users/{ZOTERO_USER_ID}/items/top',
+                     {'format': 'json', 'limit': 100, 'start': start})
+        batch = r.json()
+        if not batch:
+            break
+        for entry in batch:
+            data = entry.get('data', {})
+            item_type = data.get('itemType', '')
+            if item_type in ('attachment', 'note', 'annotation'):
+                continue
+            title = (data.get('title') or '').strip()
+            if not title:
+                continue
+
+            authors = []
+            for creator in data.get('creators', []):
+                if creator.get('creatorType') != 'author':
+                    continue
+                name = creator.get('name') or \
+                    f"{creator.get('firstName', '')} {creator.get('lastName', '')}".strip()
+                if name:
+                    authors.append(name)
+            author_str = ', '.join(authors[:3])
+            if len(authors) > 3:
+                author_str += ' et al.'
+
+            year_match = re.search(r'\b(\d{4})\b', data.get('date') or '')
+            url = data.get('url') or ''
+            if data.get('DOI'):
+                url = f"https://doi.org/{data['DOI']}"
+            tags = '; '.join(sorted(collections[k] for k in data.get('collections', [])
+                                    if k in collections))
+
+            items.append({
+                'type': TYPE_MAP.get(item_type, 'others'),
+                'title': title,
+                'author': author_str,
+                'description': truncate_words(data.get('abstractNote') or '', 300),
+                'year': year_match.group(1) if year_match else '',
+                'url': url,
+                'tags': tags,
+                'added': data.get('dateAdded', ''),
+            })
+        start += len(batch)
+        total = int(r.headers.get('Total-Results', 0) or 0)
+        if total and start >= total:
+            break
+
+    print(f'Fetched {len(items)} items from the Zotero API')
+    return dedupe_items(items)
 
 
 def extract_items(db_path):
@@ -254,14 +351,9 @@ def write_meta(items, output_dir):
     print(f'Wrote sync metadata to {filepath}')
 
 
-def main():
-    if not ZOTERO_SQLITE_ID:
-        print('Error: ZOTERO_SQLITE_ID environment variable not set')
-        return
-
-    output_dir = os.environ.get('OUTPUT_DIR', '_data')
-
-    # Download SQLite to temp file
+def sync_from_drive():
+    """Legacy path: download a zotero.sqlite snapshot from Google Drive.
+    Only as fresh as the last manual upload — prefer the Web API."""
     with tempfile.NamedTemporaryFile(suffix='.sqlite', delete=False) as tmp:
         tmp_path = tmp.name
 
@@ -270,19 +362,33 @@ def main():
         download_sqlite(ZOTERO_SQLITE_ID, tmp_path)
 
         print('Extracting items from database...')
-        items = extract_items(tmp_path)
-        print(f'Found {len(items)} items')
-
-        # Write CSV files
-        for category in ['books', 'papers', 'articles', 'others']:
-            write_csv(items, category, output_dir)
-
-        write_meta(items, output_dir)
-
-        print('Sync complete!')
+        return extract_items(tmp_path)
     finally:
         if os.path.exists(tmp_path):
             os.unlink(tmp_path)
+
+
+def main():
+    output_dir = os.environ.get('OUTPUT_DIR', '_data')
+
+    if ZOTERO_USER_ID and ZOTERO_API_KEY:
+        print('Syncing from the Zotero Web API...')
+        items = fetch_items_api()
+    elif ZOTERO_SQLITE_ID:
+        items = sync_from_drive()
+    else:
+        print('Error: set ZOTERO_USER_ID + ZOTERO_API_KEY (preferred) '
+              'or ZOTERO_SQLITE_ID (legacy Drive snapshot)')
+        return
+
+    print(f'Found {len(items)} items')
+
+    for category in ['books', 'papers', 'articles', 'others']:
+        write_csv(items, category, output_dir)
+
+    write_meta(items, output_dir)
+
+    print('Sync complete!')
 
 
 if __name__ == '__main__':
