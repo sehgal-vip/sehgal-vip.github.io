@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Sync Zotero SQLite database from Google Drive to Jekyll CSV files."""
 import os
+import re
 import csv
 import sqlite3
 import tempfile
@@ -173,16 +174,31 @@ def truncate_words(text, limit):
     return text[:cut].rstrip('.,;:') + '…'
 
 
+def item_key(item):
+    """Identity for dedup. The same paper saved from two sources (arXiv,
+    HuggingFace 'Paper page - …') gets different titles and URLs but shares
+    an arXiv ID, so prefer that; fall back to normalized title."""
+    m = re.search(r'(?:arxiv\.org/abs/|arXiv\.|huggingface\.co/papers/)(\d{4}\.\d{4,5})',
+                  item['url'] or '')
+    if m:
+        return ('arxiv', m.group(1))
+    title = ' '.join(item['title'].lower().split())
+    title = re.sub(r'^paper page - ', '', title)
+    return (item['type'], title)
+
+
 def dedupe_items(items):
-    """Drop duplicate items (same title + category), e.g. an item filed in
-    Zotero twice. Keep the copy with the most complete metadata."""
+    """Drop duplicate items, e.g. an item filed in Zotero twice or saved
+    from two sources. Keep the copy with the most complete metadata."""
     def completeness(i):
-        return sum(bool(i[k]) for k in ('url', 'description', 'author', 'year', 'tags'))
+        # Penalize aggregator titles so the canonical source wins ties.
+        aggregator = i['title'].lower().startswith('paper page - ')
+        return sum(bool(i[k]) for k in ('url', 'description', 'author', 'year', 'tags')) - (2 if aggregator else 0)
 
     best = {}
     order = []
     for item in items:
-        key = (item['type'], ' '.join(item['title'].lower().split()))
+        key = item_key(item)
         if key not in best:
             best[key] = item
             order.append(key)
